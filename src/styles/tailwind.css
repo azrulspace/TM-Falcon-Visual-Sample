@@ -1,0 +1,10 @@
+@tailwind utilities;
+
+@layer utilities {
+  .theme_light {
+    color-scheme: light;
+  }
+  .theme_dark {
+    color-scheme: dark;
+  }
+}

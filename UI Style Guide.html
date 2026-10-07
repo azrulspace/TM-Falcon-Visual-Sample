@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<script>(function(){var t;try{t=localStorage.getItem("ds_theme")}catch(e){}if(!t)t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.classList.add("theme_"+t)})();</script>
+<title>UI Style Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(64px + env(safe-area-inset-top,0px));scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg_primary);color:var(--text_primary);font-family:var(--font_family),system-ui,sans-serif;font-size:16px;line-height:24px}
+header{position:sticky;top:0;z-index:5;background:var(--bg_primary);border-bottom:1px solid var(--border_secondary);padding:12px 24px;display:flex;gap:20px;align-items:center;overflow-x:auto}
+header b{font-weight:600;white-space:nowrap;margin-right:auto}
+header a{color:var(--text_tertiary);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
+header a:hover{color:var(--text_primary)}
+.theme_toggle{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--border_primary);border-radius:8px;background:var(--bg_primary);color:var(--text_secondary);cursor:pointer}
+.theme_toggle:hover{background:var(--bg_secondary)}
+.theme_toggle:focus-visible{outline:none;box-shadow:var(--ring_brand)}
+.theme_toggle svg{width:20px;height:20px}
+main{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+h1{font-size:36px;line-height:44px;font-weight:600;letter-spacing:-0.02em;margin:0 0 8px}
+h2{font-size:30px;line-height:38px;font-weight:600;margin:80px 0 4px}
+h3{font-size:18px;line-height:28px;font-weight:600;margin:36px 0 12px}
+p.l{color:var(--text_tertiary);margin:0 0 16px;max-width:680px}
+.note{background:var(--bg_secondary);border:1px solid var(--border_secondary);border-radius:12px;padding:16px 20px;margin:16px 0;font-size:14px;line-height:22px}
+.note ol{margin:8px 0 0;padding-left:20px}
+.sw{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+@media(max-width:760px){.sw{grid-template-columns:repeat(3,1fr)}}
+.c{border:1px solid var(--border_secondary);border-radius:8px;overflow:hidden;cursor:pointer;background:var(--bg_primary)}
+.c i{display:block;height:52px}
+.c div{padding:8px 10px;font-size:12px;line-height:18px}
+.c b{display:block;font-weight:600;font-size:13px}
+.c span,.c em{display:block;color:var(--text_tertiary);font-family:ui-monospace,Menlo,monospace;font-style:normal;font-size:11px;line-height:16px;overflow:hidden;text-overflow:ellipsis}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:20px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border_secondary);vertical-align:middle}
+th{color:var(--text_tertiary);font-weight:500;background:var(--bg_secondary);white-space:nowrap}
+td{min-width:90px}
+.wrap{overflow-x:auto;border:1px solid var(--border_secondary);border-radius:12px}
+.wrap tr:last-child td{border-bottom:0}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg_secondary);border:1px solid var(--border_secondary);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.dot{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--border_primary);vertical-align:middle;margin-right:8px}
+.stage{background:var(--bg_secondary);border:1px solid var(--border_secondary);border-radius:12px;padding:20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px 24px;background:var(--bg_secondary);border:1px solid var(--border_secondary);border-radius:12px;padding:24px}
+.demo .cap{font-size:12px;line-height:18px;color:var(--text_quaternary);margin-bottom:8px;font-weight:500}
+.demo .cap .badge{margin-right:6px}
+.code{border:1px solid var(--border_secondary);border-radius:12px;overflow:hidden;margin:12px 0}
+.bar{display:flex;justify-content:space-between;align-items:center;padding:8px 8px 8px 16px;background:var(--bg_tertiary);border-bottom:1px solid var(--border_secondary);font-size:13px;font-weight:500}
+.copy{font:500 12px/16px Inter,sans-serif;background:var(--bg_primary);border:1px solid var(--border_primary);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text_secondary)}
+.copy:hover{background:var(--bg_secondary)}
+pre{margin:0;padding:16px;background:var(--bg_secondary);font:12px/18px ui-monospace,Menlo,monospace;overflow:auto;max-height:340px;color:var(--text_secondary);white-space:pre}
+.shbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px;background:var(--bg_secondary);padding:28px;border-radius:12px;border:1px solid var(--border_secondary)}
+.shbox div{height:96px;border-radius:12px;background:var(--bg_elevated);color:var(--text_primary);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.gcol{background:var(--bg_brand_secondary);color:var(--text_brand);border-radius:4px;text-align:center;font-size:12px;line-height:18px;padding:12px 0}
+</style>
+<style id="dsCss"></style>
+</head>
+<body>
+<header><b>UI Style Guide</b><a href="#guide">Guide</a><a href="#color">Color</a><a href="#type">Typography</a><a href="#spacing">Spacing</a><a href="#button">Button</a><a href="#input">Input</a><a href="#controls">Controls</a><a href="#feedback">Alert</a><a href="#shadow">Shadow</a><a href="#layout">Layout</a><a href="#a11y">Accessibility</a><a href="#dos">Do and Don't</a><a href="#source">Source code</a><button class="theme_toggle" id="themeBtn" type="button" aria-label="Switch to dark mode"></button></header>
+<main>
+<h1>UI Style Guide</h1>
+<p class="l">Design foundation for the UI project: color, typography, button, form input, and shadow. Font family is Inter. Every value on this page is generated from one set of design tokens, so what you see is what the code uses. Use the sun and moon button in the header to switch between light and dark mode.</p>
+
+<h2 id="guide">Developer guide</h2>
+<p class="l">Start from Section 12 (Source code). Copy tokens.css, components.css, and utilities.css into the project, add the theme snippet to the head, then build UI only with the tokens and classes documented below.</p>
+<div class="note"><b>Rules</b>
+<ol>
+<li>Never hardcode hex values, sizes, radius, or shadows. Always use a CSS variable, for example <code>var(--bg_brand_solid)</code>.</li>
+<li>Use semantic tokens (<code>text_</code>, <code>bg_</code>, <code>border_</code>) inside components. Use palette tokens (<code>color_brand_900</code>) only to define a new semantic token.</li>
+<li>Light and dark mode switch automatically through the class <code>theme_light</code> or <code>theme_dark</code> on the html element. Semantic tokens change value, so never write separate dark mode styles.</li>
+<li>All names use underscores. Classes follow the pattern <code>component</code> + <code>variant</code> + <code>size</code>, for example <code>btn btn_primary btn_md</code>.</li>
+<li>State classes (<code>is_hover</code>, <code>is_focus</code>, <code>is_error</code>, <code>is_success</code>, <code>is_disabled</code>, <code>is_loading</code>) exist for documentation and validation. Real hover and focus use native pseudo classes automatically.</li>
+<li>If a value is missing, add a token to tokens.css first, then reuse it. Do not invent one off values.</li>
+</ol></div>
+<div id="prefix"></div>
+<h3>Light and dark mode</h3>
+<p class="l">Add this snippet to the head of the project. It reads the saved choice, falls back to the system preference, and wires up the toggle button.</p>
+<div id="themeCode"></div>
+<h3>Prompt for AI code assistants</h3>
+<p class="l">Paste this at the start of a session together with tokens.css and components.css.</p>
+<div id="aiPrompt"></div>
+
+<h2 id="color">1. Color style guide</h2>
+<p class="l">The brand color is #06013A and is used as Brand 900. Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. Base colors are White and Black. Text, background, and border colors are semantic tokens that point to palette shades, and each semantic token has a light value and a dark value. Click a swatch to copy its hex.</p>
+<div id="pal"></div>
+<h3>Text color</h3><div class="wrap"><table id="tt"></table></div>
+<h3>Background color</h3><div class="wrap"><table id="tb"></table></div>
+<h3>Border color</h3><div class="wrap"><table id="tbd"></table></div>
+
+<h2 id="type">2. Typography style guide</h2>
+<p class="l">Font family Inter. Weights: Regular 400, Medium 500, Semibold 600, Bold 700. Apply weight with <code>fw_regular</code>, <code>fw_medium</code>, <code>fw_semibold</code>, <code>fw_bold</code>. Display sizes use negative letter spacing for a tighter look.</p>
+<h3>Heading</h3><div class="wrap"><table id="th"></table></div>
+<h3>Display</h3><div class="wrap"><table id="td"></table></div>
+<h3>Body text</h3><div class="wrap"><table id="tx"></table></div>
+
+<h2 id="spacing">3. Spacing and radius</h2>
+<p class="l">Spacing uses a 4px base unit. Use spacing tokens for every margin, padding, and gap. Radius tokens keep corners consistent across components.</p>
+<h3>Spacing scale</h3><div class="wrap"><table id="tsp"></table></div>
+<h3>Radius scale</h3><div class="wrap"><table id="trd"></table></div>
+
+<h2 id="button">4. Button system</h2>
+<p class="l">Seven variants, four sizes, five states. Icon size is always 20px. Radius is 8px for S, M, L and 10px for XL. Flat is a solid neutral button with no border and no shadow, for low emphasis actions on busy surfaces.</p>
+<h3>Sizes</h3><div class="wrap"><table id="bs"></table></div>
+<div class="stage" id="sizes" style="margin-top:16px"></div>
+<h3>Variants and states</h3><div class="wrap"><table id="bm"></table></div>
+<h3>Color tokens per variant</h3><div class="wrap"><table id="bc"></table></div>
+<h3>Markup</h3><div id="btnCode"></div>
+
+<h2 id="input">5. Form input field and description</h2>
+<p class="l">Default height is 44px (M) and 36px (S). Radius 8px, horizontal padding 14px. Each field has a label, an input, and an optional hint. Required fields show an asterisk after the label.</p>
+<h3>Field types</h3><div class="grid" id="inp"></div>
+<h3>States</h3><div class="grid" id="ist"></div>
+<h3>Specification</h3><div class="wrap"><table id="is"></table></div>
+<h3>Markup</h3><div id="inCode"></div>
+
+<h2 id="controls">6. Form controls</h2>
+<p class="l">Select and textarea use the same soft border as the text input. Checkbox, radio, and toggle use the stronger control border (Neutral 500, 3:1 contrast) because small shapes need it to stay visible.</p>
+<h3>Checkbox, radio, and toggle states</h3><div class="wrap"><table id="ctl"></table></div>
+<h3>With label and description</h3><div class="grid" id="chs"></div>
+<h3>Select and textarea</h3><div class="grid" id="sel"></div>
+<div id="ctlCode"></div>
+
+<h2 id="feedback">7. Alert, badge, and toast</h2>
+<p class="l">Feedback components use the Success, Info, Warning, and Error palettes. Alerts stay in the page flow, toasts appear temporarily above the page, and badges label status inside lists and tables.</p>
+<h3>Alert</h3><div class="grid" id="alr" style="grid-template-columns:repeat(auto-fill,minmax(360px,1fr))"></div>
+<h3>Badge</h3><div class="stage" id="bdg"></div>
+<h3>Toast</h3><div class="stage" id="tst"></div>
+<div id="fbCode"></div>
+
+<h2 id="shadow">8. Shadow style</h2>
+<p class="l">Light mode uses rgb 16, 24, 40 with different opacity. Dark mode uses black with higher opacity so shadows stay visible. A higher level means the element sits higher above the surface. Focus rings are separate tokens.</p>
+<div class="shbox" id="sh"></div>
+<div class="wrap" style="margin-top:16px"><table id="st"></table></div>
+
+<h2 id="layout">9. Layout and grid</h2>
+<p class="l">Mobile first. Media queries cannot read CSS variables, so breakpoint values are written as numbers in the CSS and listed as tokens for reference.</p>
+<div class="wrap"><table id="bp"></table></div>
+<h3>Live grid</h3>
+<p class="l">Resize the window to see 4, 8, and 12 columns.</p>
+<div class="stage" style="display:block"><div class="layout_grid" id="lg"></div></div>
+
+<h2 id="a11y">10. Accessibility</h2>
+<p class="l">Target is WCAG 2.1 level AA. Contrast ratios below are calculated live from the token values on this page, for both light and dark mode. Disabled elements are exempt from contrast rules.</p>
+<h3>Text contrast (minimum 4.5:1)</h3><div class="wrap"><table id="ct"></table></div>
+<h3>Non text contrast (minimum 3:1)</h3><div class="wrap"><table id="cn"></table></div>
+<div class="note"><b>About the soft input border.</b> Inputs use <code>border_primary</code> for a softer look. WCAG 1.4.11 asks for 3:1 on the boundary of a control unless other cues identify it. Each field keeps a visible label, so it stays identifiable. For stricter government requirements, add <code>input_strong</code> to the input, or switch the default to <code>border_control</code>.</div>
+<h3>Developer checklist</h3>
+<div class="note"><ol>
+<li>Every input has a visible label connected with <code>for</code> and <code>id</code>. A placeholder is never a label.</li>
+<li>Never rely on color alone. Errors need an icon and a text message, linked with <code>aria describedby</code>, and the input gets <code>aria invalid</code>.</li>
+<li>Keep the focus ring visible on every interactive element. Do not remove outlines.</li>
+<li>Touch targets: use <code>btn_lg</code> (44px) or taller on mobile. WCAG 2.2 AA allows 24px, but 44px is recommended for public services.</li>
+<li>Use <code>role="alert"</code> for errors and <code>role="status"</code> for success and info messages.</li>
+<li>Loading buttons set <code>aria busy</code> and keep their size so the layout does not shift.</li>
+<li>Reduced motion is respected: transitions are removed and spinners slow down automatically.</li>
+<li>Do not use the disabled state to hide a reason. Explain why an action is blocked with a visible message.</li>
+<li>Test pages at 200% zoom and with keyboard only navigation.</li>
+</ol></div>
+
+<h2 id="dos">11. Do and Don't</h2>
+<div class="grid" id="dd"></div>
+
+<h2 id="source">12. Source code</h2>
+<p class="l">Generated from the same tokens used above. Copy these files into the project.</p>
+<div id="src"></div>
+</main>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+var SD=[25,50,100,200,300,400,500,600,700,800,900,950];
+var P={
+brand:"F8F8FF F0EFFE E1DFFC C5C1F7 A39DEF 7B72E0 5547C9 3D2FA6 261C80 160F5C 06013A 030120",
+neutral:"FCFCFD F9FAFB F2F4F7 E4E7EC D0D5DD 98A2B3 667085 475467 344054 1D2939 101828 0C111D",
+success:"F6FEF9 ECFDF3 D1FADF A6F4C5 6CE9A6 32D583 12B76A 039855 027A48 05603A 054F31 053321",
+info:"F5FAFF EFF8FF D1E9FF B2DDFF 84CAFF 53B1FD 2E90FA 1570EF 175CD3 1849A9 194185 102A56",
+error:"FFFBFA FEF3F2 FEE4E2 FECDCA FDA29B F97066 F04438 D92D20 B42318 912018 7A271A 55160C",
+warning:"FFFCF5 FFFAEB FEF0C7 FEDF89 FEC84B FDB022 F79009 DC6803 B54708 93370D 7A2E0D 4E1D09"};
+for(var k in P)P[k]=P[k].split(" ");
+var cap=function(s){return s.charAt(0).toUpperCase()+s.slice(1)};
+function res(r){
+ if(r==="white")return{hex:"#FFFFFF",v:"var(--color_white)",l:"White"};
+ if(r==="black")return{hex:"#000000",v:"var(--color_black)",l:"Black"};
+ if(r.indexOf("rgba")==0)return{hex:"#000000",v:r,l:"Black at 70%"};
+ var p=r.split("_");return{hex:"#"+P[p[0]][SD.indexOf(+p[1])],v:"var(--color_"+r+")",l:cap(p[0])+" "+p[1]}}
+var TEXT=[["text_primary","neutral_900","Headings and main content","neutral_50"],["text_secondary","neutral_700","Labels and supporting text","neutral_200"],["text_tertiary","neutral_600","Hints and descriptions","neutral_300"],["text_quaternary","neutral_500","Captions and icons","neutral_400"],["text_placeholder","neutral_500","Input placeholder","neutral_400"],["text_disabled","neutral_400","Disabled elements","neutral_500"],["text_white","white","Text on solid brand or status surfaces","white"],["text_brand","brand_900","Brand text and links","brand_200"],["text_brand_secondary","brand_700","Text button and soft brand text","brand_200"],["text_success","success_700","Success message","success_400"],["text_info","info_700","Information message","info_400"],["text_warning","warning_700","Warning message","warning_400"],["text_error","error_700","Error message","error_400"],["text_link","brand_600","Inline link","brand_300"],["text_link_hover","brand_700","Inline link hover","brand_200"],["icon_brand","brand_500","Active icons / accents","brand_400"]];
+var BGS=[["bg_primary","white","Page and input background","neutral_950"],["bg_secondary","neutral_50","Section and subtle area","neutral_900"],["bg_tertiary","neutral_100","Hover, chip, flat button","neutral_800"],["bg_quaternary","neutral_200","Pressed, skeleton","neutral_700"],["bg_elevated","white","Card, toast, popover surface","neutral_800"],["bg_disabled","neutral_100","Disabled elements","neutral_800"],["bg_brand_solid","brand_900","Primary button, banner","brand_500"],["bg_brand_solid_hover","brand_800","Primary button hover","brand_600"],["bg_brand_primary","brand_50","Secondary button, highlight","brand_700"],["bg_brand_secondary","brand_100","Secondary button hover","brand_600"],["bg_success_primary","success_50","Success alert","success_950"],["bg_success_solid","success_700","Solid success badge","success_700"],["bg_info_primary","info_50","Info alert","info_950"],["bg_info_solid","info_700","Solid info badge","info_700"],["bg_warning_primary","warning_50","Warning alert","warning_950"],["bg_warning_solid","warning_700","Solid warning badge","warning_700"],["bg_error_primary","error_50","Error alert","error_950"],["bg_error_solid","error_600","Solid error badge","error_600"],["bg_overlay","rgba(0,0,0,0.7)","Modal backdrop","rgba(0,0,0,0.7)"],["bg_selected","brand_50","Selected row/tab/item","brand_800"]];
+var BDS=[["border_primary","neutral_300","Input, select, textarea, secondary gray button","neutral_600"],["border_secondary","neutral_200","Card, table, divider","neutral_700"],["border_tertiary","neutral_100","Subtle divider","neutral_800"],["border_control","neutral_500","Checkbox, radio, toggle boundary, strong input option (3:1 minimum)","neutral_500"],["border_control_hover","neutral_600","Control hover","neutral_400"],["border_hover","neutral_400","Input hover","neutral_500"],["border_disabled","neutral_200","Disabled elements","neutral_800"],["border_brand","brand_400","Input focus","brand_400"],["border_brand_solid","brand_900","Checked control outline","brand_500"],["border_success","success_300","Success alert","success_700"],["border_success_solid","success_600","Success input boundary","success_400"],["border_info","info_300","Info alert","info_700"],["border_warning","warning_300","Warning alert","warning_700"],["border_error","error_300","Error alert","error_700"],["border_error_solid","error_600","Error input boundary","error_400"]];
+var SP=[["space_0",0,"No gap"],["space_1",4,"Tight gap inside badges and alerts"],["space_2",8,"Icon to label gap, small stacks"],["space_3",12,"Alert and toast inner gap, control to label"],["space_4",16,"Default padding, card gap, mobile margin"],["space_5",20,"Medium block gap"],["space_6",24,"Tablet margin, grid gutter, section gap"],["space_8",32,"Desktop margin, large gap"],["space_10",40,"Large block gap"],["space_12",48,"Section padding"],["space_16",64,"Page section spacing"]];
+var RD=[["radius_xs","4px","Text button, small elements"],["radius_sm","6px","Checkbox, icon action"],["radius_md","8px","Button S, M, L, input, select"],["radius_lg","10px","Button XL, alert, toast"],["radius_xl","12px","Card, table wrapper"],["radius_2xl","16px","Modal, large card"],["radius_full","9999px","Badge, toggle, avatar"]];
+var DS=[["display_2xl",72,90,-0.02],["display_xl",60,72,-0.02],["display_lg",48,60,-0.02],["display_md",36,44,-0.02],["display_sm",30,38,0],["display_xs",24,32,0]];
+var TS=[["text_xl",20,30,0],["text_lg",18,28,0],["text_md",16,24,0],["text_sm",14,20,0],["text_xs",12,18,0]];
+var HS=[["h1","display_md"],["h2","display_sm"],["h3","display_xs"],["h4","text_xl"],["h5","text_lg"],["h6","text_md"]];
+var SHD=[["xs",[[0,1,2,0,.05]]],["sm",[[0,1,3,0,.1],[0,1,2,-1,.1]]],["md",[[0,4,6,-1,.1],[0,2,4,-2,.06]]],["lg",[[0,12,16,-4,.08],[0,4,6,-2,.03]]],["xl",[[0,20,24,-4,.08],[0,8,8,-4,.03]]],["2xl",[[0,24,48,-12,.18]]],["3xl",[[0,32,64,-12,.14]]]];
+var bsh=function(L,m){return L.map(function(l){var a=m?Math.min(.6,l[4]*2.5):l[4];return l[0]+"px "+l[1]+"px "+l[2]+"px "+l[3]+"px rgba("+(m?"0,0,0":"16,24,40")+","+a+")"}).join(", ")};
+
+/* ---------- generated CSS ---------- */
+var TOK=":root{\n  /* Base */\n  --color_white:#FFFFFF;\n  --color_black:#000000;\n\n  /* Palette */\n";
+for(var n in P)P[n].forEach(function(h,i){TOK+="  --color_"+n+"_"+SD[i]+":#"+h+";\n"});
+TOK+="\n  /* Typography */\n  --font_family:\"Inter\",system-ui,sans-serif;\n  --fw_regular:400;\n  --fw_medium:500;\n  --fw_semibold:600;\n  --fw_bold:700;\n";
+DS.forEach(function(d){TOK+="  --type_"+d[0]+"_size:"+d[1]+"px;\n  --type_"+d[0]+"_line:"+d[2]+"px;\n  --type_"+d[0]+"_tracking:"+d[3]+"em;\n"});
+TS.forEach(function(d){TOK+="  --type_"+d[0]+"_size:"+d[1]+"px;\n  --type_"+d[0]+"_line:"+d[2]+"px;\n"});
+TOK+="\n  /* Spacing */\n";SP.forEach(function(x){TOK+="  --"+x[0]+":"+x[1]+"px;\n"});
+TOK+="\n  /* Radius */\n";RD.forEach(function(x){TOK+="  --"+x[0]+":"+x[1]+";\n"});
+TOK+="\n  /* Layout */\n  --bp_sm:640px;\n  --bp_lg:1024px;\n  --bp_xl:1280px;\n  --container_max:1200px;\n}\n";
+function themeVars(m){
+ var o="  color-scheme:"+(m?"dark":"light")+";\n";
+ [["Text",TEXT],["Background",BGS],["Border",BDS]].forEach(function(g){o+="\n  /* "+g[0]+" */\n";g[1].forEach(function(t){o+="  --"+t[0]+":"+res(m?t[3]:t[1]).v+";\n"})});
+ o+="\n  /* Shadow */\n";SHD.forEach(function(x){o+="  --shadow_"+x[0]+":"+bsh(x[1],m)+";\n"});
+ o+="\n  /* Focus ring */\n  --ring_brand:0 0 0 2px var(--bg_primary),0 0 0 4px var(--color_brand_"+(m?300:500)+");\n  --ring_gray:0 0 0 4px var(--color_brand_"+(m?600:100)+");\n  --ring_error:0 0 0 4px var(--color_error_"+(m?900:100)+");\n";
+ return o}
+TOK+="\n/* Light theme (default) */\n:root,\n:root.theme_light{\n"+themeVars(0)+"}\n\n/* Dark theme */\n:root.theme_dark{\n"+themeVars(1)+"}\n";
+
+var UT="html{font-family:var(--font_family)}\n";
+["regular","medium","semibold","bold"].forEach(function(w){UT+=".fw_"+w+"{font-weight:var(--fw_"+w+")}\n"});
+function tcls(name,src,w){var d=DS.concat(TS).filter(function(x){return x[0]===src})[0],tr=d[0].indexOf("display")==0?"letter-spacing:var(--type_"+src+"_tracking);":"";return"."+name+"{font-size:var(--type_"+src+"_size);line-height:var(--type_"+src+"_line);"+tr+"font-weight:var(--fw_"+w+")}\n"}
+DS.forEach(function(d){UT+=tcls(d[0],d[0],"semibold")});
+TS.forEach(function(d){UT+=tcls(d[0],d[0],"regular")});
+HS.forEach(function(h){UT+=tcls(h[0],h[1],"semibold")});
+SHD.forEach(function(s){UT+=".shadow_"+s[0]+"{box-shadow:var(--shadow_"+s[0]+")}\n"});
+UT+=".container{width:100%;max-width:var(--container_max);margin:0 auto;padding:0 var(--space_4)}\n.layout_grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space_4)}\n@media (min-width:640px){.container{padding:0 var(--space_6)}.layout_grid{grid-template-columns:repeat(8,1fr);gap:var(--space_6)}}\n@media (min-width:1024px){.container{padding:0 var(--space_8)}.layout_grid{grid-template-columns:repeat(12,1fr)}}\n";
+
+var COMP=`/* Button */
+.btn,.btn_md{--btn_h:40px;--btn_px:16px;--btn_fs:14px;--btn_lh:20px;--btn_gap:8px;--btn_radius:var(--radius_md)}
+.btn_sm{--btn_h:36px;--btn_px:14px;--btn_gap:6px}
+.btn_lg{--btn_h:44px;--btn_px:18px;--btn_fs:16px;--btn_lh:24px}
+.btn_xl{--btn_h:48px;--btn_px:20px;--btn_fs:16px;--btn_lh:24px;--btn_gap:10px;--btn_radius:var(--radius_lg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--btn_gap);height:var(--btn_h);padding:0 var(--btn_px);font-family:var(--font_family);font-size:var(--btn_fs);line-height:var(--btn_lh);font-weight:var(--fw_semibold);border:1px solid transparent;border-radius:var(--btn_radius);cursor:pointer;white-space:nowrap;transition:background .15s,box-shadow .15s,color .15s}
+.btn svg{width:20px;height:20px;flex:none}
+.btn_icon_only{padding:0;width:var(--btn_h)}
+.btn_primary{background:var(--bg_brand_solid);color:var(--text_white)}
+.btn_primary:hover,.btn_primary.is_hover{background:var(--bg_brand_solid_hover)}
+.btn_secondary{background:var(--bg_brand_primary);color:var(--text_brand)}
+.btn_secondary:hover,.btn_secondary.is_hover{background:var(--bg_brand_secondary)}
+.btn_secondary_gray{background:var(--bg_primary);color:var(--text_secondary);border-color:var(--border_primary);box-shadow:var(--shadow_xs)}
+.btn_secondary_gray:hover,.btn_secondary_gray.is_hover{background:var(--bg_secondary);color:var(--text_primary)}
+.btn_tertiary{background:transparent;color:var(--text_brand)}
+.btn_tertiary:hover,.btn_tertiary.is_hover{background:var(--bg_brand_primary)}
+.btn_tertiary_gray{background:transparent;color:var(--text_tertiary)}
+.btn_tertiary_gray:hover,.btn_tertiary_gray.is_hover{background:var(--bg_tertiary);color:var(--text_secondary)}
+.btn_flat{background:var(--bg_tertiary);color:var(--text_secondary)}
+.btn_flat:hover,.btn_flat.is_hover{background:var(--bg_quaternary);color:var(--text_primary)}
+.btn_text{background:transparent;color:var(--text_brand_secondary);padding:0;height:auto;border-radius:4px}
+.btn_text:hover,.btn_text.is_hover{color:var(--text_brand);text-decoration:underline}
+.btn:focus-visible,.btn.is_focus{outline:none;box-shadow:var(--ring_brand)}
+.btn_secondary_gray:focus-visible,.btn_secondary_gray.is_focus{box-shadow:var(--shadow_xs),var(--ring_brand)}
+.btn:disabled,.btn.is_disabled{cursor:not-allowed;box-shadow:none;text-decoration:none;background:var(--bg_disabled);color:var(--text_disabled)}
+.btn_secondary_gray:disabled{background:var(--bg_primary);border-color:var(--border_disabled)}
+.btn_tertiary:disabled,.btn_tertiary_gray:disabled,.btn_text:disabled{background:transparent}
+.btn.is_loading{pointer-events:none}
+.btn_spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:btn_spin .8s linear infinite}
+@keyframes btn_spin{to{transform:rotate(360deg)}}
+
+/* Form field */
+.field{display:flex;flex-direction:column;gap:6px;font-family:var(--font_family)}
+.field_label{font-size:14px;line-height:20px;font-weight:var(--fw_medium);color:var(--text_secondary)}
+.field_required{color:var(--text_error)}
+.field_hint{margin:0;font-size:14px;line-height:20px;color:var(--text_tertiary)}
+.field_hint.is_error{color:var(--text_error)}
+.field_hint.is_success{color:var(--text_success)}
+.input{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;background:var(--bg_primary);--input_border:var(--border_primary);--input_border_hover:var(--border_hover);border:1px solid var(--input_border);border-radius:var(--radius_md);box-shadow:var(--shadow_xs);color:var(--text_primary)}
+.input_sm{height:36px;padding:0 12px}
+.input_strong{--input_border:var(--border_control);--input_border_hover:var(--border_control_hover)}
+.input_field{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:0;font-family:inherit;font-size:16px;line-height:24px;color:var(--text_primary)}
+.input_sm .input_field{font-size:14px;line-height:20px}
+.input_field::placeholder{color:var(--text_placeholder)}
+.input_icon{width:20px;height:20px;flex:none;color:var(--text_quaternary)}
+.input_addon{display:flex;align-items:center;gap:4px;align-self:stretch;color:var(--text_tertiary);font-size:16px;line-height:24px;white-space:nowrap}
+.input_addon_split{padding-right:12px;border-right:1px solid var(--border_primary)}
+.input_action{display:flex;border:0;background:transparent;padding:4px;margin-right:-4px;border-radius:6px;color:var(--text_quaternary);cursor:pointer}
+.input_action:hover{background:var(--bg_secondary);color:var(--text_secondary)}
+.input:hover,.input.is_hover{border-color:var(--input_border_hover)}
+.input:focus-within,.input.is_focus{border-color:var(--border_brand);box-shadow:var(--shadow_xs),var(--ring_gray)}
+.input.is_error{border-color:var(--border_error_solid)}
+.input.is_error:focus-within,.input.is_error.is_focus{box-shadow:var(--shadow_xs),var(--ring_error)}
+.input.is_error .input_icon_status{color:var(--text_error)}
+.input.is_success{border-color:var(--border_success_solid)}
+.input.is_success .input_icon_status{color:var(--text_success)}
+.input.is_disabled{background:var(--bg_secondary);border-color:var(--border_disabled);box-shadow:none}
+.input.is_disabled .input_field,.input.is_disabled .input_icon{color:var(--text_disabled)}
+
+/* Select and textarea */
+select.input_field{appearance:none;cursor:pointer}
+.input_textarea{height:auto;align-items:flex-start;padding:12px 14px}
+.input_textarea .input_field{min-height:80px;resize:vertical}
+
+/* Checkbox, radio, toggle */
+.choice{display:flex;align-items:flex-start;gap:var(--space_3);cursor:pointer;font-family:var(--font_family)}
+.choice_body{display:flex;flex-direction:column}
+.choice_label{font-size:16px;line-height:24px;font-weight:var(--fw_medium);color:var(--text_secondary)}
+.choice_hint{font-size:14px;line-height:20px;color:var(--text_tertiary)}
+.check,.radio{appearance:none;margin:2px 0 0;width:20px;height:20px;flex:none;display:inline-grid;place-content:center;background:var(--bg_primary);border:1px solid var(--border_control);cursor:pointer}
+.check{border-radius:var(--radius_sm)}
+.radio{border-radius:var(--radius_full)}
+.check:hover,.radio:hover,.check.is_hover,.radio.is_hover{border-color:var(--border_brand_solid);background:var(--bg_brand_primary)}
+.check:checked,.radio:checked,.check:indeterminate{background:var(--bg_brand_solid);border-color:var(--border_brand_solid)}
+.check:checked::after{content:"";width:5px;height:10px;margin-top:-2px;border:solid var(--text_white);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.check:indeterminate::after{content:"";width:10px;height:2px;background:var(--text_white)}
+.radio:checked::after{content:"";width:8px;height:8px;border-radius:var(--radius_full);background:var(--text_white)}
+.toggle{appearance:none;margin:0;position:relative;width:44px;height:24px;flex:none;border-radius:var(--radius_full);background:var(--border_control);cursor:pointer;transition:background .15s}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:var(--radius_full);background:var(--color_white);box-shadow:var(--shadow_sm);transition:transform .15s}
+.toggle:hover,.toggle.is_hover{background:var(--border_control_hover)}
+.toggle:checked{background:var(--bg_brand_solid)}
+.toggle:checked:hover,.toggle:checked.is_hover{background:var(--bg_brand_solid_hover)}
+.toggle:checked::after{transform:translateX(20px)}
+.check:focus-visible,.radio:focus-visible,.toggle:focus-visible,.check.is_focus,.radio.is_focus,.toggle.is_focus{outline:none;box-shadow:var(--ring_brand)}
+.check.is_error,.radio.is_error{border-color:var(--border_error_solid)}
+.check:disabled,.radio:disabled,.toggle:disabled{opacity:.4;cursor:not-allowed}
+
+/* Alert */
+.alert{display:flex;align-items:flex-start;gap:var(--space_3);padding:var(--space_4);border:1px solid;border-radius:var(--radius_lg);font-family:var(--font_family);font-size:14px;line-height:20px;color:var(--text_secondary)}
+.alert_icon{width:20px;height:20px;flex:none}
+.alert_body{flex:1;display:flex;flex-direction:column;gap:var(--space_1)}
+.alert_title{font-weight:var(--fw_semibold)}
+.alert_actions{display:flex;gap:var(--space_4);margin-top:var(--space_2)}
+.alert_link{border:0;background:none;padding:0;font:inherit;font-weight:var(--fw_semibold);color:inherit;text-decoration:underline;cursor:pointer}
+.alert_close,.toast_close{display:flex;border:0;background:transparent;padding:2px;margin:-2px;border-radius:var(--radius_sm);color:var(--text_quaternary);cursor:pointer}
+.alert_close svg,.toast_close svg{width:20px;height:20px}
+.alert_close:focus-visible,.toast_close:focus-visible{outline:none;box-shadow:var(--ring_brand)}
+.alert_success{background:var(--bg_success_primary);border-color:var(--border_success)}
+.alert_success .alert_title,.alert_success .alert_icon{color:var(--text_success)}
+.alert_info{background:var(--bg_info_primary);border-color:var(--border_info)}
+.alert_info .alert_title,.alert_info .alert_icon{color:var(--text_info)}
+.alert_warning{background:var(--bg_warning_primary);border-color:var(--border_warning)}
+.alert_warning .alert_title,.alert_warning .alert_icon{color:var(--text_warning)}
+.alert_error{background:var(--bg_error_primary);border-color:var(--border_error)}
+.alert_error .alert_title,.alert_error .alert_icon{color:var(--text_error)}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:var(--radius_full);font-family:var(--font_family);font-size:12px;line-height:18px;font-weight:var(--fw_medium);white-space:nowrap}
+.badge_dot::before{content:"";width:6px;height:6px;border-radius:var(--radius_full);background:currentColor}
+.badge_neutral{background:var(--bg_tertiary);color:var(--text_secondary)}
+.badge_brand{background:var(--bg_brand_primary);color:var(--text_brand)}
+.badge_success{background:var(--bg_success_primary);color:var(--text_success)}
+.badge_info{background:var(--bg_info_primary);color:var(--text_info)}
+.badge_warning{background:var(--bg_warning_primary);color:var(--text_warning)}
+.badge_error{background:var(--bg_error_primary);color:var(--text_error)}
+.badge_solid_brand{background:var(--bg_brand_solid);color:var(--text_white)}
+.badge_solid_success{background:var(--bg_success_solid);color:var(--text_white)}
+.badge_solid_info{background:var(--bg_info_solid);color:var(--text_white)}
+.badge_solid_warning{background:var(--bg_warning_solid);color:var(--text_white)}
+.badge_solid_error{background:var(--bg_error_solid);color:var(--text_white)}
+
+/* Toast */
+.toast{display:flex;align-items:flex-start;gap:var(--space_3);width:360px;max-width:100%;padding:var(--space_4);background:var(--bg_elevated);border:1px solid var(--border_secondary);border-radius:var(--radius_lg);box-shadow:var(--shadow_lg);font-family:var(--font_family);font-size:14px;line-height:20px;color:var(--text_tertiary)}
+.toast_icon{width:20px;height:20px;flex:none}
+.toast_body{flex:1;display:flex;flex-direction:column;gap:var(--space_1)}
+.toast_title{font-weight:var(--fw_semibold);color:var(--text_primary)}
+.toast_success .toast_icon{color:var(--text_success)}
+.toast_info .toast_icon{color:var(--text_info)}
+.toast_warning .toast_icon{color:var(--text_warning)}
+.toast_error .toast_icon{color:var(--text_error)}
+
+@media (prefers-reduced-motion:reduce){.btn,.toggle,.toggle::after{transition:none}.btn_spinner{animation-duration:2s}}
+`;
+
+$("dsCss").textContent=TOK+"\n"+UT+"\n"+COMP;
+
+/* ---------- helpers ---------- */
+var CODES=[];
+var TITLES=[];
+function code(title,text){var i=CODES.push(text)-1;TITLES[i]=title;return"<div class='code'><div class='bar'><span>"+title+"</span><button class='copy' data-i='"+i+"'>Copy</button></div><pre data-i='"+i+"'></pre></div>"}
+function tbl(id,head,rows){$(id).innerHTML="<tr>"+head.map(function(h){return"<th>"+h+"</th>"}).join("")+"</tr>"+rows.map(function(r){return"<tr>"+r.map(function(c){return"<td>"+c+"</td>"}).join("")+"</tr>"}).join("")}
+var cd=function(t){return"<code>"+t+"</code>"};
+var A="<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' stroke-width='1.67' stroke-linecap='round' stroke-linejoin='round'";
+var IC={
+plus:"<path d='M10 4.2v11.6M4.2 10h11.6'/>",
+mail:"<rect x='2.5' y='4' width='15' height='12' rx='2'/><path d='M3 5.5l7 5 7-5'/>",
+user:"<circle cx='10' cy='6.5' r='3.5'/><path d='M3.5 17c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5'/>",
+users:"<circle cx='7.5' cy='7' r='3'/><path d='M2 16.5c0-2.7 2.5-4.5 5.5-4.5s5.5 1.8 5.5 4.5'/><path d='M13.5 4.3a3 3 0 010 5.4M15.5 12.4c1.7.5 2.9 1.9 2.9 4.1'/>",
+card:"<rect x='2' y='4' width='16' height='12' rx='2'/><path d='M2 8h16M5 13h3'/>",
+chev:"<path d='M5 7.5l5 5 5-5'/>",
+copy:"<rect x='7' y='7' width='9.5' height='9.5' rx='2'/><path d='M13 7V5.5A1.5 1.5 0 0011.5 4h-6A1.5 1.5 0 004 5.5v6A1.5 1.5 0 005.5 13H7'/>",
+alert:"<circle cx='10' cy='10' r='7.5'/><path d='M10 6.5v4M10 13.3v.1'/>",
+ok:"<circle cx='10' cy='10' r='7.5'/><path d='M7 10.2l2.2 2.2L13.2 8'/>",
+x:"<path d='M5 5l10 10M15 5L5 15'/>",
+info:"<circle cx='10' cy='10' r='7.5'/><path d='M10 9v4.5M10 6.7v.1'/>",
+warn:"<path d='M10 3.5l7 12.5H3z'/><path d='M10 8.5v3M10 13.8v.1'/>"};
+var ico=function(n,c){return A+" class='"+(c||"input_icon")+"'>"+IC[n]+"</svg>"};
+
+</script>
+<script>
+var pf=document.createElement("div");pf.className="wrap";pf.innerHTML="<table id='pft'></table>";$("prefix").appendChild(pf);
+tbl("pft",["Prefix","Meaning","Example"],[
+[cd("color_"),"Base color or palette color with shade",cd("--color_white")+" "+cd("--color_brand_900")],
+[cd("text_ / bg_ / border_"),"Semantic color tokens",cd("--text_primary")+" "+cd("--bg_secondary")+" "+cd("--border_primary")],
+[cd("type_"),"Typography size, line height, tracking",cd("--type_text_md_size")],
+[cd("fw_"),"Font weight",cd("--fw_semibold")],
+[cd("space_"),"Spacing scale",cd("--space_4")],
+[cd("theme_"),"Theme class on the html element",cd(".theme_dark")],
+[cd("radius_"),"Corner radius",cd("--radius_md")],
+[cd("shadow_ / ring_"),"Elevation and focus ring",cd("--shadow_md")+" "+cd("--ring_brand")],
+[cd("btn_ / field_ / input_"),"Component classes",cd(".btn_primary")+" "+cd(".input_icon")],
+[cd("is_"),"State modifier",cd(".is_error")+" "+cd(".is_loading")]]);
+var AIP="You are implementing UI from an existing design system with light and dark themes.\n\nRules:\n1. Load tokens.css, components.css, and utilities.css before writing any UI. Add the theme snippet to the head so the html element gets the class theme_light or theme_dark.\n2. Never hardcode hex values, font sizes, spacing, radius, or shadows. Use CSS variables only, for example var(--bg_brand_solid).\n3. Use semantic tokens (text_, bg_, border_) in components. They switch automatically between light and dark, so never write separate dark mode styles. Use palette tokens (color_brand_900) or base colors (color_white, color_black) only when defining a new semantic token.\n4. Buttons: class btn + variant + size. Variants: btn_primary, btn_secondary, btn_secondary_gray, btn_tertiary, btn_tertiary_gray, btn_flat, btn_text. Sizes: btn_sm, btn_md, btn_lg, btn_xl.\n5. Inputs: wrap in .field with .field_label, .input (contains .input_icon, .input_field, .input_addon, .input_action) and .field_hint. Add input_strong to .input when a high contrast border is required.\n6. States use is_error, is_success, is_disabled. Native hover and focus are already styled.\n7. Controls: .check, .radio, .toggle inside .choice. Select and textarea use .input_field. Feedback: .alert_success, .alert_info, .alert_warning, .alert_error, .badge_*, .toast_*.\n8. Use space_ tokens for every margin, padding, and gap, and radius_ tokens for corners.\n9. Layout: .container and .layout_grid (4, 8, 12 columns). Keep focus rings visible and pair every error color with an icon and text.\n10. All names use underscores.\n11. If a value does not exist, add a token to tokens.css first, then use it. Do not invent one off values.";
+$("aiPrompt").innerHTML=code("AI assistant prompt",AIP);
+
+/* color */
+var pal="<h3>Base</h3><div class='sw'>"+[["White","FFFFFF","white"],["Black","000000","black"]].map(function(b){return"<div class='c' data-h='#"+b[1]+"'><i style='background:#"+b[1]+";border-bottom:1px solid var(--border_secondary)'></i><div><b>"+b[0]+"</b><span>#"+b[1]+"</span><em>--color_"+b[2]+"</em></div></div>"}).join("")+"</div>";
+for(var n in P){pal+="<h3>"+cap(n)+"</h3><div class='sw'>";P[n].forEach(function(h,i){pal+="<div class='c' data-h='#"+h+"'><i style='background:#"+h+"'></i><div><b>"+cap(n)+" "+SD[i]+"</b><span>#"+h+"</span><em>--color_"+n+"_"+SD[i]+"</em></div></div>"});pal+="</div>"}
+$("pal").innerHTML=pal;
+function semTbl(id,list){var cl=function(r){var x=res(r);return"<span class='dot' style='background:"+x.hex+"'></span>"+cd(x.hex)+" "+x.l};tbl(id,["Token","Light","Dark","Usage"],list.map(function(t){return[cd("--"+t[0]),cl(t[1]),cl(t[3]),t[2]]}))}
+semTbl("tt",TEXT);semTbl("tb",BGS);semTbl("tbd",BDS);
+
+/* typography */
+var em=function(v){return v===0?"0":"negative "+Math.round(Math.abs(v)*100)+"%"};
+var wt="fw_regular, fw_medium, fw_semibold, fw_bold";
+function tyRows(list,show){return list.map(function(r){var src=show?show(r):r[0],d=DS.concat(TS).filter(function(x){return x[0]===src})[0];return[r[0],"<span style='font-size:"+Math.min(d[1],36)+"px;line-height:"+d[2]+"px;letter-spacing:"+d[3]+"em;font-weight:600;white-space:nowrap'>Ag Typeface</span>",cd("."+r[0]),d[1]+"px",d[2]+"px",em(d[3]),r.length>3||!show?(r[0].indexOf("display")==0?"Semibold 600":"Regular 400"):"Semibold 600"]})}
+var TH=["Style","Preview","CSS class","Size","Line height","Letter spacing","Default weight"];
+tbl("th",TH.slice(),tyRows(HS,function(r){return r[1]}).map(function(r,i){r[0]="Heading "+(i+1)+" ("+HS[i][1].replace("_"," ")+")";return r}));
+tbl("td",TH,tyRows(DS));
+tbl("tx",TH,tyRows(TS));
+
+/* button */
+tbl("bs",["Size","Class","Height","Padding X","Font size","Line height","Icon","Gap","Radius"],[["S",cd(".btn_sm"),"36px","14px","14px","20px","20px","6px","8px"],["M",cd(".btn_md"),"40px","16px","14px","20px","20px","8px","8px"],["L",cd(".btn_lg"),"44px","18px","16px","24px","20px","8px","8px"],["XL",cd(".btn_xl"),"48px","20px","16px","24px","20px","10px","10px"]]);
+$("sizes").innerHTML=["sm","md","lg","xl"].map(function(s){return"<button class='btn btn_primary btn_"+s+"'>"+ico("plus","")+"Button "+s.toUpperCase()+"</button>"}).join("")+"<button class='btn btn_secondary_gray btn_md'>Trailing icon"+ico("chev","")+"</button><button class='btn btn_secondary_gray btn_md btn_icon_only' aria-label='Add'>"+ico("plus","")+"</button>";
+var V=[["Primary","btn_primary"],["Secondary","btn_secondary"],["Secondary gray","btn_secondary_gray"],["Tertiary","btn_tertiary"],["Tertiary gray","btn_tertiary_gray"],["Flat","btn_flat"],["Text button","btn_text"]];
+var h="<tr><th>Variant</th><th>Default</th><th>Hover</th><th>Focus</th><th>Disabled</th><th>Loading</th></tr>";
+V.forEach(function(v){var c=v[1],t=c==="btn_text"?"":ico("plus","");h+="<tr><td>"+v[0]+"<br>"+cd("."+c)+"</td><td><button class='btn "+c+" btn_md'>"+t+"Button</button></td><td><button class='btn "+c+" btn_md is_hover'>"+t+"Button</button></td><td><button class='btn "+c+" btn_md is_focus'>"+t+"Button</button></td><td><button class='btn "+c+" btn_md' disabled>"+t+"Button</button></td><td><button class='btn "+c+" btn_md is_loading' aria-busy='true'><span class='btn_spinner'></span>Loading</button></td></tr>"});
+$("bm").innerHTML=h;
+tbl("bc",["Variant","Background","Text","Border","Hover","Focus ring","Disabled"],[
+["Primary",cd("bg_brand_solid"),cd("text_white"),"None",cd("bg_brand_solid_hover"),cd("ring_brand"),cd("bg_disabled")+" "+cd("text_disabled")],
+["Secondary",cd("bg_brand_primary"),cd("text_brand"),"None",cd("bg_brand_secondary"),cd("ring_brand"),cd("bg_disabled")+" "+cd("text_disabled")],
+["Secondary gray",cd("bg_primary"),cd("text_secondary"),cd("border_primary")+" + "+cd("shadow_xs"),cd("bg_secondary")+" "+cd("text_primary"),cd("ring_brand"),cd("border_disabled")+" "+cd("text_disabled")],
+["Tertiary","Transparent",cd("text_brand"),"None",cd("bg_brand_primary"),cd("ring_brand"),cd("text_disabled")],
+["Tertiary gray","Transparent",cd("text_tertiary"),"None",cd("bg_tertiary")+" "+cd("text_secondary"),cd("ring_brand"),cd("text_disabled")],
+["Flat",cd("bg_tertiary"),cd("text_secondary"),"None, no shadow",cd("bg_quaternary")+" "+cd("text_primary"),cd("ring_brand"),cd("bg_disabled")+" "+cd("text_disabled")],
+["Text button","Transparent, no padding",cd("text_brand_secondary"),"None",cd("text_brand")+" + underline",cd("ring_brand"),cd("text_disabled")]]);
+$("btnCode").innerHTML=code("Button markup",'<button class="btn btn_primary btn_md">Button</button>\n\n<!-- Leading icon -->\n<button class="btn btn_primary btn_md">[svg icon] Button</button>\n\n<!-- Icon only -->\n<button class="btn btn_secondary_gray btn_md btn_icon_only" aria-label="Add">[svg icon]</button>\n\n<!-- Loading -->\n<button class="btn btn_primary btn_md is_loading" aria-busy="true"><span class="btn_spinner"></span>Loading</button>\n\n<!-- Disabled -->\n<button class="btn btn_primary btn_md" disabled>Button</button>\n\n<!-- Variants: btn_primary, btn_secondary, btn_secondary_gray, btn_tertiary, btn_tertiary_gray, btn_flat, btn_text -->\n<!-- Sizes: btn_sm, btn_md, btn_lg, btn_xl -->');
+
+/* inputs */
+function fld(cap_,label,req,cls,inner,hint,hc){return"<div class='demo'><div class='cap'>"+cap_+"</div><div class='field'><label class='field_label'>"+label+(req?" <span class='field_required'>*</span>":"")+"</label><div class='input "+cls+"'>"+inner+"</div>"+(hint?"<p class='field_hint "+(hc||"")+"'>"+hint+"</p>":"")+"</div></div>"}
+var inp=function(ph,val,x){return"<input class='input_field' "+(val?"value='"+val+"'":"placeholder='"+ph+"'")+(x||"")+">"};
+$("inp").innerHTML=[
+fld("Email","Email",1,"",ico("mail")+inp("name@email.com"),"We will never share your email."),
+fld("Full name","Full name",1,"",ico("user")+inp("Olivia Rhye"),"Use the name on your ID."),
+fld("Phone number","Phone number",0,"","<span class='input_addon'>US"+ico("chev")+"</span>"+inp("+1 (555) 000 0000"),"Include the country code."),
+fld("Sale amount","Sale amount",0,"","<span class='input_addon'>$</span>"+inp("","1,000.00")+"<span class='input_addon'>USD"+ico("chev")+"</span>","Enter the total before tax."),
+fld("Card number","Card number",0,"",ico("card")+inp("1234 5678 9012 3456"),"16 digits on the front of the card."),
+fld("Users","Users",0,"",ico("users")+inp("","Olivia Rhye, Phoenix Baker")+ico("chev"),"Select who can access this project."),
+fld("Website","Website",0,"","<span class='input_addon input_addon_split'>https://</span>"+inp("www.example.com"),"Enter the full domain."),
+fld("Website with copy icon on the right","Website",0,"","<span class='input_addon input_addon_split'>https://</span>"+inp("","www.example.com")+"<button class='input_action' aria-label='Copy'>"+ico("copy","")+"</button>","Click the icon to copy the link.")
+].join("");
+$("ist").innerHTML=[
+fld("Default","Email",1,"",ico("mail")+inp("name@email.com"),"We will never share your email."),
+fld("Hover","Email",1,"is_hover",ico("mail")+inp("name@email.com"),"We will never share your email."),
+fld("Focused","Email",1,"is_focus",ico("mail")+inp("","name@email.com"),"We will never share your email."),
+fld("Filled","Email",1,"",ico("mail")+inp("","name@email.com"),"We will never share your email."),
+fld("Error","Email",1,"is_error",ico("mail")+inp("","name@email")+ico("alert","input_icon input_icon_status"),"Enter a valid email address.","is_error"),
+fld("Success","Email",1,"is_success",ico("mail")+inp("","name@email.com")+ico("ok","input_icon input_icon_status"),"This email is available.","is_success"),
+fld("Disabled","Email",1,"is_disabled",ico("mail")+inp("name@email.com"," disabled"),"This field cannot be edited."),
+fld("Strong border option (3:1)","Email",1,"input_strong",ico("mail")+inp("name@email.com"),"Use when a high contrast boundary is required.")+fld("Small size (36px)","Email",1,"input_sm",ico("mail")+inp("name@email.com"),"We will never share your email.")
+].join("");
+tbl("is",["Property","Value","Token or class"],[
+["Height","M 44px, S 36px",cd(".input")+" "+cd(".input_sm")],
+["Padding X","14px (S 12px)",""],
+["Radius","8px",cd("--radius_md")],
+["Background","Page background, disabled uses secondary",cd("--bg_primary")+" "+cd("--bg_secondary")],
+["Border","1px Neutral 300 (soft), hover Neutral 400, focus Brand 400",cd("--border_primary")+" "+cd("--border_hover")+" "+cd("--border_brand")],
+["Strong border option","Add input_strong for a 3:1 boundary (Neutral 500)",cd(".input_strong")+" "+cd("--border_control")],
+["Focus ring","4px soft glow (Brand 100 light, Brand 600 dark), error uses Error 100 (Error 900 dark)",cd("--ring_gray")+" "+cd("--ring_error")],
+["Input text","16px, line height 24px (S 14px, 20px)",cd("--text_primary")],
+["Placeholder","Same size as input text",cd("--text_placeholder")],
+["Label","14px, line height 20px, Medium 500, gap 6px",cd(".field_label")+" "+cd("--text_secondary")],
+["Required mark","Asterisk after label",cd(".field_required")+" "+cd("--text_error")],
+["Hint","14px, line height 20px, gap 6px",cd(".field_hint")+" "+cd("--text_tertiary")],
+["Icon","20px, gap 8px from text",cd(".input_icon")+" "+cd("--text_quaternary")],
+["Addon (prefix, suffix, dropdown)","Inline text with optional divider",cd(".input_addon")+" "+cd(".input_addon_split")],
+["Action (copy)","Icon button inside the field, right side",cd(".input_action")]]);
+$("inCode").innerHTML=code("Field markup",'<div class="field">\n  <label class="field_label" for="email">Email <span class="field_required">*</span></label>\n  <div class="input">                      <!-- add input_sm, is_error, is_success, is_disabled -->\n    [svg icon class="input_icon"]\n    <input class="input_field" id="email" type="email" placeholder="name@email.com">\n  </div>\n  <p class="field_hint">We will never share your email.</p>\n</div>\n\n<!-- Prefix and suffix -->\n<div class="input">\n  <span class="input_addon">$</span>\n  <input class="input_field" placeholder="1,000.00">\n  <span class="input_addon">USD [chevron svg]</span>\n</div>\n\n<!-- Website with split prefix and copy action -->\n<div class="input">\n  <span class="input_addon input_addon_split">https://</span>\n  <input class="input_field" value="www.example.com">\n  <button class="input_action" aria-label="Copy">[copy svg]</button>\n</div>');
+
+/* shadows */
+$("sh").innerHTML=SHD.map(function(s){return"<div class='shadow_"+s[0]+"'>shadow_"+s[0]+"</div>"}).join("");
+var ng=function(n){return n<0?"negative "+Math.abs(n):n};
+var rows=[];SHD.forEach(function(s){s[1].forEach(function(l,i){rows.push([i?"":cd("--shadow_"+s[0]),l[0],l[1],l[2],ng(l[3]),"Light: rgb 16, 24, 40 at "+Math.round(l[4]*100)+"%. Dark: black at "+Math.round(Math.min(.6,l[4]*2.5)*100)+"%"])})});
+rows.push([cd("--ring_brand"),0,0,0,"2 then 4","Page background 2px gap, then Brand 500 (Brand 300 in dark) 2px"],[cd("--ring_gray"),0,0,0,4,"Brand 100"],[cd("--ring_error"),0,0,0,4,"Error 100"]);
+tbl("st",["Token","X","Y","Blur","Spread","Color"],rows);
+
+/* spacing */
+tbl("tsp",["Token","Value","Rem","Scale","Usage"],SP.map(function(x){return[cd("--"+x[0]),x[1]+"px",(x[1]/16)+"rem","<span style='display:block;height:12px;width:"+Math.max(x[1],1)+"px;background:var(--color_brand_500);border-radius:2px'></span>",x[2]]}));
+tbl("trd",["Token","Value","Preview","Usage"],RD.map(function(x){return[cd("--"+x[0]),x[1],"<span style='display:block;width:48px;height:32px;border:2px solid var(--color_brand_500);background:var(--bg_brand_primary);border-radius:"+x[1]+"'></span>",x[2]]}));
+
+/* controls */
+var ck=function(c,x){return"<input type='checkbox' class='check "+(c||"")+"'"+(x||"")+" aria-label='Checkbox'>"};
+var rd=function(c,x){return"<input type='radio' class='radio "+(c||"")+"'"+(x||"")+" aria-label='Radio'>"};
+var tg=function(c,x){return"<input type='checkbox' role='switch' class='toggle "+(c||"")+"'"+(x||"")+" aria-label='Toggle'>"};
+var na="Not applicable";
+tbl("ctl",["Control","Default","Hover","Checked","Focus","Disabled"],[
+["Checkbox "+cd(".check"),ck(),ck("is_hover"),ck("",' checked'),ck("is_focus"),ck("",' disabled')],
+["Checkbox indeterminate",ck("",' data-ind="1"'),ck("is_hover",' data-ind="1"'),na,ck("is_focus",' data-ind="1"'),ck("",' data-ind="1" disabled')],
+["Radio "+cd(".radio"),rd(),rd("is_hover"),rd("",' checked'),rd("is_focus"),rd("",' disabled checked')],
+["Toggle "+cd(".toggle"),tg(),tg("is_hover"),tg("",' checked'),tg("is_focus"),tg("",' disabled')]]);
+document.querySelectorAll("[data-ind]").forEach(function(e){e.indeterminate=true});
+function ch(cap_,inner){return"<div class='demo'><div class='cap'>"+cap_+"</div>"+inner+"</div>"}
+function choice(ctl,label,hint){return"<label class='choice'>"+ctl+"<span class='choice_body'><span class='choice_label'>"+label+"</span>"+(hint?"<span class='choice_hint'>"+hint+"</span>":"")+"</span></label>"}
+$("chs").innerHTML=[
+ch("Checkbox with description",choice(ck(),"Remember me","Save my login details for 30 days.")),
+ch("Checkbox with error","<div class='field'>"+choice(ck("is_error"),"I agree to the terms")+"<p class='field_hint is_error'>You must accept the terms to continue.</p></div>"),
+ch("Radio group","<div role='radiogroup' aria-label='Plan' style='display:flex;flex-direction:column;gap:12px'>"+choice("<input type='radio' name='plan' class='radio' checked>","Online","Submit through the website.")+choice("<input type='radio' name='plan' class='radio'>","In person","Visit the nearest office.")+"</div>"),
+ch("Toggle with description",choice(tg("",' checked'),"Email notifications","Receive updates about your application."))
+].join("");
+var sl="<select class='input_field'><option>Select country</option><option>Indonesia</option><option>Malaysia</option></select>"+ico("chev");
+var ta="<textarea class='input_field' placeholder='Write your message'></textarea>";
+$("sel").innerHTML=[
+fld("Select","Country",1,"",sl,"Choose your country of residence."),
+fld("Select with error","Country",1,"is_error",sl,"Select a country to continue.","is_error"),
+fld("Textarea","Message",0,"input_textarea",ta,"Maximum 200 characters."),
+fld("Textarea disabled","Message",0,"input_textarea is_disabled","<textarea class='input_field' disabled placeholder='Write your message'></textarea>","This field cannot be edited.")
+].join("");
+$("ctlCode").innerHTML=code("Controls markup",'<label class="choice">\n  <input type="checkbox" class="check">      <!-- radio: class="radio", toggle: class="toggle" role="switch" -->\n  <span class="choice_body">\n    <span class="choice_label">Remember me</span>\n    <span class="choice_hint">Save my login details for 30 days.</span>\n  </span>\n</label>\n\n<!-- Select -->\n<div class="input">\n  <select class="input_field">...</select>\n  [chevron svg class="input_icon"]\n</div>\n\n<!-- Textarea -->\n<div class="input input_textarea">\n  <textarea class="input_field"></textarea>\n</div>');
+
+/* feedback */
+var ST={success:["ok","Application submitted","Your application was received. We will send updates by email."],info:["info","Maintenance schedule","The service will be unavailable on Sunday from 01:00 to 03:00."],warning:["warn","Document expires soon","Your ID document expires in 14 days. Upload a new one to avoid delay."],error:["alert","Submission failed","We could not save your changes. Check the fields marked in red and try again."]};
+function alr(t,act){var d=ST[t];return"<div class='alert alert_"+t+"' role='"+(t==="error"?"alert":"status")+"'>"+ico(d[0],"alert_icon")+"<div class='alert_body'><div class='alert_title'>"+d[1]+"</div><div>"+d[2]+"</div>"+(act?"<div class='alert_actions'><button class='alert_link'>Dismiss</button><button class='alert_link'>View details</button></div>":"")+"</div><button class='alert_close' aria-label='Close'>"+ico("x","")+"</button></div>"}
+$("alr").innerHTML=["success","info","warning","error"].map(function(t,i){return alr(t,i%2==0)}).join("");
+var BL={neutral:"Draft",brand:"In review",success:"Approved",info:"Information",warning:"Pending",error:"Rejected"};
+var bh="<div style='width:100%' class='cap'><b>Soft</b></div>";
+for(var b in BL)bh+="<span class='badge badge_"+b+"'>"+BL[b]+"</span>";
+bh+="<div style='width:100%' class='cap'><b>Soft with dot</b></div>";
+for(var b in BL)bh+="<span class='badge badge_dot badge_"+b+"'>"+BL[b]+"</span>";
+bh+="<div style='width:100%' class='cap'><b>Solid</b></div>";
+for(var b in BL)if(b!=="neutral")bh+="<span class='badge badge_solid_"+b+"'>"+BL[b]+"</span>";
+$("bdg").innerHTML=bh;
+var TM={success:["ok","Changes saved","Your profile was updated."],info:["info","New version available","Refresh the page to update."],warning:["warn","Connection is slow","Some content may load late."],error:["alert","Upload failed","The file is larger than 5 MB."]};
+$("tst").innerHTML=["success","info","warning","error"].map(function(t){var d=TM[t];return"<div class='toast toast_"+t+"' role='"+(t==="error"?"alert":"status")+"'>"+ico(d[0],"toast_icon")+"<div class='toast_body'><div class='toast_title'>"+d[1]+"</div><div>"+d[2]+"</div></div><button class='toast_close' aria-label='Close'>"+ico("x","")+"</button></div>"}).join("");
+$("fbCode").innerHTML=code("Feedback markup",'<div class="alert alert_success" role="status">     <!-- alert_info, alert_warning, alert_error (role="alert") -->\n  [svg class="alert_icon"]\n  <div class="alert_body">\n    <div class="alert_title">Application submitted</div>\n    <div>Your application was received.</div>\n    <div class="alert_actions"><button class="alert_link">Dismiss</button></div>\n  </div>\n  <button class="alert_close" aria-label="Close">[x svg]</button>\n</div>\n\n<span class="badge badge_success">Approved</span>\n<span class="badge badge_dot badge_warning">Pending</span>\n<span class="badge badge_solid_error">Rejected</span>\n\n<div class="toast toast_success" role="status">\n  [svg class="toast_icon"]\n  <div class="toast_body"><div class="toast_title">Changes saved</div><div>Your profile was updated.</div></div>\n  <button class="toast_close" aria-label="Close">[x svg]</button>\n</div>');
+
+/* layout */
+tbl("bp",["Range","Name","Columns","Page margin","Gutter","Container","Tokens"],[["0 to 639px","Mobile","4","16px","16px","Full width",cd("--space_4")],["640 to 1023px","Tablet","8","24px","24px","Full width",cd("--bp_sm")+" "+cd("--space_6")],["1024px and above","Desktop","12","32px","24px","Max 1200px",cd("--bp_lg")+" "+cd("--container_max")],["1280px and above","Wide","12","32px","24px","Max 1200px, centered",cd("--bp_xl")]]);
+var gc="";for(var q=1;q<=12;q++)gc+="<div class='gcol'>"+q+"</div>";$("lg").innerHTML=gc;
+
+/* accessibility */
+function lum(h){h=h.replace("#","");var c=[0,2,4].map(function(i){var v=parseInt(h.substr(i,2),16)/255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+function ratio(a,b){var x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+var tokRef=function(t,m){var all=TEXT.concat(BGS,BDS);for(var i=0;i<all.length;i++)if(all[i][0]===t)return all[i][m?3:1]};
+var tokHex=function(t,m){return res(tokRef(t,m)).hex};
+function status(r,min,ex){var t,c;if(ex){t="Exempt";c="neutral"}else if(r>=7&&min>4){t="Pass AAA";c="success"}else if(r>=min){t="Pass";c="success"}else if(r>=3&&min>3){t="Large text only";c="warning"}else{t="Fail";c="error"}return"<span class='badge badge_"+c+"'>"+t+"</span>"}
+var cell=function(r,min,ex){return r.toFixed(2)+":1 "+status(r,min,ex)};
+var CP=[["text_primary","bg_primary","Body text"],["text_secondary","bg_primary","Labels, secondary gray button"],["text_tertiary","bg_primary","Hints and descriptions"],["text_placeholder","bg_primary","Input placeholder"],["text_quaternary","bg_primary","Captions"],["text_brand","bg_brand_primary","Secondary button"],["text_secondary","bg_tertiary","Flat button"],["text_white","bg_brand_solid","Primary button"],["text_white","bg_brand_solid_hover","Primary button hover"],["text_brand_secondary","bg_primary","Text button"],["text_error","bg_primary","Error hint"],["text_success","bg_primary","Success hint"],["text_primary","bg_elevated","Card and toast title"],["text_success","bg_success_primary","Success alert"],["text_info","bg_info_primary","Info alert"],["text_warning","bg_warning_primary","Warning alert"],["text_error","bg_error_primary","Error alert"],["text_white","bg_success_solid","Solid success badge"],["text_white","bg_info_solid","Solid info badge"],["text_white","bg_warning_solid","Solid warning badge"],["text_white","bg_error_solid","Solid error badge"],["text_disabled","bg_disabled","Disabled elements",1]];
+tbl("ct",["Text","Background","Sample","Light","Dark","Used for"],CP.map(function(p){var o=[0,1].map(function(m){return cell(ratio(tokHex(p[0],m),tokHex(p[1],m)),4.5,p[3])});return[cd(p[0]),cd(p[1]),"<span style='background:var(--"+p[1]+");color:var(--"+p[0]+");padding:2px 10px;border-radius:4px;border:1px solid var(--border_secondary);font-weight:500'>Aa</span>",o[0],o[1],p[2]]}));
+var pc=function(n,x){return"#"+P[n][SD.indexOf(x)]};
+var CN=[["border_control",tokHex("border_control",0),tokHex("border_control",1),"Checkbox, radio, toggle boundary, strong input option"],["border_brand",tokHex("border_brand",0),tokHex("border_brand",1),"Input focus border"],["border_error_solid",tokHex("border_error_solid",0),tokHex("border_error_solid",1),"Error input boundary"],["border_success_solid",tokHex("border_success_solid",0),tokHex("border_success_solid",1),"Success input boundary"],["text_error",tokHex("text_error",0),tokHex("text_error",1),"Error icon"],["text_success",tokHex("text_success",0),tokHex("text_success",1),"Success icon"],["Focus ring outer (Brand 500, Brand 300 in dark)",pc("brand",500),pc("brand",300),"Focus ring"],["border_primary",tokHex("border_primary",0),tokHex("border_primary",1),"Input, select, textarea boundary (soft style)",2],["border_secondary",tokHex("border_secondary",0),tokHex("border_secondary",1),"Dividers, cards, tables",1]];
+tbl("cn",["Token","Light on bg_primary","Dark on bg_primary","Used for"],CN.map(function(p){var bg=[tokHex("bg_primary",0),tokHex("bg_primary",1)];var o=[0,1].map(function(m){var r=ratio(p[1+m],bg[m]);return p[4]===2?r.toFixed(2)+":1 <span class='badge badge_warning'>Below 3:1</span>":p[4]?r.toFixed(2)+":1 <span class='badge badge_neutral'>Decorative</span>":cell(r,3)});return[p[0].indexOf("Focus")==0?p[0]:cd(p[0]),o[0],o[1],p[3]]}));
+
+/* do and dont */
+function dd(ok,title,body,note){return"<div class='demo'><div class='cap'><span class='badge "+(ok?"badge_solid_success":"badge_solid_error")+"'>"+(ok?"Do":"Don't")+"</span>"+title+"</div>"+body+"<p class='field_hint' style='margin-top:10px'>"+note+"</p></div>"}
+var two=function(a,b){return"<div style='display:flex;gap:12px;flex-wrap:wrap'><button class='btn "+a+" btn_md'>Submit</button><button class='btn "+b+" btn_md'>Cancel</button></div>"};
+$("dd").innerHTML=[
+dd(1,"One primary action per area",two("btn_primary","btn_secondary_gray"),"Secondary actions use a quieter variant."),
+dd(0,"Two primary buttons",two("btn_primary","btn_primary"),"Equal emphasis makes the main action unclear."),
+dd(1,"Use a visible label","<div class='field'><label class='field_label'>Full name</label><div class='input'>"+ico("user")+inp("Olivia Rhye")+"</div></div>","The label stays visible while the user types."),
+dd(0,"Placeholder only","<div class='field'><div class='input'>"+ico("user")+inp("Full name")+"</div></div>","A placeholder disappears and is not a label."),
+dd(1,"Explain the error","<div class='field'><div class='input is_error'>"+ico("mail")+inp("","name@email")+ico("alert","input_icon input_icon_status")+"</div><p class='field_hint is_error'>Enter a valid email address.</p></div>","Color, icon, and text together."),
+dd(0,"Color only","<div class='field'><div class='input is_error'>"+ico("mail")+inp("","name@email")+"</div></div>","Some users cannot see the red border."),
+dd(1,"Use tokens","<code>color: var(--text_primary);</code>","Values stay consistent and easy to update."),
+dd(0,"Hardcode values","<code>color: #101828;</code>","Raw values drift away from the system.")
+].join("");
+
+/* theme */
+var THEMEJS="// 1. Put this in the head so the theme is set before the page paints\n(function () {\n  var t;\n  try { t = localStorage.getItem(\"ds_theme\"); } catch (e) {}\n  if (!t) t = window.matchMedia \u0026\u0026 window.matchMedia(\"(prefers-color-scheme: dark)\").matches ? \"dark\" : \"light\";\n  document.documentElement.classList.add(\"theme_\" + t);\n})();\n\n// 2. Switch theme from any button\nfunction setTheme(t) {\n  var r = document.documentElement;\n  r.classList.remove(\"theme_light\", \"theme_dark\");\n  r.classList.add(\"theme_\" + t);\n  try { localStorage.setItem(\"ds_theme\", t); } catch (e) {}\n}\ndocument.getElementById(\"themeBtn\").addEventListener(\"click\", function () {\n  setTheme(document.documentElement.classList.contains(\"theme_dark\") ? \"light\" : \"dark\");\n});";
+$("themeCode").innerHTML=code("theme.js",THEMEJS);
+var SUN=A+"><circle cx='10' cy='10' r='3.5'/><path d='M10 2.5v1.5M10 16v1.5M2.5 10H4M16 10h1.5M4.7 4.7l1 1M14.3 14.3l1 1M4.7 15.3l1-1M14.3 5.7l1-1'/></svg>";
+var MOON=A+"><path d='M16.5 11.5A6.5 6.5 0 018.5 3.5a6.5 6.5 0 108 8z'/></svg>";
+function paintTheme(){var d=document.documentElement.classList.contains("theme_dark");$("themeBtn").innerHTML=d?SUN:MOON;$("themeBtn").setAttribute("aria-label",d?"Switch to light mode":"Switch to dark mode")}
+function setTheme(t){var r=document.documentElement;r.classList.remove("theme_light","theme_dark");r.classList.add("theme_"+t);try{localStorage.setItem("ds_theme",t)}catch(e){}paintTheme()}
+$("themeBtn").addEventListener("click",function(){setTheme(document.documentElement.classList.contains("theme_dark")?"light":"dark")});
+paintTheme();
+
+/* source */
+var J={base:{white:"#FFFFFF",black:"#000000"},palette:{},semantic:{light:{},dark:{}}};
+for(var n in P){J.palette[n]={};P[n].forEach(function(x,i){J.palette[n][SD[i]]="#"+x})}
+J.spacing={};SP.forEach(function(x){J.spacing[x[0]]=x[1]+"px"});J.radius={};RD.forEach(function(x){J.radius[x[0]]=x[1]});
+[TEXT,BGS,BDS].forEach(function(g){g.forEach(function(t){J.semantic.light[t[0]]=res(t[1]).hex;J.semantic.dark[t[0]]=res(t[3]).hex})});
+$("src").innerHTML=code("tokens.css",TOK)+code("components.css (button, field, controls, feedback)",COMP)+code("utilities.css (typography and shadow classes)",UT)+code("tokens.json",JSON.stringify(J,null,2));
+
+/* wiring */
+document.querySelectorAll("pre[data-i]").forEach(function(p){p.textContent=CODES[p.dataset.i]});
+document.addEventListener("click",function(e){
+ var c=e.target.closest(".c"),b=e.target.closest(".copy"),a=e.target.closest(".input_action");
+ var w=function(t){if(navigator.clipboard)navigator.clipboard.writeText(t).catch(function(){})};
+ if(c){w(c.dataset.h);var s=c.querySelector("span"),o=s.textContent;s.textContent="Copied";setTimeout(function(){s.textContent=o},900)}
+ if(b){w(CODES[b.dataset.i]);b.textContent="Copied";setTimeout(function(){b.textContent="Copy"},1200)}
+ if(a){w("https://"+a.parentNode.querySelector("input").value)}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+:root,
+:root.theme_light {
+  /* Sidebar and auth panel */
+  --bg_sidebar: var(--color_brand_900);
+  --bg_sidebar_hover: var(--color_brand_800);
+  --bg_sidebar_active: var(--color_brand_700);
+  --text_sidebar: var(--color_brand_100);
+  --text_sidebar_muted: var(--color_brand_300);
+  --text_sidebar_active: var(--color_white);
+  --border_sidebar: var(--color_brand_800);
+  --bg_auth_panel: var(--color_brand_900);
+  --bg_auth_glow: var(--color_brand_700);
+
+  /* Status accents */
+  --border_warning_solid: var(--color_warning_600);
+  --bg_neutral_solid: var(--color_neutral_600);
+
+  /* Illustrated map */
+  --bg_map: var(--color_neutral_100);
+  --map_block: var(--color_neutral_50);
+  --map_road: var(--color_white);
+  --map_label: var(--color_neutral_500);
+  --map_route: var(--color_brand_700);
+
+  /* Misc */
+  --tracking_wide: 0.06em;
+}
+
+:root.theme_dark {
+  --bg_sidebar: var(--color_brand_950);
+  --bg_sidebar_hover: var(--color_brand_900);
+  --bg_sidebar_active: var(--color_brand_800);
+  --text_sidebar: var(--color_brand_100);
+  --text_sidebar_muted: var(--color_brand_300);
+  --text_sidebar_active: var(--color_white);
+  --border_sidebar: var(--color_brand_900);
+  --bg_auth_panel: var(--color_brand_950);
+  --bg_auth_glow: var(--color_brand_800);
+
+  --border_warning_solid: var(--color_warning_400);
+  --bg_neutral_solid: var(--color_neutral_500);
+
+  --bg_map: var(--color_neutral_900);
+  --map_block: var(--color_neutral_950);
+  --map_road: var(--color_neutral_800);
+  --map_label: var(--color_neutral_400);
+  --map_route: var(--color_brand_300);
+}
