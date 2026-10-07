@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# TM Falcon Visual Design Sample
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This repository contains a visual design sample and UI Style Guide for **TM Falcon**. It is intended as a reference for the development team to understand the expected look and feel, layout patterns, and design tokens.
 
-Currently, two official plugins are available:
+## Resources for Developers
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+To implement the frontend components, developers can reference the following resources provided in this repository:
 
-## React Compiler
+1. **UI Style Guide (HTML & Markdown)**:
+   - Check the `UI Style Guide.html` and `ui_style_guide.md` (or similar files in the root) for the complete list of design tokens, colors, typography, border-radiuses, and shadows.
+2. **CSS/Tailwind Configuration**:
+   - Relevant CSS classes and variables have been configured and can be found inside the `src/styles/` directory (e.g., `tokens.css`, `components.css`).
+3. **Reference Code**:
+   - The React components inside `src/` can be used as a structural reference for building complex UI elements (Forms, Cards, Tables, Navigations, Modals).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Figma Design
 
-## Expanding the Oxlint configuration
+For pixel-perfect spacing, redlining, and exact asset exports, please refer directly to our official Figma Design file:
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+[🔗 View TM Falcon on Figma](https://www.figma.com/design/iZy7RZDEfR5zNyW8XjUcp4/TM-Falcon-Visual-Sample?node-id=0-1&t=eMiV0fyFv0DozcrV-1)
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+*Note: This project is purely a visual design sample (UI Mockup) built with React + Vite + Tailwind CSS. The interactivity and business logic are mocked solely for demonstration purposes.*
