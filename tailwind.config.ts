@@ -7,6 +7,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font_family)"],
+      },
       backgroundColor: {
         'brand-primary': 'var(--bg_brand_primary)',
         'brand-secondary': 'var(--bg_brand_secondary)',
