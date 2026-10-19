@@ -30,6 +30,74 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { GlobalSearchCommand } from './GlobalSearchCommand';
 import { navigationConfig, type NavItem } from '@/config/navigation';
 
+interface HeaderModuleTab {
+  id: string;
+  label: string;
+  route: string;
+  isMatch: (pathname: string) => boolean;
+  children?: { id: string; label: string; route: string; badge?: number | string }[];
+}
+
+const headerModules: HeaderModuleTab[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    route: '/overview',
+    isMatch: (p) => p === '/overview',
+  },
+  {
+    id: 'events',
+    label: 'Events',
+    route: '/events',
+    isMatch: (p) => p.startsWith('/events') || p.startsWith('/planned/cases'),
+    children: [
+      { id: 'event-inbox', label: 'Event inbox', route: '/events', badge: 3 },
+      { id: 'cases', label: 'Cases & field tickets', route: '/planned/cases', badge: 1 },
+    ],
+  },
+  {
+    id: 'risk',
+    label: 'Risk & preventive work',
+    route: '/risk',
+    isMatch: (p) => p.startsWith('/risk') || p.startsWith('/planned/work-queue'),
+    children: [
+      { id: 'risk-overview', label: 'Risk overview', route: '/risk' },
+      { id: 'work-queue', label: 'Work queue', route: '/planned/work-queue', badge: 5 },
+    ],
+  },
+  {
+    id: 'assets',
+    label: 'Assets & devices',
+    route: '/assets/inventory',
+    isMatch: (p) => p.startsWith('/assets') || p.startsWith('/planned/devices') || p.startsWith('/planned/fleet'),
+    children: [
+      { id: 'inventory', label: 'Inventory register', route: '/assets/inventory' },
+      { id: 'devices', label: 'Device health', route: '/planned/devices', badge: 4 },
+      { id: 'fleet', label: 'Infrastructure health', route: '/planned/fleet' },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    route: '/planned/reports',
+    isMatch: (p) => p.startsWith('/planned/reports'),
+    children: [
+      { id: 'reports-sla', label: 'Network uptime SLA', route: '/planned/reports/sla' },
+      { id: 'reports-audit', label: 'Audit trails', route: '/planned/reports/audit' },
+    ],
+  },
+  {
+    id: 'admin',
+    label: 'Administration',
+    route: '/planned/admin',
+    isMatch: (p) => p.startsWith('/planned/admin'),
+    children: [
+      { id: 'admin-users', label: 'User management', route: '/planned/admin/users' },
+      { id: 'admin-roles', label: 'Role permissions', route: '/planned/admin/roles' },
+    ],
+  },
+];
+
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
   const location = useLocation();
@@ -41,11 +109,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Desktop rail vs expanded (>= 1024px)
-  // Default to 56px collapsed rail on Overview as per Section 5.2.a
+  // Default to 56px collapsed rail on other pages
   const [sidebarMinimized, setSidebarMinimized] = useState<boolean>(() => {
     const saved = localStorage.getItem('falcon_sidebar_minimized');
     if (saved !== null) return saved === 'true';
-    return isOverview;
+    return true;
   });
 
   // Persist open collapsible groups in expanded sidebar
@@ -152,7 +220,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setActiveFlyoutItem({
       item,
-      top: Math.max(8, Math.min(rect.top - 52, window.innerHeight - 340)),
+      top: Math.max(8, Math.min(rect.top - 64, window.innerHeight - 340)),
     });
   };
 
@@ -175,83 +243,133 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-        {/* 5.6 Top Bar (52px, sleek and functional) */}
-        <header className="h-[52px] border-b border-border bg-card/90 backdrop-blur-md flex items-center justify-between px-3 z-30 shrink-0 gap-3">
-          {/* Left: Sidebar trigger, Logo, Platform Subtitle, Breadcrumbs */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* Desktop collapse toggle */}
-            <button
-              className="hidden lg:flex p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              onClick={handleToggleSidebar}
-              aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {sidebarMinimized ? <PanelLeftOpen className="size-4.5" /> : <PanelLeftClose className="size-4.5" />}
-            </button>
-
+        {/* 64px Solid Control Room Header matching CEO_REFERENCE */}
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 z-30 shrink-0 gap-3">
+          {/* Left: Mobile trigger, Wordmark Lockup */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Mobile menu trigger */}
             <button
               className="flex lg:hidden p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               onClick={() => setMobileNavOpen(true)}
               aria-label="Open navigation menu"
             >
-              <Menu className="size-4.5" />
+              <Menu className="size-5" />
             </button>
 
-            <Link to="/overview" className="flex items-center gap-2">
-              <Logo className="h-6" markOnly={sidebarMinimized} />
+            {/* Desktop sidebar toggle only on non-overview */}
+            {!isOverview && (
+              <button
+                className="hidden lg:flex p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mr-1"
+                onClick={handleToggleSidebar}
+                aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarMinimized ? <PanelLeftOpen className="size-4.5" /> : <PanelLeftClose className="size-4.5" />}
+              </button>
+            )}
+
+            <Link to="/overview" className="flex items-center gap-2 mr-1">
+              <Logo className="h-6 w-auto" markOnly={true} />
+              <span className="text-xl font-bold tracking-wider text-foreground select-none">
+                FALCON
+              </span>
             </Link>
 
             {/* Subtitle (Hidden below 1280px) */}
-            <span className="hidden xl:inline text-[11px] text-muted-foreground font-normal border-l border-border pl-2.5 ml-1 select-none">
-              Telecom Infrastructure Monitoring Platform
-            </span>
-
-            {/* Dynamic Breadcrumbs */}
-            <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-border text-xs text-muted-foreground">
-              <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
-                Falcon
-              </span>
-              {breadcrumbs.map((crumb, idx) => (
-                <React.Fragment key={crumb + idx}>
-                  <ChevronRight className="size-3 text-muted-foreground/60" />
-                  <span className={idx === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'hover:text-foreground cursor-pointer'}>
-                    {crumb}
-                  </span>
-                </React.Fragment>
-              ))}
+            <span className="hidden xl:inline-block h-6 w-px bg-border mx-2" />
+            <div className="hidden xl:flex flex-col text-[10px] leading-tight text-muted-foreground select-none">
+              <span>Telecom Infrastructure</span>
+              <span>Monitoring Platform</span>
             </div>
           </div>
 
-          {/* Center: Global Search Command Trigger (Full field above 1280px, icon button below) */}
-          <div className="flex-1 max-w-lg mx-2 flex justify-center">
-            {/* Full search bar on >= 1280px */}
+          {/* Center: Module Navigation Tabs (Overview, Events, Risk..., Assets..., Reports, Administration) */}
+          <nav className="hidden lg:flex items-center h-full gap-1 mx-2 shrink-0">
+            {headerModules.map((mod) => {
+              const isActive = mod.isMatch(location.pathname);
+              const hasChildren = mod.children && mod.children.length > 0;
+
+              return (
+                <div key={mod.id} className="relative h-full flex items-center">
+                  {hasChildren ? (
+                    <DropdownMenu>
+                      <div className="flex items-center h-full">
+                        <Link
+                          to={mod.route}
+                          className={`flex items-center h-full px-3 text-[13px] font-medium transition-colors select-none ${
+                            isActive
+                              ? 'text-foreground font-semibold'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {mod.label}
+                        </Link>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="p-1 -ml-1.5 mr-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label={`${mod.label} sub-navigation`}
+                          >
+                            <ChevronDown className="size-3 opacity-60 hover:opacity-100" />
+                          </button>
+                        </DropdownMenuTrigger>
+                      </div>
+
+                      <DropdownMenuContent align="start" className="w-52 bg-popover border border-border text-popover-foreground z-50">
+                        {mod.children?.map((child) => (
+                          <DropdownMenuItem
+                            key={child.id}
+                            onClick={() => navigate(child.route)}
+                            className="cursor-pointer text-xs flex items-center justify-between py-2"
+                          >
+                            <span className={location.pathname === child.route ? 'font-semibold text-primary' : ''}>
+                              {child.label}
+                            </span>
+                            {child.badge !== undefined && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive/20 text-destructive font-bold">
+                                {child.badge}
+                              </span>
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Link
+                      to={mod.route}
+                      className={`flex items-center h-full px-3 text-[13px] font-medium transition-colors select-none ${
+                        isActive
+                          ? 'text-foreground font-semibold'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {mod.label}
+                    </Link>
+                  )}
+
+                  {/* Animated active underline bar */}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-primary rounded-t-sm shadow-[0_-1px_6px_rgba(56,189,248,0.5)]" />
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Right: Search, Live indicator, Notifications, Theme toggle, User profile */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Search Trigger (~280px wide) */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="hidden xl:flex w-full h-8 px-3 rounded-md bg-muted/60 hover:bg-muted border border-border items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
+              className="w-44 xl:w-[280px] h-8 px-3 rounded-md bg-muted/50 hover:bg-muted border border-border flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
             >
               <div className="flex items-center gap-2 truncate">
                 <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">Search navigation, poles, spans, devices, events, cases...</span>
+                <span className="truncate">Search location, device, site...</span>
               </div>
-              <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-medium text-muted-foreground/80 pl-2">
-                <kbd className="px-1.5 py-0.5 rounded bg-card border border-border">⌘K</kbd>
-                <span>or</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-card border border-border">/</kbd>
+              <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono text-muted-foreground/80 pl-1.5">
+                <kbd className="px-1.5 py-0.5 rounded bg-card border border-border text-[10px]">⌘K</kbd>
               </div>
             </button>
 
-            {/* Compact search button on < 1280px */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex xl:hidden items-center gap-1.5 px-2.5 h-8 rounded-md bg-muted/50 hover:bg-muted border border-border text-xs text-muted-foreground transition-colors"
-            >
-              <Search className="size-3.5 text-muted-foreground" />
-              <span className="text-[11px] hidden md:inline">Search (⌘K)</span>
-            </button>
-          </div>
-
-          {/* Right: Live indicator, Notifications, Theme toggle, User profile */}
-          <div className="flex items-center gap-2 shrink-0">
             {/* Live Indicator with MYT timezone */}
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-status-online-tint border border-status-online-border text-xs font-medium text-status-online select-none">
               <span className="relative flex size-2">
@@ -298,10 +416,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <button className="flex items-center gap-2 p-1 rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <Avatar className="size-7 border border-border">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {accountLabel ? accountLabel.substring(0, 2).toUpperCase() : 'AD'}
+                        {accountLabel ? accountLabel.substring(0, 2).toUpperCase() : 'AS'}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden xl:inline text-xs font-medium text-foreground pr-1">
+                    <span className="hidden 2xl:inline text-xs font-medium text-foreground pr-1">
                       {accountLabel || 'Admin (sample)'}
                     </span>
                   </button>
@@ -337,12 +455,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
         {/* Main Body with Sidebar + Viewport */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Desktop Sidebar (56px icon rail by default, expandable to 264px) */}
-          <aside
-            style={{ width: sidebarMinimized ? '56px' : '264px' }}
-            className="bg-sidebar border-r border-sidebar-border hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
-            onMouseLeave={handleRailMouseLeave}
-          >
+          {/* Desktop Sidebar (Only rendered on non-overview pages) */}
+          {!isOverview && (
+            <aside
+              style={{ width: sidebarMinimized ? '56px' : '264px' }}
+              className="bg-sidebar border-r border-sidebar-border hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
+              onMouseLeave={handleRailMouseLeave}
+            >
             {/* Scrollable Nav Sections */}
             <div className="flex flex-col gap-3 p-2 flex-1 overflow-y-auto overflow-x-hidden">
               {navigationConfig.map((sec) => (
@@ -613,6 +732,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               </Tooltip.Root>
             </div>
           </aside>
+        )}
 
           {/* Mobile Sheet Navigation (< 1024px) */}
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -699,6 +819,21 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
           {/* Main Workspace: Full Bleed for Overview (p-0) */}
           <main className={`flex-1 flex flex-col min-w-0 ${isOverview ? 'overflow-hidden p-0 relative h-full' : 'overflow-y-auto p-4 lg:p-6'}`}>
+            {!isOverview && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 select-none">
+                <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
+                  Falcon
+                </span>
+                {breadcrumbs.map((crumb, idx) => (
+                  <React.Fragment key={crumb + idx}>
+                    <ChevronRight className="size-3 text-muted-foreground/60" />
+                    <span className={idx === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'hover:text-foreground cursor-pointer'}>
+                      {crumb}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
             {children}
           </main>
         </div>
