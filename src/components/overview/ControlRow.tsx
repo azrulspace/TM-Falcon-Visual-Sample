@@ -75,26 +75,28 @@ export const ControlRow: React.FC<ControlRowProps> = ({
       <div className="flex items-center gap-1.5">
         {/* Compact density toggle */}
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleDensity}
-              className="h-8 px-2.5 border-border bg-card hover:bg-muted text-xs gap-1.5"
-            >
-              {density === 'compact' ? (
-                <>
-                  <Rows className="size-3.5 text-primary" />
-                  <span className="hidden sm:inline">Compact</span>
-                </>
-              ) : (
-                <>
-                  <AlignJustify className="size-3.5 text-muted-foreground" />
-                  <span className="hidden sm:inline">Normal</span>
-                </>
-              )}
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleDensity}
+                className="h-8 px-2.5 border-border bg-card hover:bg-muted text-xs gap-1.5"
+              >
+                {density === 'compact' ? (
+                  <>
+                    <Rows className="size-3.5 text-primary" />
+                    <span className="hidden sm:inline">Compact</span>
+                  </>
+                ) : (
+                  <>
+                    <AlignJustify className="size-3.5 text-muted-foreground" />
+                    <span className="hidden sm:inline">Normal</span>
+                  </>
+                )}
+              </Button>
+            }
+          />
           <TooltipContent side="bottom" className="text-xs">
             Toggle density ({density === 'compact' ? '28px compact rows' : '36px standard rows'})
           </TooltipContent>
@@ -102,32 +104,35 @@ export const ControlRow: React.FC<ControlRowProps> = ({
 
         {/* Map Focus toggle */}
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={mapFocus ? "secondary" : "outline"}
-              size="sm"
-              onClick={onToggleMapFocus}
-              className={`h-8 px-2.5 text-xs gap-1.5 border-border ${
-                mapFocus ? "bg-primary text-primary-foreground font-semibold" : "bg-card hover:bg-muted"
-              }`}
-            >
-              {mapFocus ? (
-                <>
-                  <Minimize2 className="size-3.5" />
-                  <span className="hidden sm:inline">Exit Focus</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="size-3.5" />
-                  <span className="hidden sm:inline">Map focus</span>
-                </>
-              )}
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant={mapFocus ? "secondary" : "outline"}
+                size="sm"
+                onClick={onToggleMapFocus}
+                className={`h-8 px-2.5 text-xs gap-1.5 border-border ${
+                  mapFocus ? "bg-primary text-primary-foreground font-semibold" : "bg-card hover:bg-muted"
+                }`}
+              >
+                {mapFocus ? (
+                  <>
+                    <Minimize2 className="size-3.5" />
+                    <span className="hidden sm:inline">Exit Focus</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="size-3.5" />
+                    <span className="hidden sm:inline">Map focus</span>
+                  </>
+                )}
+              </Button>
+            }
+          />
           <TooltipContent side="bottom" className="text-xs">
             {mapFocus ? "Restore side panels" : "Hide side panels and expand map"}
           </TooltipContent>
         </Tooltip>
+
       </div>
     </div>
   );
