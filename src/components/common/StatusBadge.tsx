@@ -2,7 +2,7 @@ import React from 'react';
 import { Circle, Square, CircleDot, AlertTriangle, Info, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type StatusType = 'online' | 'offline' | 'stale' | 'attention' | 'warning' | 'info' | string;
+export type StatusType = 'online' | 'offline' | 'stale' | 'attention' | 'warning' | 'info' | 'critical' | 'high' | 'medium' | 'low' | 'resolved' | string;
 export type SeverityType = 'critical' | 'high' | 'medium' | 'low' | string;
 
 export const StatusBadge: React.FC<{
@@ -11,23 +11,29 @@ export const StatusBadge: React.FC<{
   className?: string;
   size?: 'sm' | 'default';
 }> = ({ status, label, className, size = 'default' }) => {
-  const norm = status.toLowerCase();
+  const norm = (status || '').toLowerCase().trim();
 
   let icon = <Circle className="size-2 fill-current" />;
-  let styles = "bg-status-online-tint text-status-online border-status-online-border";
+  let styles = "bg-muted text-foreground border-border";
 
   if (norm === 'offline' || norm === 'critical') {
     icon = <Square className="size-2 fill-current" />;
     styles = "bg-status-offline-tint text-status-offline border-status-offline-border";
+  } else if (norm === 'high') {
+    icon = <AlertTriangle className="size-2.5 fill-current" />;
+    styles = "bg-severity-high-tint text-severity-high border-severity-high/30";
+  } else if (norm === 'medium' || norm === 'need attention' || norm === 'attention' || norm === 'warning') {
+    icon = <AlertTriangle className="size-2.5 fill-current" />;
+    styles = "bg-status-warning-tint text-status-warning border-status-warning-border";
   } else if (norm === 'stale' || norm === 'unknown') {
     icon = <CircleDot className="size-2.5" />;
     styles = "bg-status-stale-tint text-status-stale border-status-stale-border";
-  } else if (norm === 'need attention' || norm === 'attention' || norm === 'warning') {
-    icon = <AlertTriangle className="size-2.5 fill-current" />;
-    styles = "bg-status-warning-tint text-status-warning border-status-warning-border";
-  } else if (norm === 'info') {
+  } else if (norm === 'low' || norm === 'info') {
     icon = <Info className="size-2.5" />;
     styles = "bg-status-info-tint text-status-info border-status-info-border";
+  } else if (norm === 'online' || norm === 'resolved') {
+    icon = <Circle className="size-2 fill-current" />;
+    styles = "bg-status-online-tint text-status-online border-status-online-border";
   }
 
   const text = label || status;
@@ -53,7 +59,7 @@ export const SeverityBadge: React.FC<{
   className?: string;
   size?: 'sm' | 'default';
 }> = ({ severity, label, className, size = 'default' }) => {
-  const norm = severity.toLowerCase();
+  const norm = (severity || '').toLowerCase().trim();
 
   let styles = "bg-severity-low-tint text-severity-low border-status-info-border";
   let icon = <Info className="size-2.5" />;

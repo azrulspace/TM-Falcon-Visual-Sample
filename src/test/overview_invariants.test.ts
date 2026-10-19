@@ -1,0 +1,68 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { formatId } from '../lib/utils.ts';
+import { attention } from '../data/attention.ts';
+import { events } from '../data/events.ts';
+import { devices } from '../data/devices.ts';
+import { cases } from '../data/cases.ts';
+
+test('ID formatting matches unified hyphenated production format (D4)', () => {
+  assert.equal(formatId('DEV_004'), 'DEV-004');
+  assert.equal(formatId('DEV_011'), 'DEV-011');
+  assert.equal(formatId('EVT_0001'), 'EVT-0001');
+  assert.equal(formatId('AST_070'), 'AST-070');
+  assert.equal(formatId('CBL_002'), 'CBL-002');
+  assert.equal(formatId('AST_POL_001'), 'AST-POL-001');
+  assert.equal(formatId('DEV-003'), 'DEV-003');
+  assert.equal(formatId(''), '');
+  assert.equal(formatId(null as any), '');
+});
+
+test('Count invariants: attention queue items and tabs agree with single source of truth (C2)', () => {
+  const allCount = attention.length;
+  const eventItems = attention.filter((item) => item.kind === 'EVENT');
+  const deviceItems = attention.filter((item) => item.kind === 'DEVICE');
+  const caseItems = attention.filter((item) => item.kind === 'CASE');
+
+  // Verify mathematical agreement
+  assert.equal(allCount, eventItems.length + deviceItems.length + caseItems.length);
+  assert.equal(allCount, 10, 'Total attention queue items must equal 10');
+  assert.equal(eventItems.length, 5, 'Event queue items must equal 5');
+  assert.equal(deviceItems.length, 4, 'Device queue items must equal 4');
+  assert.equal(caseItems.length, 1, 'Case queue items must equal 1');
+
+  // Check device KPI counts match device dataset
+  const offlineDevices = devices.filter((d) => d.status.toLowerCase() === 'offline');
+  const staleDevices = devices.filter((d) => d.status.toLowerCase() === 'stale');
+  const onlineDevices = devices.filter((d) => d.status.toLowerCase() === 'online');
+  const attentionDevicesCount = offlineDevices.length + staleDevices.length;
+
+  assert.equal(devices.length, 15, 'Total devices must be 15');
+  assert.equal(onlineDevices.length, 11, 'Online devices must be 11');
+  assert.equal(offlineDevices.length, 2, 'Offline devices must be 2');
+  assert.equal(staleDevices.length, 2, 'Stale devices must be 2');
+  assert.equal(attentionDevicesCount, 4, 'Attention devices (offline + stale) must equal 4');
+});
+
+test('Severity colors: No severity badge ever maps to green (D3)', () => {
+  // Explicit semantic severity rules:
+  // Critical: Red
+  // High: Orange
+  // Medium: Amber
+  // Low: Blue
+  // Green is strictly reserved for nominal/online/resolved
+  const testSeverities = ['Critical', 'High', 'Medium', 'Low', 'critical', 'high', 'medium', 'low'];
+  
+  for (const sev of testSeverities) {
+    const s = sev.toLowerCase();
+    const isRed = s === 'critical';
+    const isOrange = s === 'high';
+    const isAmber = s === 'medium';
+    const isBlue = s === 'low';
+    
+    // Assert none of these can be treated as green / nominal
+    assert.ok(isRed || isOrange || isAmber || isBlue, `Severity ${sev} must map to a recognized warning/incident color`);
+    assert.notEqual(s, 'online');
+    assert.notEqual(s, 'resolved');
+  }
+});

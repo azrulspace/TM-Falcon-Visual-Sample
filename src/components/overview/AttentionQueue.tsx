@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   SlidersHorizontal,
   ChevronDown,
   ChevronRight,
+  ArrowRight,
   Radio,
   Briefcase,
   AlertCircle,
   RadioReceiver,
-  Clock,
+  AlertTriangle,
   Layers,
   RotateCcw,
 } from 'lucide-react';
@@ -24,10 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge, SeverityBadge } from '@/components/common/StatusBadge';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { attention } from '@/data/attention';
+import { formatId } from '@/lib/utils';
 import type { KpiFilterType } from './KpiRibbon';
 
 export interface AttentionItem {
@@ -58,16 +60,16 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
   selectedId,
   onSelectItem,
   activeKpiFilter,
-  density = 'default',
+  density: _density = 'default',
   isLoading = false,
   error = null,
   onRetry,
 }) => {
   const [tab, setTab] = useState<'All' | 'EVENT' | 'DEVICE' | 'CASE'>('All');
-  const [groupSimilar, setGroupSimilar] = useState(true);
+  const [groupSimilar, setGroupSimilar] = useState(false);
   const [sortBy, setSortBy] = useState<'severity' | 'newest' | 'oldest'>('severity');
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
-  const [selectedSeverities, setSelectedSeverities] = useState<string[]>(['High', 'Medium', 'Low', 'Offline', 'Stale']);
+  const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -85,26 +87,25 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
     }
   }, [activeKpiFilter]);
 
-  // Enrich raw attention items with realistic relative ages and location areas
+  // Enrich raw attention items with realistic ages, timestamps, and locations
   const enrichedItems: AttentionItem[] = useMemo(() => {
+    const ages = ['23m ago', '1h 14m ago', '2h 17m ago', '3h 40m ago', '5h 12m ago', '6h 11m ago', '8h 27m ago', '14h 22m ago', '1d 3h ago', '1d 8h ago'];
+    const timestamps = [
+      'Today 14:12 MYT',
+      'Today 13:21 MYT',
+      'Today 12:18 MYT',
+      'Today 10:55 MYT',
+      'Today 09:23 MYT',
+      'Today 08:24 MYT',
+      'Today 06:10 MYT',
+      'Yesterday 23:40 MYT',
+      'Yesterday 11:15 MYT',
+      '04 Oct 08:34 MYT',
+    ];
+
     return attention.map((item, idx) => {
-      // Deterministic age values for audit-friendliness
-      const ages = ['23m ago', '1h 14m ago', '2h 17m ago', '3h 40m ago', '5h 12m ago', '9h 05m ago', '14h 22m ago', '1d 3h ago', '1d 8h ago', '2d 1h ago'];
-      const timestamps = [
-        'Today 14:12 MYT',
-        'Today 13:21 MYT',
-        'Today 12:18 MYT',
-        'Today 10:55 MYT',
-        'Today 09:23 MYT',
-        'Today 05:30 MYT',
-        'Yesterday 23:40 MYT',
-        'Yesterday 11:15 MYT',
-        '04 Oct 08:34 MYT',
-        '03 Oct 14:14 MYT',
-      ];
-      // Location area extracted from detail
       const locMatch = item.detail.match(/AST_\d+|CBL_\d+|Route \d+/);
-      const locArea = locMatch ? locMatch[0] : 'Kuching Area';
+      const locArea = locMatch ? locMatch[0].replace('_', '-') : 'Kuching Area';
 
       return {
         ...item,
@@ -128,7 +129,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
         if (!isHigh) return false;
       }
 
-      // Severity checkbox filter
+      // Severity checkbox filter (only applies if user selected specific severities)
       if (selectedSeverities.length > 0) {
         const matchesBadge = item.badges.some((b) => selectedSeverities.includes(b));
         if (!matchesBadge && !selectedSeverities.includes(item.kind)) return false;
@@ -148,52 +149,36 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
         key: string;
         title: string;
         locationArea: string;
-        items: AttentionItem[];
+        kind: string;
         highestSeverity: string;
-        oldestAge: string;
-        kind: 'EVENT' | 'CASE' | 'DEVICE';
+        items: AttentionItem[];
       }
     > = {};
 
     filteredItems.forEach((item) => {
-      const groupKey = `${item.title}__${item.locationArea}`;
-      if (!groups[groupKey]) {
-        groups[groupKey] = {
-          key: groupKey,
+      const key = `${item.title}-${item.locationArea || 'general'}`;
+      if (!groups[key]) {
+        groups[key] = {
+          key,
           title: item.title,
           locationArea: item.locationArea || 'General',
-          items: [],
-          highestSeverity: item.badges[0] || 'Medium',
-          oldestAge: item.age || 'Recent',
           kind: item.kind,
+          highestSeverity: item.badges[0] || 'Medium',
+          items: [],
         };
       }
-      groups[groupKey].items.push(item);
+      groups[key].items.push(item);
     });
 
-    const groupList = Object.values(groups);
+    return Object.values(groups);
+  }, [groupSimilar, filteredItems]);
 
-    // Sort groups: High/Critical severity first, then by count descending
-    groupList.sort((a, b) => {
-      const getWeight = (g: typeof a) => {
-        if (g.items.some((i) => i.badges.includes('High') || i.badges.includes('Offline'))) return 3;
-        if (g.items.some((i) => i.badges.includes('Medium') || i.badges.includes('Stale'))) return 2;
-        return 1;
-      };
-      const diff = getWeight(b) - getWeight(a);
-      if (diff !== 0) return diff;
-      return b.items.length - a.items.length;
-    });
-
-    return groupList;
-  }, [filteredItems, groupSimilar]);
-
-  // Keyboard navigation
   const flatItemIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
+  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (flatItemIds.length === 0) return;
-    const currentIndex = selectedId ? flatItemIds.indexOf(selectedId) : -1;
+    const currentIndex = flatItemIds.indexOf(selectedId || '');
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -214,35 +199,64 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => ({
       ...prev,
-      [key]: prev[key] === undefined ? false : !prev[key], // Default expanded
+      [key]: prev[key] === undefined ? false : !prev[key],
     }));
   };
 
   const isGroupExpanded = (key: string) => {
-    return expandedGroups[key] !== false; // expanded by default
+    return expandedGroups[key] !== false;
   };
-
-  const rowHeightClass = density === 'compact' ? 'py-1.5' : 'py-2.5';
 
   return (
     <div
-      className="flex flex-col h-full bg-card rounded-panel border border-border overflow-hidden select-none outline-none"
+      className="flex flex-col h-full bg-card/95 backdrop-blur-md rounded-xl border border-border/80 overflow-hidden select-none outline-none shadow-2xl"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       role="region"
-      aria-label="Attention Queue"
+      aria-label="Needs attention queue"
     >
-      {/* Header */}
-      <div className="p-3 border-b border-border bg-card shrink-0 flex flex-col gap-2.5">
+      {/* Header (D1 & CEO_REFERENCE: Title, Count badge, and View all link) */}
+      <div className="p-3.5 border-b border-border bg-card shrink-0 flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">Needs attention</h2>
-            <Badge variant="secondary" className="h-5 px-1.5 text-xs font-bold font-mono bg-muted text-foreground">
+            <h2 className="text-base font-semibold text-foreground tracking-tight">
+              Needs attention
+            </h2>
+            <Badge variant="secondary" className="h-5 px-1.5 text-xs font-semibold bg-muted text-foreground tabular-nums">
               {filteredItems.length}
             </Badge>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <Link
+            to="/events"
+            className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors group"
+          >
+            <span>View all</span>
+            <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {/* Compact Controls Row: Filters Popover & Untruncated Sort Select */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Tabs: All, Events, Devices, Cases */}
+          <Tabs value={tab} onValueChange={(val: any) => setTab(val)} className="flex-1">
+            <TabsList className="h-7 w-full p-0.5 bg-muted/60 border border-border grid grid-cols-4 rounded-md">
+              <TabsTrigger value="All" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
+                All ({enrichedItems.length})
+              </TabsTrigger>
+              <TabsTrigger value="EVENT" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
+                Events ({enrichedItems.filter((i) => i.kind === 'EVENT').length})
+              </TabsTrigger>
+              <TabsTrigger value="DEVICE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
+                Devices ({enrichedItems.filter((i) => i.kind === 'DEVICE').length})
+              </TabsTrigger>
+              <TabsTrigger value="CASE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
+                Cases ({enrichedItems.filter((i) => i.kind === 'CASE').length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex items-center gap-1 shrink-0">
             {/* Filter Popover */}
             <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
               <PopoverTrigger
@@ -260,7 +274,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
               <PopoverContent className="w-56 p-3 bg-popover border border-border text-xs z-50">
                 <div className="font-semibold text-foreground mb-2">Filter by Severity & State</div>
                 <div className="space-y-2">
-                  {['High', 'Medium', 'Low', 'Offline', 'Stale'].map((sev) => (
+                  {['High', 'Medium', 'Low', 'Offline', 'Stale', 'Field work'].map((sev) => (
                     <label key={sev} className="flex items-center gap-2 cursor-pointer">
                       <Checkbox
                         checked={selectedSeverities.includes(sev)}
@@ -278,7 +292,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedSeverities(['High', 'Medium', 'Low', 'Offline', 'Stale'])}
+                    onClick={() => setSelectedSeverities([])}
                     className="h-6 text-[11px] px-2 text-muted-foreground"
                   >
                     Reset
@@ -289,36 +303,16 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
 
             {/* Sort Select */}
             <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-              <SelectTrigger className="h-7 w-28 text-xs bg-muted/40 border-border">
+              <SelectTrigger className="h-7 w-32 text-xs bg-muted/40 border-border">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-popover border border-border text-xs">
                 <SelectItem value="severity">Highest severity</SelectItem>
                 <SelectItem value="newest">Newest first</SelectItem>
                 <SelectItem value="oldest">Oldest first</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        {/* Tabs: All, Events, Devices, Cases */}
-        <div className="flex items-center justify-between gap-2">
-          <Tabs value={tab} onValueChange={(val: any) => setTab(val)} className="w-full">
-            <TabsList className="h-7 w-full p-0.5 bg-muted/60 border border-border grid grid-cols-4 rounded-md">
-              <TabsTrigger value="All" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                All ({enrichedItems.length})
-              </TabsTrigger>
-              <TabsTrigger value="EVENT" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Events ({enrichedItems.filter((i) => i.kind === 'EVENT').length})
-              </TabsTrigger>
-              <TabsTrigger value="DEVICE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Devices ({enrichedItems.filter((i) => i.kind === 'DEVICE').length})
-              </TabsTrigger>
-              <TabsTrigger value="CASE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Cases ({enrichedItems.filter((i) => i.kind === 'CASE').length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         {/* Group Similar Items Switch */}
@@ -375,38 +369,33 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
         </div>
       )}
 
-      {/* Main List Container */}
+      {/* Main List Container: Flat 72px rows separated by 1px dividers (D2 & CEO_REFERENCE) */}
       {!isLoading && !error && filteredItems.length > 0 && (
-        <div ref={listContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1.5">
+        <div ref={listContainerRef} className="flex-1 overflow-y-auto divide-y divide-border/60">
           {groupSimilar && groupedItems
             ? groupedItems.map((group) => {
-                // If group has only 1 item, render directly as a clean row without accordion wrapper
                 if (group.items.length === 1) {
                   const singleItem = group.items[0];
-                  const isSelected = selectedId === singleItem.id;
                   return (
-                    <div key={singleItem.id} className="rounded-md border border-border/80 overflow-hidden bg-card/60">
-                      <QueueItemRow
-                        item={singleItem}
-                        isSelected={isSelected}
-                        rowHeightClass={rowHeightClass}
-                        onSelect={() => onSelectItem(singleItem.id, singleItem.marker)}
-                      />
-                    </div>
+                    <FlatQueueItemRow
+                      key={singleItem.id}
+                      item={singleItem}
+                      isSelected={selectedId === singleItem.id}
+                      onSelect={() => onSelectItem(singleItem.id, singleItem.marker)}
+                    />
                   );
                 }
 
-                // Group of 2 or more items: render collapsible group container
                 const expanded = isGroupExpanded(group.key);
                 const hasSelectedChild = group.items.some((i) => i.id === selectedId);
 
                 return (
-                  <div key={group.key} className="rounded-md border border-border overflow-hidden bg-card/60">
+                  <div key={group.key} className="flex flex-col">
                     {/* Sticky Group Header */}
                     <div
                       onClick={() => toggleGroup(group.key)}
-                      className={`sticky top-0 z-10 px-2.5 py-2 flex items-center justify-between cursor-pointer transition-colors border-b border-border/60 ${
-                        hasSelectedChild ? 'bg-accent/50 font-semibold' : 'bg-muted/40 hover:bg-muted/70'
+                      className={`sticky top-0 z-10 px-3 py-2 flex items-center justify-between cursor-pointer transition-colors border-b border-border/60 ${
+                        hasSelectedChild ? 'bg-accent/60 font-semibold' : 'bg-muted/40 hover:bg-muted/70'
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
@@ -415,135 +404,138 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
                         ) : (
                           <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
                         )}
-                        {group.kind === 'EVENT' && <AlertCircle className="size-3.5 shrink-0 text-warning" />}
-                        {group.kind === 'DEVICE' && <RadioReceiver className="size-3.5 shrink-0 text-destructive" />}
-                        {group.kind === 'CASE' && <Briefcase className="size-3.5 shrink-0 text-primary" />}
                         <span className="text-xs font-semibold truncate text-foreground">{group.title}</span>
                         <Badge variant="outline" className="h-4 px-1 text-[10px] font-mono bg-muted text-muted-foreground">
                           {group.items.length}
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-muted-foreground font-mono">{group.locationArea}</span>
-                        <SeverityBadge severity={group.highestSeverity} size="sm" />
-                      </div>
+                      <span className="text-[10px] text-muted-foreground font-mono">{group.locationArea}</span>
                     </div>
 
-                    {/* Group Children */}
                     {expanded && (
-                      <div className="divide-y divide-border/40">
-                        {group.items.map((item) => {
-                          const isSelected = selectedId === item.id;
-                          return (
-                            <QueueItemRow
-                              key={item.id}
-                              item={item}
-                              isSelected={isSelected}
-                              rowHeightClass={rowHeightClass}
-                              onSelect={() => onSelectItem(item.id, item.marker)}
-                            />
-                          );
-                        })}
+                      <div className="divide-y divide-border/40 pl-2">
+                        {group.items.map((item) => (
+                          <FlatQueueItemRow
+                            key={item.id}
+                            item={item}
+                            isSelected={selectedId === item.id}
+                            onSelect={() => onSelectItem(item.id, item.marker)}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
                 );
               })
-            : filteredItems.map((item) => {
-                const isSelected = selectedId === item.id;
-                return (
-                  <div key={item.id} className="rounded-md border border-border/80 overflow-hidden bg-card/60">
-                    <QueueItemRow
-                      item={item}
-                      isSelected={isSelected}
-                      rowHeightClass={rowHeightClass}
-                      onSelect={() => onSelectItem(item.id, item.marker)}
-                    />
-                  </div>
-                );
-              })}
+            : filteredItems.map((item) => (
+                <FlatQueueItemRow
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedId === item.id}
+                  onSelect={() => onSelectItem(item.id, item.marker)}
+                />
+              ))}
         </div>
       )}
 
-      {/* Footer Meta / Audit Counter */}
-      <div className="px-3 py-1.5 border-t border-border bg-muted/30 text-[10px] text-muted-foreground flex items-center justify-between shrink-0 font-mono">
+      {/* Footer Meta / Audit Counter in quiet sans text (D6) */}
+      <div className="px-3.5 py-2 border-t border-border bg-card/60 text-[11px] text-muted-foreground flex items-center justify-between shrink-0 font-sans select-none">
         <span>Active triage queue</span>
-        <span>Keyboard: ↑/↓ select • Esc</span>
+        <span className="text-[10px] text-muted-foreground/70">Keyboard: ↑/↓ select • Esc</span>
       </div>
     </div>
   );
 };
 
-// Queue Item Row Subcomponent (2-line layout without harmful truncation)
-const QueueItemRow: React.FC<{
+// Flat 72px Queue Item Row (CEO_REFERENCE)
+const FlatQueueItemRow: React.FC<{
   item: AttentionItem;
   isSelected: boolean;
-  rowHeightClass: string;
   onSelect: () => void;
-}> = ({ item, isSelected, rowHeightClass, onSelect }) => {
+}> = ({ item, isSelected, onSelect }) => {
+  const isOffline = item.badges.includes('Offline');
+  const isStale = item.badges.includes('Stale');
+  const isHigh = item.badges.includes('High') || item.badges.includes('Critical');
+  const isCase = item.kind === 'CASE';
+
   return (
     <div
       onClick={onSelect}
-      className={`px-3 ${rowHeightClass} cursor-pointer transition-all relative flex flex-col justify-center gap-1 border-l-[3px] ${
+      className={`min-h-[72px] px-3.5 py-2.5 cursor-pointer transition-colors relative flex items-center gap-3 border-l-2 ${
         isSelected
-          ? 'bg-accent/70 border-l-primary shadow-xs'
-          : 'border-l-transparent hover:bg-muted/40'
+          ? 'bg-primary/10 border-l-primary'
+          : 'border-l-transparent hover:bg-muted/30'
       }`}
     >
-      {/* Line 1: Leading icon, Mono ID, Title (wrapping), Severity/Status Badge aligned right */}
-      <div className="flex items-start justify-between gap-2 min-w-0">
-        <div className="flex items-start gap-2 min-w-0 flex-1">
-          <div className="shrink-0 mt-0.5">
-            {item.kind === 'EVENT' && <Radio className="size-3.5 text-warning" />}
-            {item.kind === 'DEVICE' && <RadioReceiver className="size-3.5 text-destructive" />}
-            {item.kind === 'CASE' && <Briefcase className="size-3.5 text-primary" />}
+      {/* 28px Round Status Icon on left (CEO_REFERENCE) */}
+      <div className="shrink-0">
+        {isOffline ? (
+          <div className="size-7 rounded-full bg-destructive/15 text-destructive flex items-center justify-center border border-destructive/30">
+            <AlertCircle className="size-4" />
           </div>
-
-          <div className="flex items-baseline gap-1.5 min-w-0 flex-1">
-            <span className="font-mono text-xs font-bold text-primary shrink-0">{item.id}</span>
-            <Tooltip>
-              <TooltipTrigger render={
-                <span className="text-xs font-medium text-foreground line-clamp-2 leading-snug">
-                  {item.title}
-                </span>
-              } />
-              <TooltipContent side="top" className="text-xs max-w-xs">
-                {item.title}: {item.detail}
-              </TooltipContent>
-            </Tooltip>
+        ) : isStale ? (
+          <div className="size-7 rounded-full bg-status-stale/15 text-status-stale flex items-center justify-center border border-status-stale/30">
+            <AlertCircle className="size-4" />
           </div>
-        </div>
-
-        <div className="shrink-0">
-          {item.badges.slice(0, 1).map((b) => (
-            <StatusBadge key={b} status={b} size="sm" />
-          ))}
-        </div>
+        ) : isHigh ? (
+          <div className="size-7 rounded-full bg-destructive/15 text-destructive flex items-center justify-center border border-destructive/30">
+            <AlertTriangle className="size-4" />
+          </div>
+        ) : isCase ? (
+          <div className="size-7 rounded-full bg-primary/15 text-primary flex items-center justify-center border border-primary/30">
+            <Briefcase className="size-4" />
+          </div>
+        ) : (
+          <div className="size-7 rounded-full bg-status-warning/15 text-status-warning flex items-center justify-center border border-status-warning/30">
+            <AlertTriangle className="size-4" />
+          </div>
+        )}
       </div>
 
-      {/* Line 2: Location, Relative age with clock icon, Optional device chip */}
-      <div className="flex items-center justify-between pl-5 text-[11px] text-muted-foreground gap-2">
-        <div className="flex items-center gap-2 truncate">
-          <span className="truncate">{item.locationArea || item.detail}</span>
-          {item.marker && item.marker.startsWith('DEV_') && (
-            <span className="font-mono text-[10px] px-1 py-0.2 bg-muted rounded text-foreground/80 shrink-0">
-              {item.marker}
+      {/* Middle: 2-line Content */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+        {/* Line 1: Bold ID, State Badge, Urgency-colored Age aligned right */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 truncate">
+            <span className="font-semibold text-xs text-foreground tracking-tight">
+              {formatId(item.id)}
             </span>
-          )}
+            {item.badges.slice(0, 1).map((b) => (
+              <StatusBadge key={b} status={b} size="sm" />
+            ))}
+          </div>
+
+          <span
+            className={`text-[11px] font-medium tabular-nums shrink-0 ${
+              isOffline || isHigh
+                ? 'text-destructive'
+                : isStale
+                ? 'text-muted-foreground'
+                : 'text-status-warning'
+            }`}
+          >
+            {item.age}
+          </span>
         </div>
 
-        <Tooltip>
-          <TooltipTrigger render={
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono tabular-nums shrink-0">
-              <Clock className="size-2.5 opacity-60" />
-              {item.age}
-            </span>
-          } />
-          <TooltipContent side="left" className="text-xs font-mono">
-            {item.timestamp || item.age}
-          </TooltipContent>
-        </Tooltip>
+        {/* Line 2: Type icon, Location & Reason in muted text */}
+        <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 truncate">
+            {item.kind === 'DEVICE' ? (
+              <RadioReceiver className="size-3 shrink-0 opacity-70" />
+            ) : item.kind === 'CASE' ? (
+              <Briefcase className="size-3 shrink-0 opacity-70" />
+            ) : (
+              <Radio className="size-3 shrink-0 opacity-70" />
+            )}
+            <span className="truncate">{item.locationArea || item.detail}</span>
+            <span className="opacity-40">•</span>
+            <span className="truncate">{item.why}</span>
+          </div>
+
+          <ChevronRight className="size-3.5 text-muted-foreground/50 shrink-0" />
+        </div>
       </div>
     </div>
   );

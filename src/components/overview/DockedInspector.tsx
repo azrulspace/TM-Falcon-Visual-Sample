@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusBadge, SeverityBadge } from '@/components/common/StatusBadge';
+import { formatId } from '@/lib/utils';
 import { events } from '@/data/events';
 import { devices } from '@/data/devices';
 import { attention } from '@/data/attention';
@@ -94,7 +95,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
             {isEvent ? 'Event' : isCase ? 'Case' : 'Device'}
           </Badge>
 
-          <span className="font-mono text-xs font-bold text-primary truncate">{selectedId}</span>
+          <span className="font-mono text-xs font-bold text-primary truncate">{formatId(selectedId)}</span>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -173,7 +174,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
               className="flex items-center gap-1.5 font-mono text-xs text-primary font-semibold cursor-pointer hover:underline"
             >
               <span className="size-1.5 rounded-full bg-status-online" />
-              <span>{evt?.device || 'DEV_002'}</span>
+              <span>{formatId(evt?.device || 'DEV_002')}</span>
             </div>
           </div>
         </div>
@@ -217,7 +218,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
               <Cable className="size-3.5 text-primary" />
               Cable Span
             </span>
-            <span className="font-mono text-[11px] font-bold text-primary">{span.id}</span>
+            <span className="font-mono text-[11px] font-bold text-primary">{formatId(span.id)}</span>
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50 text-[11px]">
@@ -227,14 +228,14 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
                 onClick={() => onSelectEntity && onSelectEntity(span.from)}
                 className="font-mono px-1.5 py-0.5 rounded bg-muted text-foreground cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors font-medium"
               >
-                {span.from}
+                {formatId(span.from)}
               </span>
               <span className="text-muted-foreground">to</span>
               <span
                 onClick={() => onSelectEntity && onSelectEntity(span.to)}
                 className="font-mono px-1.5 py-0.5 rounded bg-muted text-foreground cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors font-medium"
               >
-                {span.to}
+                {formatId(span.to)}
               </span>
             </div>
           </div>
@@ -259,7 +260,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-xs font-bold text-primary">{e.id}</span>
+                  <span className="font-mono text-xs font-bold text-primary">{formatId(e.id)}</span>
                   <span className="text-xs text-foreground truncate">{e.type}</span>
                 </div>
                 <Badge variant="outline" className="text-[10px] font-mono shrink-0">
@@ -321,7 +322,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
               className="w-full h-auto rounded object-contain max-h-[80vh]"
             />
             <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xs px-3 py-1 rounded text-xs font-mono text-white">
-              CCTV Snapshot • {evt?.captured || '05 Oct, 14:25:12'} MYT • {span.id}
+              CCTV Snapshot • {evt?.captured || '05 Oct, 14:25:12'} MYT • {formatId(span.id)}
             </div>
           </div>
         </DialogContent>

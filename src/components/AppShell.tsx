@@ -303,14 +303,16 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         >
                           {mod.label}
                         </Link>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="p-1 -ml-1.5 mr-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label={`${mod.label} sub-navigation`}
-                          >
-                            <ChevronDown className="size-3 opacity-60 hover:opacity-100" />
-                          </button>
-                        </DropdownMenuTrigger>
+                        <DropdownMenuTrigger
+                          render={
+                            <button
+                              className="p-1 -ml-1.5 mr-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                              aria-label={`${mod.label} sub-navigation`}
+                            >
+                              <ChevronDown className="size-3 opacity-60 hover:opacity-100" />
+                            </button>
+                          }
+                        />
                       </div>
 
                       <DropdownMenuContent align="start" className="w-52 bg-popover border border-border text-popover-foreground z-50">
