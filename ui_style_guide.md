@@ -71,10 +71,11 @@ Base colors: White #FFFFFF (--color_white) and Black #000000 (--color_black).
 
 ### 5.1 Palettes
 
-Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. The brand color #06013A is Brand 900.
+Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. The brand color #06013A is Brand 900. Light mode uses the Neutral greyscale. Dark mode uses its own greyscale, Neutral dark, which is softer and slightly tinted toward the brand.
 
 * **Brand** (--color_brand_*): 25 #F8F8FF, 50 #F0EFFE, 100 #E1DFFC, 200 #C5C1F7, 300 #A39DEF, 400 #7B72E0, 500 #5547C9, 600 #3D2FA6, 700 #261C80, 800 #160F5C, 900 #06013A, 950 #030120
-* **Neutral** (--color_neutral_*): 25 #FCFCFD, 50 #F9FAFB, 100 #F2F4F7, 200 #E4E7EC, 300 #D0D5DD, 400 #98A2B3, 500 #667085, 600 #475467, 700 #344054, 800 #1D2939, 900 #101828, 950 #0C111D
+* **Neutral (light mode)** (--color_neutral_*): 25 #FCFCFD, 50 #F9FAFB, 100 #F2F4F7, 200 #E4E7EC, 300 #D0D5DD, 400 #98A2B3, 500 #667085, 600 #475467, 700 #344054, 800 #1D2939, 900 #101828, 950 #0C111D
+* **Neutral dark (dark mode)** (--color_neutral_dark_*): 25 #F7F7F8, 50 #EEEFF1, 100 #E3E4E8, 200 #CDCED5, 300 #B7B8C3, 400 #9B9CAB, 500 #74768B, 600 #58596A, 700 #41424E, 800 #33343D, 900 #27282F, 950 #1E1F24
 * **Success** (--color_success_*): 25 #F6FEF9, 50 #ECFDF3, 100 #D1FADF, 200 #A6F4C5, 300 #6CE9A6, 400 #32D583, 500 #12B76A, 600 #039855, 700 #027A48, 800 #05603A, 900 #054F31, 950 #053321
 * **Info** (--color_info_*): 25 #F5FAFF, 50 #EFF8FF, 100 #D1E9FF, 200 #B2DDFF, 300 #84CAFF, 400 #53B1FD, 500 #2E90FA, 600 #1570EF, 700 #175CD3, 800 #1849A9, 900 #194185, 950 #102A56
 * **Error** (--color_error_*): 25 #FFFBFA, 50 #FEF3F2, 100 #FEE4E2, 200 #FECDCA, 300 #FDA29B, 400 #F97066, 500 #F04438, 600 #D92D20, 700 #B42318, 800 #912018, 900 #7A271A, 950 #55160C
@@ -84,12 +85,12 @@ Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900
 
 Each token has a light value and a dark value.
 
-* `--text_primary`: light #101828 (Neutral 900), dark #F9FAFB (Neutral 50). Headings and main content.
-* `--text_secondary`: light #344054 (Neutral 700), dark #E4E7EC (Neutral 200). Labels and supporting text.
-* `--text_tertiary`: light #475467 (Neutral 600), dark #D0D5DD (Neutral 300). Hints and descriptions.
-* `--text_quaternary`: light #667085 (Neutral 500), dark #98A2B3 (Neutral 400). Captions and icons.
-* `--text_placeholder`: light #667085 (Neutral 500), dark #98A2B3 (Neutral 400). Input placeholder.
-* `--text_disabled`: light #98A2B3 (Neutral 400), dark #667085 (Neutral 500). Disabled elements.
+* `--text_primary`: light #101828 (Neutral 900), dark #E3E4E8 (Neutral dark 100). Headings and main content.
+* `--text_secondary`: light #344054 (Neutral 700), dark #CDCED5 (Neutral dark 200). Labels and supporting text.
+* `--text_tertiary`: light #475467 (Neutral 600), dark #B7B8C3 (Neutral dark 300). Hints and descriptions.
+* `--text_quaternary`: light #667085 (Neutral 500), dark #9B9CAB (Neutral dark 400). Captions and icons.
+* `--text_placeholder`: light #667085 (Neutral 500), dark #9B9CAB (Neutral dark 400). Input placeholder.
+* `--text_disabled`: light #98A2B3 (Neutral 400), dark #58596A (Neutral dark 600). Disabled elements.
 * `--text_white`: light #FFFFFF (White), dark #FFFFFF (White). Text on solid brand or status surfaces.
 * `--text_brand`: light #06013A (Brand 900), dark #A39DEF (Brand 300). Brand text and links.
 * `--text_brand_secondary`: light #261C80 (Brand 700), dark #C5C1F7 (Brand 200). Text button and soft brand text.
@@ -102,12 +103,12 @@ Each token has a light value and a dark value.
 
 Each token has a light value and a dark value.
 
-* `--bg_primary`: light #FFFFFF (White), dark #0C111D (Neutral 950). Page and input background.
-* `--bg_secondary`: light #F9FAFB (Neutral 50), dark #101828 (Neutral 900). Section and subtle area.
-* `--bg_tertiary`: light #F2F4F7 (Neutral 100), dark #1D2939 (Neutral 800). Hover, chip, flat button.
-* `--bg_quaternary`: light #E4E7EC (Neutral 200), dark #344054 (Neutral 700). Pressed, skeleton.
-* `--bg_elevated`: light #FFFFFF (White), dark #1D2939 (Neutral 800). Card, toast, popover surface.
-* `--bg_disabled`: light #F2F4F7 (Neutral 100), dark #1D2939 (Neutral 800). Disabled elements.
+* `--bg_primary`: light #FFFFFF (White), dark #1E1F24 (Neutral dark 950). Page and input background.
+* `--bg_secondary`: light #F9FAFB (Neutral 50), dark #27282F (Neutral dark 900). Section and subtle area.
+* `--bg_tertiary`: light #F2F4F7 (Neutral 100), dark #33343D (Neutral dark 800). Hover, chip, flat button.
+* `--bg_quaternary`: light #E4E7EC (Neutral 200), dark #41424E (Neutral dark 700). Pressed, skeleton.
+* `--bg_elevated`: light #FFFFFF (White), dark #33343D (Neutral dark 800). Card, toast, popover surface.
+* `--bg_disabled`: light #F2F4F7 (Neutral 100), dark #33343D (Neutral dark 800). Disabled elements.
 * `--bg_brand_solid`: light #06013A (Brand 900), dark #3D2FA6 (Brand 600). Primary button, banner.
 * `--bg_brand_solid_hover`: light #160F5C (Brand 800), dark #5547C9 (Brand 500). Primary button hover.
 * `--bg_brand_primary`: light #F0EFFE (Brand 50), dark #160F5C (Brand 800). Secondary button, highlight.
@@ -126,13 +127,13 @@ Each token has a light value and a dark value.
 
 Each token has a light value and a dark value.
 
-* `--border_primary`: light #D0D5DD (Neutral 300), dark #344054 (Neutral 700). Input, select, textarea, secondary gray button.
-* `--border_secondary`: light #E4E7EC (Neutral 200), dark #1D2939 (Neutral 800). Card, table, divider.
-* `--border_tertiary`: light #F2F4F7 (Neutral 100), dark #101828 (Neutral 900). Subtle divider.
-* `--border_control`: light #667085 (Neutral 500), dark #667085 (Neutral 500). Checkbox, radio, toggle boundary, strong input option (3:1 minimum).
-* `--border_control_hover`: light #475467 (Neutral 600), dark #98A2B3 (Neutral 400). Control hover.
-* `--border_hover`: light #98A2B3 (Neutral 400), dark #667085 (Neutral 500). Input hover.
-* `--border_disabled`: light #E4E7EC (Neutral 200), dark #1D2939 (Neutral 800). Disabled elements.
+* `--border_primary`: light #D0D5DD (Neutral 300), dark #41424E (Neutral dark 700). Input, select, textarea, secondary gray button.
+* `--border_secondary`: light #E4E7EC (Neutral 200), dark #33343D (Neutral dark 800). Card, table, divider.
+* `--border_tertiary`: light #F2F4F7 (Neutral 100), dark #27282F (Neutral dark 900). Subtle divider.
+* `--border_control`: light #667085 (Neutral 500), dark #74768B (Neutral dark 500). Checkbox, radio, toggle boundary, strong input option (3:1 minimum).
+* `--border_control_hover`: light #475467 (Neutral 600), dark #9B9CAB (Neutral dark 400). Control hover.
+* `--border_hover`: light #98A2B3 (Neutral 400), dark #74768B (Neutral dark 500). Input hover.
+* `--border_disabled`: light #E4E7EC (Neutral 200), dark #33343D (Neutral dark 800). Disabled elements.
 * `--border_brand`: light #7B72E0 (Brand 400), dark #7B72E0 (Brand 400). Input focus.
 * `--border_brand_solid`: light #06013A (Brand 900), dark #5547C9 (Brand 500). Checked control outline.
 * `--border_success`: light #6CE9A6 (Success 300), dark #027A48 (Success 700). Success alert.
@@ -380,19 +381,19 @@ Mobile first. Media queries cannot read CSS variables, so breakpoint values are 
 
 ### Text contrast (minimum 4.5:1)
 
-* **text_primary**. Background: bg_primary; Light: 17.75:1 (Pass AAA); Dark: 18.05:1 (Pass AAA); Used for: Body text
-* **text_secondary**. Background: bg_primary; Light: 10.46:1 (Pass AAA); Dark: 15.21:1 (Pass AAA); Used for: Labels, secondary gray button
-* **text_tertiary**. Background: bg_primary; Light: 7.69:1 (Pass AAA); Dark: 12.79:1 (Pass AAA); Used for: Hints and descriptions
-* **text_placeholder**. Background: bg_primary; Light: 4.97:1 (Pass); Dark: 7.32:1 (Pass AAA); Used for: Input placeholder
-* **text_quaternary**. Background: bg_primary; Light: 4.97:1 (Pass); Dark: 7.32:1 (Pass AAA); Used for: Captions
+* **text_primary**. Background: bg_primary; Light: 17.75:1 (Pass AAA); Dark: 12.95:1 (Pass AAA); Used for: Body text
+* **text_secondary**. Background: bg_primary; Light: 10.46:1 (Pass AAA); Dark: 10.48:1 (Pass AAA); Used for: Labels, secondary gray button
+* **text_tertiary**. Background: bg_primary; Light: 7.69:1 (Pass AAA); Dark: 8.35:1 (Pass AAA); Used for: Hints and descriptions
+* **text_placeholder**. Background: bg_primary; Light: 4.97:1 (Pass); Dark: 6.06:1 (Pass); Used for: Input placeholder
+* **text_quaternary**. Background: bg_primary; Light: 4.97:1 (Pass); Dark: 6.06:1 (Pass); Used for: Captions
 * **text_brand**. Background: bg_brand_primary; Light: 17.22:1 (Pass AAA); Dark: 6.86:1 (Pass); Used for: Secondary button
-* **text_secondary**. Background: bg_tertiary; Light: 9.49:1 (Pass AAA); Dark: 11.86:1 (Pass AAA); Used for: Flat button
+* **text_secondary**. Background: bg_tertiary; Light: 9.49:1 (Pass AAA); Dark: 7.88:1 (Pass AAA); Used for: Flat button
 * **text_white**. Background: bg_brand_solid; Light: 19.57:1 (Pass AAA); Dark: 9.74:1 (Pass AAA); Used for: Primary button
 * **text_white**. Background: bg_brand_solid_hover; Light: 16.71:1 (Pass AAA); Dark: 6.71:1 (Pass); Used for: Primary button hover
-* **text_brand_secondary**. Background: bg_primary; Light: 13.46:1 (Pass AAA); Dark: 11.09:1 (Pass AAA); Used for: Text button
-* **text_error**. Background: bg_primary; Light: 6.57:1 (Pass); Dark: 6.77:1 (Pass); Used for: Error hint
-* **text_success**. Background: bg_primary; Light: 5.41:1 (Pass); Dark: 9.86:1 (Pass AAA); Used for: Success hint
-* **text_primary**. Background: bg_elevated; Light: 17.75:1 (Pass AAA); Dark: 14.07:1 (Pass AAA); Used for: Card and toast title
+* **text_brand_secondary**. Background: bg_primary; Light: 13.46:1 (Pass AAA); Dark: 9.67:1 (Pass AAA); Used for: Text button
+* **text_error**. Background: bg_primary; Light: 6.57:1 (Pass); Dark: 5.90:1 (Pass); Used for: Error hint
+* **text_success**. Background: bg_primary; Light: 5.41:1 (Pass); Dark: 8.60:1 (Pass AAA); Used for: Success hint
+* **text_primary**. Background: bg_elevated; Light: 17.75:1 (Pass AAA); Dark: 9.73:1 (Pass AAA); Used for: Card and toast title
 * **text_success**. Background: bg_success_primary; Light: 5.13:1 (Pass); Dark: 7.31:1 (Pass AAA); Used for: Success alert
 * **text_info**. Background: bg_info_primary; Light: 5.57:1 (Pass); Dark: 6.10:1 (Pass); Used for: Info alert
 * **text_warning**. Background: bg_warning_primary; Light: 5.20:1 (Pass); Dark: 7.59:1 (Pass AAA); Used for: Warning alert
@@ -401,21 +402,21 @@ Mobile first. Media queries cannot read CSS variables, so breakpoint values are 
 * **text_white**. Background: bg_info_solid; Light: 4.57:1 (Pass); Dark: 4.57:1 (Pass); Used for: Solid info badge
 * **text_white**. Background: bg_warning_solid; Light: 5.43:1 (Pass); Dark: 5.43:1 (Pass); Used for: Solid warning badge
 * **text_white**. Background: bg_error_solid; Light: 4.83:1 (Pass); Dark: 4.83:1 (Pass); Used for: Solid error badge
-* **text_disabled**. Background: bg_disabled; Light: 2.34:1 (Exempt); Dark: 2.96:1 (Exempt); Used for: Disabled elements
+* **text_disabled**. Background: bg_disabled; Light: 2.34:1 (Exempt); Dark: 1.80:1 (Exempt); Used for: Disabled elements
 
 ### Non text contrast (minimum 3:1)
 
 Note: the soft input border (border_primary) is below 3:1. Each field keeps a visible label so it stays identifiable. For stricter requirements use input_strong or switch the default to border_control.
 
-* **border_control**. Light on bg_primary: 4.97:1 (Pass); Dark on bg_primary: 3.79:1 (Pass); Used for: Checkbox, radio, toggle boundary, strong input option
-* **border_brand**. Light on bg_primary: 3.94:1 (Pass); Dark on bg_primary: 4.78:1 (Pass); Used for: Input focus border
-* **border_error_solid**. Light on bg_primary: 4.83:1 (Pass); Dark on bg_primary: 6.77:1 (Pass); Used for: Error input boundary
-* **border_success_solid**. Light on bg_primary: 3.73:1 (Pass); Dark on bg_primary: 9.86:1 (Pass); Used for: Success input boundary
-* **text_error**. Light on bg_primary: 6.57:1 (Pass); Dark on bg_primary: 6.77:1 (Pass); Used for: Error icon
-* **text_success**. Light on bg_primary: 5.41:1 (Pass); Dark on bg_primary: 9.86:1 (Pass); Used for: Success icon
-* **Focus ring outer (Brand 500, Brand 300 in dark)**. Light on bg_primary: 6.71:1 (Pass); Dark on bg_primary: 7.75:1 (Pass); Used for: Focus ring
-* **border_primary**. Light on bg_primary: 1.47:1 (Below 3:1); Dark on bg_primary: 1.80:1 (Below 3:1); Used for: Input, select, textarea boundary (soft style)
-* **border_secondary**. Light on bg_primary: 1.24:1 (Decorative); Dark on bg_primary: 1.28:1 (Decorative); Used for: Dividers, cards, tables
+* **border_control**. Light on bg_primary: 4.97:1 (Pass); Dark on bg_primary: 3.69:1 (Pass); Used for: Checkbox, radio, toggle boundary, strong input option
+* **border_brand**. Light on bg_primary: 3.94:1 (Pass); Dark on bg_primary: 4.17:1 (Pass); Used for: Input focus border
+* **border_error_solid**. Light on bg_primary: 4.83:1 (Pass); Dark on bg_primary: 5.90:1 (Pass); Used for: Error input boundary
+* **border_success_solid**. Light on bg_primary: 3.73:1 (Pass); Dark on bg_primary: 8.60:1 (Pass); Used for: Success input boundary
+* **text_error**. Light on bg_primary: 6.57:1 (Pass); Dark on bg_primary: 5.90:1 (Pass); Used for: Error icon
+* **text_success**. Light on bg_primary: 5.41:1 (Pass); Dark on bg_primary: 8.60:1 (Pass); Used for: Success icon
+* **Focus ring outer (Brand 500, Brand 300 in dark)**. Light on bg_primary: 6.71:1 (Pass); Dark on bg_primary: 6.76:1 (Pass); Used for: Focus ring
+* **border_primary**. Light on bg_primary: 1.47:1 (Below 3:1); Dark on bg_primary: 1.66:1 (Below 3:1); Used for: Input, select, textarea boundary (soft style)
+* **border_secondary**. Light on bg_primary: 1.24:1 (Decorative); Dark on bg_primary: 1.33:1 (Decorative); Used for: Dividers, cards, tables
 
 ### Developer checklist
 
@@ -473,6 +474,18 @@ Copy these files into the project. They are generated from the same tokens as th
   --color_neutral_800:#1D2939;
   --color_neutral_900:#101828;
   --color_neutral_950:#0C111D;
+  --color_neutral_dark_25:#F7F7F8;
+  --color_neutral_dark_50:#EEEFF1;
+  --color_neutral_dark_100:#E3E4E8;
+  --color_neutral_dark_200:#CDCED5;
+  --color_neutral_dark_300:#B7B8C3;
+  --color_neutral_dark_400:#9B9CAB;
+  --color_neutral_dark_500:#74768B;
+  --color_neutral_dark_600:#58596A;
+  --color_neutral_dark_700:#41424E;
+  --color_neutral_dark_800:#33343D;
+  --color_neutral_dark_900:#27282F;
+  --color_neutral_dark_950:#1E1F24;
   --color_success_25:#F6FEF9;
   --color_success_50:#ECFDF3;
   --color_success_100:#D1FADF;
@@ -664,12 +677,12 @@ Copy these files into the project. They are generated from the same tokens as th
   color-scheme:dark;
 
   /* Text */
-  --text_primary:var(--color_neutral_50);
-  --text_secondary:var(--color_neutral_200);
-  --text_tertiary:var(--color_neutral_300);
-  --text_quaternary:var(--color_neutral_400);
-  --text_placeholder:var(--color_neutral_400);
-  --text_disabled:var(--color_neutral_500);
+  --text_primary:var(--color_neutral_dark_100);
+  --text_secondary:var(--color_neutral_dark_200);
+  --text_tertiary:var(--color_neutral_dark_300);
+  --text_quaternary:var(--color_neutral_dark_400);
+  --text_placeholder:var(--color_neutral_dark_400);
+  --text_disabled:var(--color_neutral_dark_600);
   --text_white:var(--color_white);
   --text_brand:var(--color_brand_300);
   --text_brand_secondary:var(--color_brand_200);
@@ -679,12 +692,12 @@ Copy these files into the project. They are generated from the same tokens as th
   --text_error:var(--color_error_400);
 
   /* Background */
-  --bg_primary:var(--color_neutral_950);
-  --bg_secondary:var(--color_neutral_900);
-  --bg_tertiary:var(--color_neutral_800);
-  --bg_quaternary:var(--color_neutral_700);
-  --bg_elevated:var(--color_neutral_800);
-  --bg_disabled:var(--color_neutral_800);
+  --bg_primary:var(--color_neutral_dark_950);
+  --bg_secondary:var(--color_neutral_dark_900);
+  --bg_tertiary:var(--color_neutral_dark_800);
+  --bg_quaternary:var(--color_neutral_dark_700);
+  --bg_elevated:var(--color_neutral_dark_800);
+  --bg_disabled:var(--color_neutral_dark_800);
   --bg_brand_solid:var(--color_brand_600);
   --bg_brand_solid_hover:var(--color_brand_500);
   --bg_brand_primary:var(--color_brand_800);
@@ -700,13 +713,13 @@ Copy these files into the project. They are generated from the same tokens as th
   --bg_overlay:rgba(0,0,0,0.7);
 
   /* Border */
-  --border_primary:var(--color_neutral_700);
-  --border_secondary:var(--color_neutral_800);
-  --border_tertiary:var(--color_neutral_900);
-  --border_control:var(--color_neutral_500);
-  --border_control_hover:var(--color_neutral_400);
-  --border_hover:var(--color_neutral_500);
-  --border_disabled:var(--color_neutral_800);
+  --border_primary:var(--color_neutral_dark_700);
+  --border_secondary:var(--color_neutral_dark_800);
+  --border_tertiary:var(--color_neutral_dark_900);
+  --border_control:var(--color_neutral_dark_500);
+  --border_control_hover:var(--color_neutral_dark_400);
+  --border_hover:var(--color_neutral_dark_500);
+  --border_disabled:var(--color_neutral_dark_800);
   --border_brand:var(--color_brand_400);
   --border_brand_solid:var(--color_brand_500);
   --border_success:var(--color_success_700);
@@ -807,7 +820,7 @@ select.input_field{appearance:none;cursor:pointer}
 .check,.radio{appearance:none;margin:2px 0 0;width:20px;height:20px;flex:none;display:inline-grid;place-content:center;background:var(--bg_primary);border:1px solid var(--border_control);cursor:pointer}
 .check{border-radius:var(--radius_sm)}
 .radio{border-radius:var(--radius_full)}
-.check:hover,.radio:hover,.check.is_hover,.radio.is_hover{border-color:var(--border_control_hover)}
+.check:hover,.radio:hover,.check.is_hover,.radio.is_hover{border-color:var(--border_brand_solid);background:var(--bg_brand_primary)}
 .check:checked,.radio:checked,.check:indeterminate{background:var(--bg_brand_solid);border-color:var(--border_brand_solid)}
 .check:checked::after{content:"";width:5px;height:10px;margin-top:-2px;border:solid var(--text_white);border-width:0 2px 2px 0;transform:rotate(45deg)}
 .check:indeterminate::after{content:"";width:10px;height:2px;background:var(--text_white)}
@@ -944,6 +957,20 @@ html{font-family:var(--font_family)}
       "900": "#101828",
       "950": "#0C111D"
     },
+    "neutral_dark": {
+      "25": "#F7F7F8",
+      "50": "#EEEFF1",
+      "100": "#E3E4E8",
+      "200": "#CDCED5",
+      "300": "#B7B8C3",
+      "400": "#9B9CAB",
+      "500": "#74768B",
+      "600": "#58596A",
+      "700": "#41424E",
+      "800": "#33343D",
+      "900": "#27282F",
+      "950": "#1E1F24"
+    },
     "success": {
       "25": "#F6FEF9",
       "50": "#ECFDF3",
@@ -1052,12 +1079,12 @@ html{font-family:var(--font_family)}
       "border_error_solid": "#D92D20"
     },
     "dark": {
-      "text_primary": "#F9FAFB",
-      "text_secondary": "#E4E7EC",
-      "text_tertiary": "#D0D5DD",
-      "text_quaternary": "#98A2B3",
-      "text_placeholder": "#98A2B3",
-      "text_disabled": "#667085",
+      "text_primary": "#E3E4E8",
+      "text_secondary": "#CDCED5",
+      "text_tertiary": "#B7B8C3",
+      "text_quaternary": "#9B9CAB",
+      "text_placeholder": "#9B9CAB",
+      "text_disabled": "#58596A",
       "text_white": "#FFFFFF",
       "text_brand": "#A39DEF",
       "text_brand_secondary": "#C5C1F7",
@@ -1065,12 +1092,12 @@ html{font-family:var(--font_family)}
       "text_info": "#53B1FD",
       "text_warning": "#FDB022",
       "text_error": "#F97066",
-      "bg_primary": "#0C111D",
-      "bg_secondary": "#101828",
-      "bg_tertiary": "#1D2939",
-      "bg_quaternary": "#344054",
-      "bg_elevated": "#1D2939",
-      "bg_disabled": "#1D2939",
+      "bg_primary": "#1E1F24",
+      "bg_secondary": "#27282F",
+      "bg_tertiary": "#33343D",
+      "bg_quaternary": "#41424E",
+      "bg_elevated": "#33343D",
+      "bg_disabled": "#33343D",
       "bg_brand_solid": "#3D2FA6",
       "bg_brand_solid_hover": "#5547C9",
       "bg_brand_primary": "#160F5C",
@@ -1084,13 +1111,13 @@ html{font-family:var(--font_family)}
       "bg_error_primary": "#55160C",
       "bg_error_solid": "#D92D20",
       "bg_overlay": "#000000",
-      "border_primary": "#344054",
-      "border_secondary": "#1D2939",
-      "border_tertiary": "#101828",
-      "border_control": "#667085",
-      "border_control_hover": "#98A2B3",
-      "border_hover": "#667085",
-      "border_disabled": "#1D2939",
+      "border_primary": "#41424E",
+      "border_secondary": "#33343D",
+      "border_tertiary": "#27282F",
+      "border_control": "#74768B",
+      "border_control_hover": "#9B9CAB",
+      "border_hover": "#74768B",
+      "border_disabled": "#33343D",
       "border_brand": "#7B72E0",
       "border_brand_solid": "#5547C9",
       "border_success": "#027A48",

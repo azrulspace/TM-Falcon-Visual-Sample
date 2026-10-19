@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link,  } from 'react-router-dom';
 import { ChevronRight, Check, CheckCircle2, User, Search, Eye, ShieldAlert, Info, MapPin } from 'lucide-react';
-import * as Tooltip from '@radix-ui/react-tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 export const PageHeader = ({ title, description, breadcrumbs, actions, openQuestion, pageId, roles, tabs = false }: any) => {
   return (
@@ -62,9 +63,9 @@ export const StatCard = ({ overline, number, helper, accent, onShowMap, icon: Ic
           <span className="text_xs font-semibold uppercase tracking-[var(--tracking\_wide)] text-tertiary">{overline}</span>
         </div>
         {onShowMap && (
-          <button className="btn btn_tertiary_gray btn_sm btn_icon_only" aria-label={`Show ${overline.toLowerCase()} on map`} tabIndex={-1}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-[8px]" aria-label={`Show ${overline.toLowerCase()} on map`} tabIndex={-1}>
             <MapPin className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
       <div className="text-[24px] leading-[32px] font-semibold text-primary mt-1">{number}</div>
@@ -113,21 +114,16 @@ export const StatusBadge = ({ kind, value }: { kind?: 'priority' | 'state' | 'de
 };
 
 export const PendingConfigInfo = ({ text }: { text: string }) => (
-  <Tooltip.Provider delayDuration={0}>
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <button className="btn btn_tertiary_gray btn_sm btn_icon_only" aria-label="Pending configuration">
-          <Info className="w-4 h-4" />
-        </button>
-      </Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content className="px-3 py-2 bg-elevated text-primary text_sm rounded-sm shadow-lg border border-secondary max-w-[300px] z-50" sideOffset={5}>
-          {text}
-          <Tooltip.Arrow className="fill-[var(--bg\_elevated)]" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  </Tooltip.Provider>
+  <Tooltip>
+    <TooltipTrigger render={
+      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-[8px]" aria-label="Pending configuration">
+        <Info className="w-4 h-4" />
+      </Button>
+    } />
+    <TooltipContent sideOffset={5} className="max-w-[300px]">
+      {text}
+    </TooltipContent>
+  </Tooltip>
 );
 
 export const SegmentedControl = ({ options, value, onChange }: any) => {

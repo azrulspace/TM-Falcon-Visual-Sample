@@ -4,6 +4,7 @@ import { PageHeader, StatusBadge, EmptyState } from '../components/Shared';
 import { useAppContext } from '../contexts/AppContext';
 import { devices as initialDevices } from '../data/devices';
 import { Plus, ChevronDown, Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Inventory() {
   const { reviewMode } = useAppContext();
@@ -77,9 +78,9 @@ export default function Inventory() {
         pageId="FAL_INV_01"
         roles="Admin, System"
         actions={
-          <button className="btn btn_primary btn_md" onClick={() => navigate('/assets/inventory/devices/new')}>
-            <Plus className="w-4 h-4" /> Add device
-          </button>
+          <Button size="sm" onClick={() => navigate('/assets/inventory/devices/new')}>
+            <Plus className="w-4 h-4 mr-2" /> Add device
+          </Button>
         }
       />
 
@@ -147,7 +148,7 @@ export default function Inventory() {
                     <td className="text-tertiary">{d.lastContact}</td>
                     <td className="text-tertiary">{d.model}</td>
                     <td>
-                      <Link to={`/assets/inventory/devices/${d.id}`} className="btn btn_text btn_sm px-3">View</Link>
+                      <Link to={`/assets/inventory/devices/${d.id}`}><Button variant="ghost" size="sm">View</Button></Link>
                     </td>
                   </tr>
                 ))}
@@ -179,21 +180,25 @@ export default function Inventory() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button 
-                    className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   >
                     <ChevronLeft className="w-4 h-4" />
-                  </button>
+                  </Button>
                   <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
-                  <button 
-                    className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   >
                     <ChevronRight className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -203,7 +208,7 @@ export default function Inventory() {
             icon={Search} 
             title="No devices found" 
             description="No devices match these filters." 
-            action={<button className="btn btn_tertiary_gray btn_md" onClick={() => { setSearch(''); setFilterType('All'); setFilterStatus('All'); setCurrentPage(1); }}>Clear filters</button>} 
+            action={<Button variant="outline" size="sm" onClick={() => { setSearch(''); setFilterType('All'); setFilterStatus('All'); setCurrentPage(1); }}>Clear filters</Button>} 
           />
         )}
       </div>

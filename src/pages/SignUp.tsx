@@ -4,6 +4,7 @@ import { Mail, Lock, User, Check, Eye, EyeOff, ChevronDown } from 'lucide-react'
 import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import signInBg from '../assets/sign-up-in-image.png';
+import { Button } from '@/components/ui/button';
 
 export default function SignUp() {
   const [form, setForm] = useState({ name: '', email: '', role: 'Operator', password: '', confirm: '', check: false });
@@ -129,10 +130,10 @@ export default function SignUp() {
             </label>
 
             <div className="flex flex-col gap-4 mt-4">
-              <button type="submit" className="btn btn_primary btn_lg w-full">Create account</button>
+              <Button type="submit" size="lg" className="w-full">Create account</Button>
               <div className="text-center">
                 <span className="text_sm text-secondary">Already have an account? </span>
-                <Link to="/signin" className="btn_text text_sm font-medium p-1">Sign in</Link>
+                <Link to="/signin"><Button variant="ghost" className="p-1">Sign in</Button></Link>
               </div>
             </div>
           </form>

@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle } from 'lucide-react';
 import { PageHeader } from '../components/Shared';
 import { useAppContext } from '../contexts/AppContext';
+import { Button } from '@/components/ui/button';
 
 export default function PlannedPage() {
   const location = useLocation();
@@ -25,7 +26,7 @@ export default function PlannedPage() {
         </div>
         <h4 className="h4 mb-2">Planned page</h4>
         <p className="text_md text-tertiary mb-6">The {title} screen is not part of this prototype.</p>
-        <button className="btn btn_secondary_gray btn_md" onClick={() => navigate('/overview')}>Back to Overview</button>
+        <Button variant="outline" onClick={() => navigate('/overview')}>Back to Overview</Button>
       </div>
     </div>
   );

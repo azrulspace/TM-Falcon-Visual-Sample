@@ -4,9 +4,10 @@ import { PageHeader, StatusBadge, EmptyState } from '../components/Shared';
 import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { events as initialEvents } from '../data/events';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { 
   ChevronDown, Search, Info, Calendar,
   ArrowUpDown, ArrowDown, ArrowUp,
@@ -15,29 +16,27 @@ import {
 
 // A custom dropdown filter to avoid native select popup styling issues
 const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: { icon?: React.ElementType, value: string, options: string[], onChange: (v: string) => void, prefix?: string }) => (
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild>
-      <button className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow focus:outline-none focus:border-primary focus:shadow-[var(--ring\_brand)] flex items-center gap-2 text_sm text-primary">
+  <DropdownMenu>
+    <DropdownMenuTrigger render={
+      <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
         {Icon && <Icon className="w-4 h-4 text-secondary" />}
         <span>{prefix}{value}</span>
         <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
-      </button>
-    </DropdownMenu.Trigger>
-    <DropdownMenu.Portal>
-      <DropdownMenu.Content className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-1 min-w-[160px] z-50 flex flex-col gap-1" align="start" sideOffset={4}>
-        {options.map(opt => (
-          <DropdownMenu.Item 
-            key={opt}
-            className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
-            style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
-            onSelect={() => onChange(opt)}
-          >
-            {prefix}{opt}
-          </DropdownMenu.Item>
-        ))}
-      </DropdownMenu.Content>
-    </DropdownMenu.Portal>
-  </DropdownMenu.Root>
+      </Button>
+    } />
+    <DropdownMenuContent className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-1 min-w-[160px] z-50 flex flex-col gap-1" align="start" sideOffset={4}>
+      {options.map(opt => (
+        <DropdownMenuItem 
+          key={opt}
+          className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
+          style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
+          onSelect={() => onChange(opt)}
+        >
+          {prefix}{opt}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 export default function Events() {
@@ -170,32 +169,29 @@ export default function Events() {
   const headerTitle = (
     <div className="flex items-center gap-2">
       Event inbox
-      <Tooltip.Provider>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger render={
             <button className="text-tertiary hover:text-primary transition-colors focus:outline-none">
               <Info className="w-4 h-4" />
             </button>
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Content className="bg-elevated border border-secondary shadow-lg rounded-[8px] p-3 text_sm text-primary max-w-[250px] z-50" sideOffset={4}>
-              Event states, and individual or team acknowledgement
-              <Tooltip.Arrow className="fill-[var(--bg\_elevated)]" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
+          } />
+          <TooltipContent className="bg-elevated border border-secondary shadow-lg rounded-[8px] p-3 text_sm text-primary max-w-[250px] z-50" sideOffset={4}>
+            Event states, and individual or team acknowledgement
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 
   const headerActions = (
-    <button 
-      className="btn btn_primary btn_md shadow-sm" 
+    <Button 
+      className="shadow-sm" 
       disabled={newInViewCount === 0}
       onClick={handleBulkAcknowledgeAll}
     >
       {newInViewCount === 0 ? "All in view acknowledged" : `Acknowledge ${newInViewCount} new in view`}
-    </button>
+    </Button>
   );
 
   return (
@@ -315,17 +311,17 @@ export default function Events() {
                         <div className="flex items-center justify-end gap-2">
                           {e.state === 'New' && (
                             <>
-                              <button className="btn btn_secondary btn_sm px-3" onClick={() => handleAcknowledge(e.id)}>Acknowledge</button>
-                              <button className="btn btn_secondary_gray btn_sm px-3" onClick={() => setAssignTargetIds([e.id])}>Assign</button>
+                              <Button variant="secondary" size="sm" onClick={() => handleAcknowledge(e.id)}>Acknowledge</Button>
+                              <Button variant="outline" size="sm" onClick={() => setAssignTargetIds([e.id])}>Assign</Button>
                             </>
                           )}
                           {e.state === 'Acknowledged' && (
-                            <button className="btn btn_secondary btn_sm px-3" onClick={() => setAssignTargetIds([e.id])}>Assign</button>
+                            <Button variant="secondary" size="sm" onClick={() => setAssignTargetIds([e.id])}>Assign</Button>
                           )}
                           {e.state === 'Assigned' && (
-                            <Link to="/planned/case" className="btn btn_text btn_sm px-3 flex items-center gap-1">
+                            <Link to="/planned/case"><Button variant="ghost" size="sm" className="flex items-center gap-1">
                               View Case <ExternalLink className="w-3 h-3 opacity-70" />
-                            </Link>
+                            </Button></Link>
                           )}
                           {e.state === 'Closed' && (
                             <span className="text-quaternary mr-2">-</span>
@@ -363,21 +359,25 @@ export default function Events() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button 
-                    className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   >
                     <ChevronLeft className="w-4 h-4" />
-                  </button>
+                  </Button>
                   <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
-                  <button 
-                    className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   >
                     <ChevronRight className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -387,38 +387,33 @@ export default function Events() {
             icon={Search} 
             title="No events found" 
             description="No events match these filters." 
-            action={<button className="btn btn_tertiary_gray btn_md" onClick={clearFilters}>Clear filters</button>} 
+            action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>} 
           />
         )}
       </div>
 
-      <Dialog.Root open={assignTargetIds.length > 0} onOpenChange={(open) => !open && setAssignTargetIds([])}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-overlay z-50" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-elevated p-6 rounded-[16px] shadow-2xl z-50 w-full max-w-md border border-secondary">
-            <Dialog.Title className="h4 mb-2 text-primary">Assign event{assignTargetIds.length > 1 ? 's' : ''}</Dialog.Title>
-            <Dialog.Description className="text-secondary text_sm mb-6">
-              You are assigning {assignTargetIds.length} event{assignTargetIds.length > 1 ? 's' : ''}.
-            </Dialog.Description>
-            <div className="field mb-6">
-              <label className="field_label">Team</label>
-              <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center">
-                <select className="h-full w-full pl-3 pr-8 bg-transparent outline-none appearance-none cursor-pointer" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
-                  <option value="Team A (sample)">Team A (sample)</option>
-                  <option value="Team B (sample)">Team B (sample)</option>
-                </select>
-                <ChevronDown className="absolute right-3 w-4 h-4 text-tertiary pointer-events-none" />
-              </div>
+      <Dialog open={assignTargetIds.length > 0} onOpenChange={(open) => !open && setAssignTargetIds([])}>
+        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-elevated p-6 rounded-[16px] shadow-2xl z-50 w-full max-w-md border border-secondary" showCloseButton={false}>
+          <DialogTitle className="h4 mb-2 text-primary">Assign event{assignTargetIds.length > 1 ? 's' : ''}</DialogTitle>
+          <DialogDescription className="text-secondary text_sm mb-6">
+            You are assigning {assignTargetIds.length} event{assignTargetIds.length > 1 ? 's' : ''}.
+          </DialogDescription>
+          <div className="field mb-6">
+            <label className="field_label">Team</label>
+            <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center">
+              <select className="h-full w-full pl-3 pr-8 bg-transparent outline-none appearance-none cursor-pointer" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
+                <option value="Team A (sample)">Team A (sample)</option>
+                <option value="Team B (sample)">Team B (sample)</option>
+              </select>
+              <ChevronDown className="absolute right-3 w-4 h-4 text-tertiary pointer-events-none" />
             </div>
-            <div className="flex justify-end gap-3">
-              <Dialog.Close asChild>
-                <button className="btn btn_secondary_gray btn_md">Cancel</button>
-              </Dialog.Close>
-              <button className="btn btn_primary btn_md" onClick={handleAssign}>Assign</button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+          </div>
+          <div className="flex justify-end gap-3">
+            <DialogClose render={<Button variant="outline">Cancel</Button>} />
+            <Button onClick={handleAssign}>Assign</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

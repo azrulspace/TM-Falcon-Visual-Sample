@@ -3,7 +3,8 @@ import { PageHeader, StatusBadge } from '../components/Shared';
 import { useAppContext } from '../contexts/AppContext';
 import { devices } from '../data/devices';
 import { Edit2, Terminal, MapPin, Wifi, Cpu, Clock } from 'lucide-react';
-import * as Tabs from '@radix-ui/react-tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 export default function DeviceDetail() {
   const { reviewMode } = useAppContext();
@@ -29,12 +30,12 @@ export default function DeviceDetail() {
         roles="Admin, System, Operator"
         actions={
           <div className="flex gap-2">
-            <button className="btn btn_secondary_gray btn_md" onClick={() => navigate(`/assets/inventory/devices/${device.id}/edit`)}>
-              <Edit2 className="w-4 h-4" /> Edit
-            </button>
-            <button className="btn btn_primary btn_md" onClick={() => alert('Command modal')}>
-              <Terminal className="w-4 h-4" /> Send command
-            </button>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/assets/inventory/devices/${device.id}/edit`)}>
+              <Edit2 className="w-4 h-4 mr-2" /> Edit
+            </Button>
+            <Button size="sm" onClick={() => alert('Command modal')}>
+              <Terminal className="w-4 h-4 mr-2" /> Send command
+            </Button>
           </div>
         }
       />
@@ -83,35 +84,35 @@ export default function DeviceDetail() {
             <MapPin className="w-6 h-6 text-tertiary" />
           </div>
           <p className="text_sm text-tertiary max-w-[200px] mb-4">Map view of this specific device's location and coverage.</p>
-          <button className="btn btn_secondary_gray btn_sm">Open map</button>
+          <Button variant="outline" size="sm">Open map</Button>
         </div>
       </div>
 
-      <Tabs.Root defaultValue="events">
-        <Tabs.List className="flex gap-6 border-b border-secondary mb-6">
-          <Tabs.Trigger value="events" className="pb-3 text_sm font-medium border-b-2 border-brand-solid text-primary">Recent Events</Tabs.Trigger>
-          <Tabs.Trigger value="telemetry" className="pb-3 text_sm font-medium border-b-2 border-transparent text-secondary hover:text-primary transition-colors">Telemetry</Tabs.Trigger>
-          <Tabs.Trigger value="logs" className="pb-3 text_sm font-medium border-b-2 border-transparent text-secondary hover:text-primary transition-colors">Device Logs</Tabs.Trigger>
-        </Tabs.List>
+      <Tabs defaultValue="events">
+        <TabsList className="flex gap-6 border-b border-secondary mb-6 bg-transparent p-0 justify-start h-auto rounded-none">
+          <TabsTrigger value="events" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Recent Events</TabsTrigger>
+          <TabsTrigger value="telemetry" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Telemetry</TabsTrigger>
+          <TabsTrigger value="logs" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Device Logs</TabsTrigger>
+        </TabsList>
 
-        <Tabs.Content value="events">
+        <TabsContent value="events">
           <div className="app_card p-0">
              <div className="p-12 text-center text-tertiary text_sm">
                 No recent events for this device in the last 7 days.
              </div>
           </div>
-        </Tabs.Content>
-        <Tabs.Content value="telemetry">
+        </TabsContent>
+        <TabsContent value="telemetry">
            <div className="app_card p-12 text-center text-tertiary text_sm">
               Telemetry graph placeholder
            </div>
-        </Tabs.Content>
-        <Tabs.Content value="logs">
+        </TabsContent>
+        <TabsContent value="logs">
            <div className="app_card p-12 text-center text-tertiary text_sm">
               Raw device logs placeholder
            </div>
-        </Tabs.Content>
-      </Tabs.Root>
+        </TabsContent>
+      </Tabs>
 
     </div>
   );

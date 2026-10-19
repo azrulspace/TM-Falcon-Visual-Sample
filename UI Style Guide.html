@@ -69,7 +69,7 @@ pre{margin:0;padding:16px;background:var(--bg_secondary);font:12px/18px ui-monos
 <ol>
 <li>Never hardcode hex values, sizes, radius, or shadows. Always use a CSS variable, for example <code>var(--bg_brand_solid)</code>.</li>
 <li>Use semantic tokens (<code>text_</code>, <code>bg_</code>, <code>border_</code>) inside components. Use palette tokens (<code>color_brand_900</code>) only to define a new semantic token.</li>
-<li>Light and dark mode switch automatically through the class <code>theme_light</code> or <code>theme_dark</code> on the html element. Semantic tokens change value, so never write separate dark mode styles.</li>
+<li>Light and dark mode switch automatically through the class <code>theme_light</code> or <code>theme_dark</code> on the html element. Semantic tokens change value (dark mode reads from the Neutral dark greyscale), so never write separate dark mode styles.</li>
 <li>All names use underscores. Classes follow the pattern <code>component</code> + <code>variant</code> + <code>size</code>, for example <code>btn btn_primary btn_md</code>.</li>
 <li>State classes (<code>is_hover</code>, <code>is_focus</code>, <code>is_error</code>, <code>is_success</code>, <code>is_disabled</code>, <code>is_loading</code>) exist for documentation and validation. Real hover and focus use native pseudo classes automatically.</li>
 <li>If a value is missing, add a token to tokens.css first, then reuse it. Do not invent one off values.</li>
@@ -83,7 +83,7 @@ pre{margin:0;padding:16px;background:var(--bg_secondary);font:12px/18px ui-monos
 <div id="aiPrompt"></div>
 
 <h2 id="color">1. Color style guide</h2>
-<p class="l">The brand color is #06013A and is used as Brand 900. Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. Base colors are White and Black. Text, background, and border colors are semantic tokens that point to palette shades, and each semantic token has a light value and a dark value. Click a swatch to copy its hex.</p>
+<p class="l">The brand color is #06013A and is used as Brand 900. Every palette has 12 shades: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950. Base colors are White and Black. Light mode uses the Neutral greyscale. Dark mode uses its own greyscale, Neutral dark, which is softer and slightly tinted toward the brand, so dark surfaces feel calmer and text is less glaring. Text, background, and border colors are semantic tokens that point to palette shades, and each semantic token has a light value and a dark value. Click a swatch to copy its hex.</p>
 <div id="pal"></div>
 <h3>Text color</h3><div class="wrap"><table id="tt"></table></div>
 <h3>Background color</h3><div class="wrap"><table id="tb"></table></div>
@@ -173,20 +173,22 @@ var SD=[25,50,100,200,300,400,500,600,700,800,900,950];
 var P={
 brand:"F8F8FF F0EFFE E1DFFC C5C1F7 A39DEF 7B72E0 5547C9 3D2FA6 261C80 160F5C 06013A 030120",
 neutral:"FCFCFD F9FAFB F2F4F7 E4E7EC D0D5DD 98A2B3 667085 475467 344054 1D2939 101828 0C111D",
+neutral_dark:"F7F7F8 EEEFF1 E3E4E8 CDCED5 B7B8C3 9B9CAB 74768B 58596A 41424E 33343D 27282F 1E1F24",
 success:"F6FEF9 ECFDF3 D1FADF A6F4C5 6CE9A6 32D583 12B76A 039855 027A48 05603A 054F31 053321",
 info:"F5FAFF EFF8FF D1E9FF B2DDFF 84CAFF 53B1FD 2E90FA 1570EF 175CD3 1849A9 194185 102A56",
 error:"FFFBFA FEF3F2 FEE4E2 FECDCA FDA29B F97066 F04438 D92D20 B42318 912018 7A271A 55160C",
 warning:"FFFCF5 FFFAEB FEF0C7 FEDF89 FEC84B FDB022 F79009 DC6803 B54708 93370D 7A2E0D 4E1D09"};
 for(var k in P)P[k]=P[k].split(" ");
 var cap=function(s){return s.charAt(0).toUpperCase()+s.slice(1)};
+var nm=function(n){return cap(n.replace("_"," "))},hn=function(n){return n=="neutral"?"Neutral (light mode)":n=="neutral_dark"?"Neutral dark (dark mode)":nm(n)};
 function res(r){
  if(r==="white")return{hex:"#FFFFFF",v:"var(--color_white)",l:"White"};
  if(r==="black")return{hex:"#000000",v:"var(--color_black)",l:"Black"};
  if(r.indexOf("rgba")==0)return{hex:"#000000",v:r,l:"Black at 70%"};
- var p=r.split("_");return{hex:"#"+P[p[0]][SD.indexOf(+p[1])],v:"var(--color_"+r+")",l:cap(p[0])+" "+p[1]}}
-var TEXT=[["text_primary","neutral_900","Headings and main content","neutral_50"],["text_secondary","neutral_700","Labels and supporting text","neutral_200"],["text_tertiary","neutral_600","Hints and descriptions","neutral_300"],["text_quaternary","neutral_500","Captions and icons","neutral_400"],["text_placeholder","neutral_500","Input placeholder","neutral_400"],["text_disabled","neutral_400","Disabled elements","neutral_500"],["text_white","white","Text on solid brand or status surfaces","white"],["text_brand","brand_900","Brand text and links","brand_200"],["text_brand_secondary","brand_700","Text button and soft brand text","brand_200"],["text_success","success_700","Success message","success_400"],["text_info","info_700","Information message","info_400"],["text_warning","warning_700","Warning message","warning_400"],["text_error","error_700","Error message","error_400"],["text_link","brand_600","Inline link","brand_300"],["text_link_hover","brand_700","Inline link hover","brand_200"],["icon_brand","brand_500","Active icons / accents","brand_400"]];
-var BGS=[["bg_primary","white","Page and input background","neutral_950"],["bg_secondary","neutral_50","Section and subtle area","neutral_900"],["bg_tertiary","neutral_100","Hover, chip, flat button","neutral_800"],["bg_quaternary","neutral_200","Pressed, skeleton","neutral_700"],["bg_elevated","white","Card, toast, popover surface","neutral_800"],["bg_disabled","neutral_100","Disabled elements","neutral_800"],["bg_brand_solid","brand_900","Primary button, banner","brand_500"],["bg_brand_solid_hover","brand_800","Primary button hover","brand_600"],["bg_brand_primary","brand_50","Secondary button, highlight","brand_700"],["bg_brand_secondary","brand_100","Secondary button hover","brand_600"],["bg_success_primary","success_50","Success alert","success_950"],["bg_success_solid","success_700","Solid success badge","success_700"],["bg_info_primary","info_50","Info alert","info_950"],["bg_info_solid","info_700","Solid info badge","info_700"],["bg_warning_primary","warning_50","Warning alert","warning_950"],["bg_warning_solid","warning_700","Solid warning badge","warning_700"],["bg_error_primary","error_50","Error alert","error_950"],["bg_error_solid","error_600","Solid error badge","error_600"],["bg_overlay","rgba(0,0,0,0.7)","Modal backdrop","rgba(0,0,0,0.7)"],["bg_selected","brand_50","Selected row/tab/item","brand_800"]];
-var BDS=[["border_primary","neutral_300","Input, select, textarea, secondary gray button","neutral_600"],["border_secondary","neutral_200","Card, table, divider","neutral_700"],["border_tertiary","neutral_100","Subtle divider","neutral_800"],["border_control","neutral_500","Checkbox, radio, toggle boundary, strong input option (3:1 minimum)","neutral_500"],["border_control_hover","neutral_600","Control hover","neutral_400"],["border_hover","neutral_400","Input hover","neutral_500"],["border_disabled","neutral_200","Disabled elements","neutral_800"],["border_brand","brand_400","Input focus","brand_400"],["border_brand_solid","brand_900","Checked control outline","brand_500"],["border_success","success_300","Success alert","success_700"],["border_success_solid","success_600","Success input boundary","success_400"],["border_info","info_300","Info alert","info_700"],["border_warning","warning_300","Warning alert","warning_700"],["border_error","error_300","Error alert","error_700"],["border_error_solid","error_600","Error input boundary","error_400"]];
+ var i=r.lastIndexOf("_"),n=r.slice(0,i),sh=+r.slice(i+1);return{hex:"#"+P[n][SD.indexOf(sh)],v:"var(--color_"+r+")",l:nm(n)+" "+sh}}
+var TEXT=[["text_primary","neutral_900","Headings and main content","neutral_dark_100"],["text_secondary","neutral_700","Labels and supporting text","neutral_dark_200"],["text_tertiary","neutral_600","Hints and descriptions","neutral_dark_300"],["text_quaternary","neutral_500","Captions and icons","neutral_dark_400"],["text_placeholder","neutral_500","Input placeholder","neutral_dark_400"],["text_disabled","neutral_400","Disabled elements","neutral_dark_600"],["text_white","white","Text on solid brand or status surfaces","white"],["text_brand","brand_900","Brand text and links","brand_300"],["text_brand_secondary","brand_700","Text button and soft brand text","brand_200"],["text_success","success_700","Success message","success_400"],["text_info","info_700","Information message","info_400"],["text_warning","warning_700","Warning message","warning_400"],["text_error","error_700","Error message","error_400"]];
+var BGS=[["bg_primary","white","Page and input background","neutral_dark_950"],["bg_secondary","neutral_50","Section and subtle area","neutral_dark_900"],["bg_tertiary","neutral_100","Hover, chip, flat button","neutral_dark_800"],["bg_quaternary","neutral_200","Pressed, skeleton","neutral_dark_700"],["bg_elevated","white","Card, toast, popover surface","neutral_dark_800"],["bg_disabled","neutral_100","Disabled elements","neutral_dark_800"],["bg_brand_solid","brand_900","Primary button, banner","brand_600"],["bg_brand_solid_hover","brand_800","Primary button hover","brand_500"],["bg_brand_primary","brand_50","Secondary button, highlight","brand_800"],["bg_brand_secondary","brand_100","Secondary button hover","brand_700"],["bg_success_primary","success_50","Success alert","success_950"],["bg_success_solid","success_700","Solid success badge","success_700"],["bg_info_primary","info_50","Info alert","info_950"],["bg_info_solid","info_600","Solid info badge","info_600"],["bg_warning_primary","warning_50","Warning alert","warning_950"],["bg_warning_solid","warning_700","Solid warning badge","warning_700"],["bg_error_primary","error_50","Error alert","error_950"],["bg_error_solid","error_600","Solid error badge","error_600"],["bg_overlay","rgba(0,0,0,0.7)","Modal backdrop","rgba(0,0,0,0.7)"]];
+var BDS=[["border_primary","neutral_300","Input, select, textarea, secondary gray button","neutral_dark_700"],["border_secondary","neutral_200","Card, table, divider","neutral_dark_800"],["border_tertiary","neutral_100","Subtle divider","neutral_dark_900"],["border_control","neutral_500","Checkbox, radio, toggle boundary, strong input option (3:1 minimum)","neutral_dark_500"],["border_control_hover","neutral_600","Control hover","neutral_dark_400"],["border_hover","neutral_400","Input hover","neutral_dark_500"],["border_disabled","neutral_200","Disabled elements","neutral_dark_800"],["border_brand","brand_400","Input focus","brand_400"],["border_brand_solid","brand_900","Checked control outline","brand_500"],["border_success","success_300","Success alert","success_700"],["border_success_solid","success_600","Success input boundary","success_400"],["border_info","info_300","Info alert","info_700"],["border_warning","warning_300","Warning alert","warning_700"],["border_error","error_300","Error alert","error_700"],["border_error_solid","error_600","Error input boundary","error_400"]];
 var SP=[["space_0",0,"No gap"],["space_1",4,"Tight gap inside badges and alerts"],["space_2",8,"Icon to label gap, small stacks"],["space_3",12,"Alert and toast inner gap, control to label"],["space_4",16,"Default padding, card gap, mobile margin"],["space_5",20,"Medium block gap"],["space_6",24,"Tablet margin, grid gutter, section gap"],["space_8",32,"Desktop margin, large gap"],["space_10",40,"Large block gap"],["space_12",48,"Section padding"],["space_16",64,"Page section spacing"]];
 var RD=[["radius_xs","4px","Text button, small elements"],["radius_sm","6px","Checkbox, icon action"],["radius_md","8px","Button S, M, L, input, select"],["radius_lg","10px","Button XL, alert, toast"],["radius_xl","12px","Card, table wrapper"],["radius_2xl","16px","Modal, large card"],["radius_full","9999px","Badge, toggle, avatar"]];
 var DS=[["display_2xl",72,90,-0.02],["display_xl",60,72,-0.02],["display_lg",48,60,-0.02],["display_md",36,44,-0.02],["display_sm",30,38,0],["display_xs",24,32,0]];
@@ -208,7 +210,7 @@ function themeVars(m){
  var o="  color-scheme:"+(m?"dark":"light")+";\n";
  [["Text",TEXT],["Background",BGS],["Border",BDS]].forEach(function(g){o+="\n  /* "+g[0]+" */\n";g[1].forEach(function(t){o+="  --"+t[0]+":"+res(m?t[3]:t[1]).v+";\n"})});
  o+="\n  /* Shadow */\n";SHD.forEach(function(x){o+="  --shadow_"+x[0]+":"+bsh(x[1],m)+";\n"});
- o+="\n  /* Focus ring */\n  --ring_brand:0 0 0 2px var(--bg_primary),0 0 0 4px var(--color_brand_"+(m?300:500)+");\n  --ring_gray:0 0 0 4px var(--color_brand_"+(m?600:100)+");\n  --ring_error:0 0 0 4px var(--color_error_"+(m?900:100)+");\n";
+ o+="\n  /* Focus ring */\n  --ring_brand:0 0 0 2px var(--bg_primary),0 0 0 4px var(--color_brand_"+(m?300:500)+");\n  --ring_gray:0 0 0 4px var(--color_brand_"+(m?800:100)+");\n  --ring_error:0 0 0 4px var(--color_error_"+(m?900:100)+");\n";
  return o}
 TOK+="\n/* Light theme (default) */\n:root,\n:root.theme_light{\n"+themeVars(0)+"}\n\n/* Dark theme */\n:root.theme_dark{\n"+themeVars(1)+"}\n";
 
@@ -377,7 +379,7 @@ ok:"<circle cx='10' cy='10' r='7.5'/><path d='M7 10.2l2.2 2.2L13.2 8'/>",
 x:"<path d='M5 5l10 10M15 5L5 15'/>",
 info:"<circle cx='10' cy='10' r='7.5'/><path d='M10 9v4.5M10 6.7v.1'/>",
 warn:"<path d='M10 3.5l7 12.5H3z'/><path d='M10 8.5v3M10 13.8v.1'/>"};
-var ico=function(n,c){return A+" class='"+(c||"input_icon")+"'>"+IC[n]+"</svg>"};
+var ico=function(n,c){return A+" class='"+(c==null?"input_icon":c)+"'>"+IC[n]+"</svg>"};
 
 </script>
 <script>
@@ -398,7 +400,7 @@ $("aiPrompt").innerHTML=code("AI assistant prompt",AIP);
 
 /* color */
 var pal="<h3>Base</h3><div class='sw'>"+[["White","FFFFFF","white"],["Black","000000","black"]].map(function(b){return"<div class='c' data-h='#"+b[1]+"'><i style='background:#"+b[1]+";border-bottom:1px solid var(--border_secondary)'></i><div><b>"+b[0]+"</b><span>#"+b[1]+"</span><em>--color_"+b[2]+"</em></div></div>"}).join("")+"</div>";
-for(var n in P){pal+="<h3>"+cap(n)+"</h3><div class='sw'>";P[n].forEach(function(h,i){pal+="<div class='c' data-h='#"+h+"'><i style='background:#"+h+"'></i><div><b>"+cap(n)+" "+SD[i]+"</b><span>#"+h+"</span><em>--color_"+n+"_"+SD[i]+"</em></div></div>"});pal+="</div>"}
+for(var n in P){pal+="<h3>"+hn(n)+"</h3><div class='sw'>";P[n].forEach(function(h,i){pal+="<div class='c' data-h='#"+h+"'><i style='background:#"+h+"'></i><div><b>"+nm(n)+" "+SD[i]+"</b><span>#"+h+"</span><em>--color_"+n+"_"+SD[i]+"</em></div></div>"});pal+="</div>"}
 $("pal").innerHTML=pal;
 function semTbl(id,list){var cl=function(r){var x=res(r);return"<span class='dot' style='background:"+x.hex+"'></span>"+cd(x.hex)+" "+x.l};tbl(id,["Token","Light","Dark","Usage"],list.map(function(t){return[cd("--"+t[0]),cl(t[1]),cl(t[3]),t[2]]}))}
 semTbl("tt",TEXT);semTbl("tb",BGS);semTbl("tbd",BDS);
@@ -459,7 +461,7 @@ tbl("is",["Property","Value","Token or class"],[
 ["Background","Page background, disabled uses secondary",cd("--bg_primary")+" "+cd("--bg_secondary")],
 ["Border","1px Neutral 300 (soft), hover Neutral 400, focus Brand 400",cd("--border_primary")+" "+cd("--border_hover")+" "+cd("--border_brand")],
 ["Strong border option","Add input_strong for a 3:1 boundary (Neutral 500)",cd(".input_strong")+" "+cd("--border_control")],
-["Focus ring","4px soft glow (Brand 100 light, Brand 600 dark), error uses Error 100 (Error 900 dark)",cd("--ring_gray")+" "+cd("--ring_error")],
+["Focus ring","4px soft glow (Brand 100 light, Brand 800 dark), error uses Error 100 (Error 900 dark)",cd("--ring_gray")+" "+cd("--ring_error")],
 ["Input text","16px, line height 24px (S 14px, 20px)",cd("--text_primary")],
 ["Placeholder","Same size as input text",cd("--text_placeholder")],
 ["Label","14px, line height 20px, Medium 500, gap 6px",cd(".field_label")+" "+cd("--text_secondary")],

@@ -5,6 +5,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { devices } from '../data/devices';
 import { ChevronDown, MapPin, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function CreateDevice() {
   const { reviewMode } = useAppContext();
@@ -47,9 +48,9 @@ export default function CreateDevice() {
       <PageHeader 
         title={
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-1 hover:bg-secondary rounded-lg transition-colors -ml-1 text-tertiary hover:text-primary">
+            <Button variant="ghost" size="icon-sm" onClick={() => navigate(-1)} className="-ml-1 text-tertiary hover:text-primary">
               <ArrowLeft className="w-5 h-5" />
-            </button>
+            </Button>
             {isEdit ? `Edit ${form.id}` : "Register new device"}
           </div>
         } 
@@ -157,8 +158,8 @@ export default function CreateDevice() {
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
-            <button type="button" className="btn btn_text" onClick={() => navigate(isEdit ? `/assets/inventory/devices/${form.id}` : '/assets/inventory')}>Cancel</button>
-            <button type="submit" className="btn btn_primary">{isEdit ? 'Save changes' : 'Register device'}</button>
+            <Button variant="ghost" type="button" onClick={() => navigate(isEdit ? `/assets/inventory/devices/${form.id}` : '/assets/inventory')}>Cancel</Button>
+            <Button type="submit">{isEdit ? 'Save changes' : 'Register device'}</Button>
           </div>
 
         </form>

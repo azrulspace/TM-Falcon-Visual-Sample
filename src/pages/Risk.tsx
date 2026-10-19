@@ -3,35 +3,34 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader, StatusBadge, EmptyState } from '../components/Shared';
 import { useAppContext } from '../contexts/AppContext';
 import { segments } from '../data/segments';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import * as Popover from '@radix-ui/react-popover';
-import * as Tooltip from '@radix-ui/react-tooltip';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { ChevronDown, Info, Search, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: { icon?: React.ElementType, value: string, options: string[], onChange: (v: string) => void, prefix?: string }) => (
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild>
-      <button className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow focus:outline-none focus:border-primary focus:shadow-[var(--ring\_brand)] flex items-center gap-2 text_sm text-primary">
+  <DropdownMenu>
+    <DropdownMenuTrigger render={
+      <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
         {Icon && <Icon className="w-4 h-4 text-secondary" />}
         <span>{prefix}{value}</span>
         <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
-      </button>
-    </DropdownMenu.Trigger>
-    <DropdownMenu.Portal>
-      <DropdownMenu.Content className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-1 min-w-[160px] z-50 flex flex-col gap-1" align="start" sideOffset={4}>
-        {options.map(opt => (
-          <DropdownMenu.Item 
-            key={opt}
-            className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
-            style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
-            onSelect={() => onChange(opt)}
-          >
-            {prefix}{opt}
-          </DropdownMenu.Item>
-        ))}
-      </DropdownMenu.Content>
-    </DropdownMenu.Portal>
-  </DropdownMenu.Root>
+      </Button>
+    } />
+    <DropdownMenuContent className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-1 min-w-[160px] z-50 flex flex-col gap-1" align="start" sideOffset={4}>
+      {options.map(opt => (
+        <DropdownMenuItem 
+          key={opt}
+          className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
+          style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
+          onSelect={() => onChange(opt)}
+        >
+          {prefix}{opt}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 export default function Risk() {
@@ -78,21 +77,18 @@ export default function Risk() {
   const pageTitle = (
     <div className="flex items-center gap-2">
       Risk overview
-      <Tooltip.Provider delayDuration={0}>
-        <Tooltip.Root>
-          <Tooltip.Trigger asChild>
+      <TooltipProvider delay={0}>
+        <Tooltip>
+          <TooltipTrigger render={
             <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full">
               <Info className="w-5 h-5 text-tertiary hover:text-secondary transition-colors" />
             </button>
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Content className="px-3 py-2 bg-elevated text-primary text_sm rounded-[8px] shadow-lg border border-secondary max-w-[300px] z-50 font-normal leading-normal" sideOffset={5}>
-              Priority comes from versioned rules on incident history. A risk priority does not establish that damage occurred.
-              <Tooltip.Arrow className="fill-[var(--bg\_elevated)]" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
+          } />
+          <TooltipContent className="px-3 py-2 bg-elevated text-primary text_sm rounded-[8px] shadow-lg border border-secondary max-w-[300px] z-50 font-normal leading-normal" sideOffset={5}>
+            Priority comes from versioned rules on incident history. A risk priority does not establish that damage occurred.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 
@@ -141,20 +137,18 @@ export default function Risk() {
               
               {/* Map Toolbar Extras (Only visible in Map view) */}
               {tabValue === 'Map' && (
-                <Popover.Root>
-                  <Popover.Trigger asChild>
-                    <button className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow focus:outline-none focus:border-primary focus:shadow-[var(--ring\_brand)] flex items-center gap-2 text_sm text-primary">
+                <Popover>
+                  <PopoverTrigger render={
+                    <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
                       <span>Basemap: Street</span>
                       <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
-                    </button>
-                  </Popover.Trigger>
-                  <Popover.Portal>
-                    <Popover.Content className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-2 z-50 flex flex-col gap-1 min-w-[160px]" align="start" sideOffset={4}>
-                      <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" defaultChecked /><span className="choice_body"><span className="choice_label text_sm">Street</span></span></label>
-                      <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" /><span className="choice_body"><span className="choice_label text_sm">Satellite</span></span></label>
-                    </Popover.Content>
-                  </Popover.Portal>
-                </Popover.Root>
+                    </Button>
+                  } />
+                  <PopoverContent className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-2 z-50 flex flex-col gap-1 min-w-[160px]" align="start" sideOffset={4}>
+                    <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" defaultChecked /><span className="choice_body"><span className="choice_label text_sm">Street</span></span></label>
+                    <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" /><span className="choice_body"><span className="choice_label text_sm">Satellite</span></span></label>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
             
@@ -302,21 +296,25 @@ export default function Risk() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button 
-                          className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                           disabled={currentPage === 1}
                           onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         >
                           <ChevronLeft className="w-4 h-4" />
-                        </button>
+                        </Button>
                         <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
-                        <button 
-                          className="btn btn_tertiary_gray btn_sm w-8 h-8 p-0 flex items-center justify-center rounded-[8px] disabled:opacity-50"
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
                           disabled={currentPage === totalPages || totalPages === 0}
                           onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         >
                           <ChevronRight className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -383,8 +381,8 @@ export default function Risk() {
                     </div>
                     
                     <div className="flex gap-2 mt-4 pt-3 border-t border-secondary">
-                      <button className="btn btn_secondary h-8 flex-1 text_xs font-medium">Investigate</button>
-                      <button className="btn btn_secondary_gray h-8 flex-1 text_xs font-medium" onClick={(e) => e.stopPropagation()}>Dismiss</button>
+                      <Button variant="secondary" size="sm" className="flex-1">Investigate</Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={(e) => e.stopPropagation()}>Dismiss</Button>
                     </div>
                   </div>
                 );
