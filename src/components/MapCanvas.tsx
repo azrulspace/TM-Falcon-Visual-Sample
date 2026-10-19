@@ -4,6 +4,7 @@ import {
   ZoomOut,
   Maximize,
   Compass,
+  Info,
 } from 'lucide-react';
 import { mapMarkers, mapClusters, mapRoutes } from '@/data/map';
 import { devices } from '@/data/devices';
@@ -163,6 +164,16 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     return `https://tile.openstreetmap.org/12/${tx}/${ty}.png`;
   };
 
+  const getLabelTileUrl = (tx: number, ty: number, bm: string) => {
+    if (bm === 'satellite') {
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/12/${ty}/${tx}`;
+    }
+    if (bm === 'dark') {
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/12/${ty}/${tx}`;
+    }
+    return null;
+  };
+
   // Associate map markers with device & incident metadata
   const enrichedMarkers = useMemo(() => {
     return mapMarkers.map((m) => {
@@ -263,13 +274,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
         {/* 1. Base Fallback Background */}
         <rect width="1000" height="700" fill={basemap === 'satellite' ? '#070f1a' : basemap === 'dark' ? '#090e17' : '#e2e8f0'} />
-        <rect width="1000" height="700" fill="url(#satelliteGlow)" />
 
-        {/* 2. Real GIS Tile Imagery Layer (Esri / Carto / OSM) */}
-        <g className="tiles-layer opacity-95 transition-opacity duration-300">
+        {/* 2. Real GIS Tile Imagery Layer (Esri World Imagery / Esri Dark Gray / OSM) */}
+        <g className="tiles-layer transition-opacity duration-300">
           {tiles.map(({ tx, ty, x, y }) => (
             <image
-              key={`${tx}-${ty}-${basemap}`}
+              key={`base-${tx}-${ty}-${basemap}`}
               href={getTileUrl(tx, ty, basemap)}
               x={x}
               y={y}
@@ -281,48 +291,25 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           ))}
         </g>
 
-        {/* Satellite Vignette overlay for text legibility in satellite mode */}
-        {basemap === 'satellite' && (
-          <rect width="1000" height="700" fill="rgba(8, 16, 28, 0.22)" pointerEvents="none" />
-        )}
-
-        {/* Overlay grid */}
-        <rect width="1000" height="700" fill="url(#grid)" pointerEvents="none" />
-
-        {/* River / Waterway polygon (Kuching River - Sungai Sarawak) */}
-        <path
-          d="M 0 320 Q 220 280 400 340 T 700 360 T 1000 310 L 1000 360 Q 700 410 400 390 T 0 370 Z"
-          fill={basemap === 'satellite' || basemap === 'dark' ? '#0b2640' : '#B8D5E8'}
-          opacity="0.75"
-        />
-
-        {/* Infrastructure Road Network */}
-        <g
-          stroke={basemap === 'satellite' || basemap === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}
-          strokeLinecap="round"
-        >
-          <path d="M 375 0 L 375 700 M 0 275 L 1000 275 M 675 275 L 675 700" strokeWidth="24" />
-          <path d="M 50 650 L 350 400 M 450 650 L 650 400" strokeWidth="12" />
-          <path d="M 150 100 L 850 100 M 200 520 L 950 520" strokeWidth="8" strokeDasharray="6 4" />
-        </g>
-
-        {/* Geographic Area Labels */}
-        {activeLayers.sites && (
-          <g
-            fill={basemap === 'satellite' || basemap === 'dark' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.55)'}
-            fontSize="10"
-            fontFamily="sans-serif"
-            fontWeight="700"
-            className="uppercase tracking-widest select-none pointer-events-none"
-          >
-            <text x="70" y="80">Matang Sector</text>
-            <text x="440" y="80">Pending Hub</text>
-            <text x="780" y="80">Demak Laut POP</text>
-            <text x="80" y="470">Batu Kawa</text>
-            <text x="740" y="470">Tabuan Jaya</text>
-            <text x="460" y="365" fontSize="13" fontWeight="bold" fill="rgba(56, 189, 248, 0.65)">
-              Sungai Sarawak
-            </text>
+        {/* 3. Real Place Names & Boundaries Reference Tile Layer (Esri Reference Labels) */}
+        {basemap !== 'streets' && basemap !== 'terrain' && (
+          <g className="labels-layer transition-opacity duration-300 pointer-events-none opacity-90">
+            {tiles.map(({ tx, ty, x, y }) => {
+              const labelUrl = getLabelTileUrl(tx, ty, basemap);
+              if (!labelUrl) return null;
+              return (
+                <image
+                  key={`label-${tx}-${ty}-${basemap}`}
+                  href={labelUrl}
+                  x={x}
+                  y={y}
+                  width="256"
+                  height="256"
+                  preserveAspectRatio="none"
+                  crossOrigin="anonymous"
+                />
+              );
+            })}
           </g>
         )}
 
@@ -640,62 +627,77 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         </div>
       )}
 
-      {/* Scale Bar, Mouse Coordinates & GIS Attribution Readout (Bottom-Left) (Section 6.6) */}
-      <div className="absolute bottom-16 left-3 text-[10px] text-muted-foreground/80 flex items-center gap-3 pointer-events-none select-none font-mono z-20">
-        {/* Scale Bar */}
-        <div className="flex items-center gap-1.5 border-b border-muted-foreground/50 pb-0.5">
-          <div className="w-12 h-1 border-l border-r border-muted-foreground/60" />
-          <span className="text-[10px] font-medium">10 km</span>
-        </div>
+      {/* Scale Bar & Mouse Coordinates (Bottom-Left) (B5) */}
+      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none select-none z-20">
+        <div className="flex items-center gap-3">
+          {/* 3-tick scale bar (0, 2.5, 5 km) */}
+          <div className="flex flex-col gap-0.5">
+            <div className="relative w-28 h-2">
+              <div className="w-full h-[1.5px] bg-white shadow-sm mt-1" />
+              <div className="absolute left-0 top-0 h-2 w-[1.5px] bg-white" />
+              <div className="absolute left-1/2 top-0 h-2 w-[1.5px] bg-white" />
+              <div className="absolute right-0 top-0 h-2 w-[1.5px] bg-white" />
+            </div>
+            <div className="flex justify-between w-28 text-[11px] font-sans font-medium text-white/95 drop-shadow">
+              <span>0</span>
+              <span>2.5</span>
+              <span>5 km</span>
+            </div>
+          </div>
 
-        {/* Live Mouse Coordinates Readout */}
-        <div className="flex items-center gap-1 text-[10.5px] text-foreground font-semibold">
-          <span>{mouseCoords.lat}° N, {mouseCoords.lon}° E</span>
+          {/* Quieter Mouse Coordinates */}
+          <span className="text-[11px] text-white/70 font-mono ml-2 drop-shadow">
+            {mouseCoords.lat}° N, {mouseCoords.lon}° E
+          </span>
         </div>
+      </div>
 
-        {/* Attribution */}
-        <span className="text-[9.5px] text-muted-foreground/60 hidden sm:inline">
-          {basemap === 'satellite'
-            ? '© Esri, Maxar, Earthstar Geographics'
-            : basemap === 'dark'
-            ? '© CARTO © OpenStreetMap'
-            : '© OpenStreetMap contributors'}
+      {/* Attribution & Classification Label (Bottom-Right) (B5) */}
+      <div className="absolute bottom-3 right-4 flex items-center gap-1.5 text-[10px] text-white/75 font-sans pointer-events-none select-none drop-shadow z-20">
+        <span>Maxar Technologies, OpenStreetMap contributors</span>
+        <span className="opacity-40">|</span>
+        <span className="font-semibold text-white/90">TM FALCON (Internal Use Only)</span>
+        <span className="pointer-events-auto cursor-pointer opacity-70 hover:opacity-100 transition-opacity ml-0.5">
+          <Info className="size-3" />
         </span>
       </div>
 
-      {/* Zoom, Compass, and Reset Controls (Bottom Right above Assets Pill) (Section 6.6) */}
-      <div className="absolute bottom-28 right-3 flex flex-col gap-1.5 z-20 pointer-events-auto">
-        <div className="flex flex-col rounded-lg border border-border/80 glass-panel overflow-hidden shadow-xl">
+      {/* Vertical Map Controls (Bottom-Right, above assets pill) (B5) */}
+      <div className="absolute bottom-16 right-4 flex flex-col gap-1.5 z-20 pointer-events-auto">
+        <div className="flex flex-col rounded-lg border border-border/80 glass-panel overflow-hidden shadow-2xl">
           <button
             className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
             onClick={handleZoomIn}
             aria-label="Zoom in"
+            title="Zoom in"
           >
             <ZoomIn className="size-4" />
           </button>
           <button
             className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            <ZoomOut className="size-4" />
+          </button>
+          <button
+            className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
             onClick={handleReset}
-            aria-label="Reset zoom and center"
+            aria-label="Fit to data"
+            title="Fit to data"
           >
             <Maximize className="size-4" />
           </button>
           <button
-            className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors"
-            onClick={handleZoomOut}
-            aria-label="Zoom out"
+            className="size-8 flex items-center justify-center hover:bg-muted/60 text-primary transition-colors"
+            onClick={handleReset}
+            aria-label="Compass heading reset"
+            title="Reset orientation"
           >
-            <ZoomOut className="size-4" />
+            <Compass className="size-4" />
           </button>
         </div>
-
-        <button
-          className="size-8 rounded-lg border border-border/80 glass-panel flex items-center justify-center hover:bg-muted/60 text-muted-foreground hover:text-foreground shadow-xl transition-colors"
-          onClick={handleReset}
-          aria-label="Compass heading reset"
-        >
-          <Compass className="size-4 text-primary" />
-        </button>
       </div>
     </div>
   );
