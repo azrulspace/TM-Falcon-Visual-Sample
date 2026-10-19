@@ -283,7 +283,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           {/* Center: Module Navigation Tabs (Overview, Events, Risk..., Assets..., Reports, Administration) */}
-          <nav className="hidden lg:flex items-center h-full gap-1 mx-2 shrink-0">
+          <nav className="hidden lg:flex items-center h-full gap-0.5 xl:gap-1 mx-1 xl:mx-2 shrink-0">
             {headerModules.map((mod) => {
               const isActive = mod.isMatch(location.pathname);
               const hasChildren = mod.children && mod.children.length > 0;
@@ -295,7 +295,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       <div className="flex items-center h-full">
                         <Link
                           to={mod.route}
-                          className={`flex items-center h-full px-3 text-[13px] font-medium transition-colors select-none ${
+                          className={`flex items-center h-full px-2 xl:px-2.5 text-xs xl:text-[13px] font-medium transition-colors select-none ${
                             isActive
                               ? 'text-foreground font-semibold'
                               : 'text-muted-foreground hover:text-foreground'
@@ -306,7 +306,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         <DropdownMenuTrigger
                           render={
                             <button
-                              className="p-1 -ml-1.5 mr-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+                              className="p-0.5 -ml-1 mr-0.5 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
                               aria-label={`${mod.label} sub-navigation`}
                             >
                               <ChevronDown className="size-3 opacity-60 hover:opacity-100" />
@@ -337,7 +337,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   ) : (
                     <Link
                       to={mod.route}
-                      className={`flex items-center h-full px-3 text-[13px] font-medium transition-colors select-none ${
+                      className={`flex items-center h-full px-2 xl:px-2.5 text-xs xl:text-[13px] font-medium transition-colors select-none ${
                         isActive
                           ? 'text-foreground font-semibold'
                           : 'text-muted-foreground hover:text-foreground'
@@ -349,7 +349,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                   {/* Animated active underline bar */}
                   {isActive && (
-                    <div className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-primary rounded-t-sm shadow-[0_-1px_6px_rgba(56,189,248,0.5)]" />
+                    <div className="absolute bottom-0 left-1.5 right-1.5 h-[2.5px] bg-primary rounded-t-sm shadow-[0_-1px_6px_rgba(56,189,248,0.5)]" />
                   )}
                 </div>
               );
@@ -357,17 +357,17 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </nav>
 
           {/* Right: Search, Live indicator, Notifications, Theme toggle, User profile */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* Search Trigger (~280px wide) */}
+          <div className="flex items-center gap-1.5 xl:gap-2 shrink-0">
+            {/* Search Trigger (~240-280px wide) */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-44 xl:w-[280px] h-8 px-3 rounded-md bg-muted/50 hover:bg-muted border border-border flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
+              className="w-36 lg:w-44 xl:w-56 2xl:w-[260px] h-8 px-2.5 rounded-md bg-muted/50 hover:bg-muted border border-border flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
             >
               <div className="flex items-center gap-2 truncate">
                 <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">Search location, device, site...</span>
+                <span className="truncate">Search location, device...</span>
               </div>
-              <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono text-muted-foreground/80 pl-1.5">
+              <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono text-muted-foreground/80 pl-1">
                 <kbd className="px-1.5 py-0.5 rounded bg-card border border-border text-[10px]">⌘K</kbd>
               </div>
             </button>
