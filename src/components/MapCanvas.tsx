@@ -6,9 +6,10 @@ import {
   Compass,
   Info,
 } from 'lucide-react';
-import { mapMarkers, mapClusters, mapRoutes } from '@/data/map';
+import { mapMarkers, mapClusters, mapRoutes, mapPoles, mapCameras } from '@/data/map';
 import { devices } from '@/data/devices';
 import { events } from '@/data/events';
+import { formatId } from '@/lib/utils';
 import type { LayerVisibility } from '@/components/overview/LayerRail';
 
 export interface MapCanvasProps {
@@ -313,7 +314,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           </g>
         )}
 
-        {/* Cable Routes: Fibre (Solid Blue Glow) and Copper (Dashed Amber) (CEO_REFERENCE) */}
+        {/* Cable Routes: Fibre (Solid Blue Glow) and Copper (Dashed Amber) (B7, CEO_REFERENCE) */}
         {activeLayers.cableRoutes &&
           mapRoutes.map((route, i) => {
             const isFibre = i % 2 === 0;
@@ -321,24 +322,24 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
             return (
               <g key={i}>
-                {/* Glow underlay */}
+                {/* Soft outer glow underlay (B7: blurred wider stroke at ~35% opacity) */}
                 <polyline
                   points={route.map((p) => p.join(',')).join(' ')}
                   fill="none"
                   stroke={isSpanSelected ? '#00d2ff' : isFibre ? '#38bdf8' : '#f59e0b'}
-                  strokeWidth={isSpanSelected ? '8' : isFibre ? '5' : '3'}
+                  strokeWidth={isSpanSelected ? '10' : isFibre ? '6' : '4'}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity={isSpanSelected ? 0.9 : isFibre ? 0.4 : 0.25}
+                  opacity={isSpanSelected ? 0.85 : isFibre ? 0.35 : 0.2}
                   filter={isSpanSelected ? 'url(#selectedSpanGlow)' : isFibre ? 'url(#fibreGlow)' : undefined}
                 />
 
-                {/* Main line */}
+                {/* Main line: 3px solid blue for fibre, 3px dashed amber for copper (B7) */}
                 <polyline
                   points={route.map((p) => p.join(',')).join(' ')}
                   fill="none"
                   stroke={isSpanSelected ? '#ffffff' : isFibre ? '#0284c7' : '#d97706'}
-                  strokeWidth={isSpanSelected ? '4.5' : isFibre ? '3' : '2.5'}
+                  strokeWidth={isSpanSelected ? '5' : '3'}
                   strokeDasharray={isFibre ? 'none' : '6 4'}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -348,24 +349,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             );
           })}
 
-        {/* Utility Poles (Small white dots) (CEO_REFERENCE) */}
+        {/* 60+ Utility Poles (Small white dots with dark outline) (B6, B7) */}
         {activeLayers.poles &&
-          [
-            [175, 452],
-            [317, 320],
-            [529, 284],
-            [595, 311],
-            [639, 352],
-            [750, 411],
-            [704, 452],
-            [645, 247],
-            [945, 256],
-            [810, 380],
-            [830, 367],
-            [947, 315],
-            [888, 511],
-            [885, 520],
-          ].map(([px, py], idx) => (
+          mapPoles.map(([px, py], idx) => (
             <circle
               key={idx}
               cx={px}
@@ -374,86 +360,84 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               fill="#FFFFFF"
               stroke="#0f172a"
               strokeWidth="0.8"
-              opacity="0.85"
+              opacity="0.9"
             />
           ))}
 
-        {/* CCTV Surveillance glyphs (CEO_REFERENCE) */}
+        {/* CCTV Surveillance Camera Feeds (B6, B7) */}
         {activeLayers.cctv &&
-          [
-            [418, 260],
-            [237, 354],
-            [614, 442],
-            [834, 226],
-          ].map(([cx, cy], idx) => (
-            <g key={idx} transform={`translate(${cx}, ${cy})`} opacity="0.9">
-              <circle r="7.5" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
+          mapCameras.map((cam) => (
+            <g
+              key={cam.id}
+              transform={`translate(${cam.x}, ${cam.y})`}
+              opacity="0.95"
+              className="cursor-pointer transition-transform hover:scale-125"
+            >
+              <title>{cam.name}</title>
+              <circle r="8" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
               <path
                 d="M -3.5 -2.5 L 2 -2.5 L 2 2.5 L -3.5 2.5 Z M 2 -1 L 4.5 -2.5 L 4.5 2.5 L 2 1 Z"
-                fill="#38bdf8"
+                fill="#ffffff"
               />
             </g>
           ))}
 
-        {/* Cluster Badges with highest severity halo */}
-        {activeLayers.clusters &&
-          mapClusters.map((c) => (
-            <g
-              key={c.id}
-              transform={`translate(${c.x}, ${c.y})`}
-              className="cursor-pointer transition-transform hover:scale-115"
-              onClick={() => {
-                handleZoomIn();
-                setPan({ x: (360 - c.x) * 0.5, y: (350 - c.y) * 0.5 });
-              }}
-            >
-              <circle
-                r="16"
-                fill="#0284c7"
-                stroke="#FFFFFF"
-                strokeWidth="2"
-                filter="drop-shadow(0px 3px 8px rgba(0,0,0,0.6))"
-              />
-              <text
-                y="4.5"
-                textAnchor="middle"
-                fill="#FFFFFF"
-                fontSize="11"
-                fontWeight="bold"
-                fontFamily="monospace"
+        {/* Clustered Event Badges with highest severity halo (B7) */}
+        {activeLayers.events &&
+          mapClusters.map((c) => {
+            const badgeColor =
+              c.severity === 'high' ? '#ef4444' : c.severity === 'medium' ? '#f59e0b' : '#0284c7';
+
+            return (
+              <g
+                key={c.id}
+                transform={`translate(${c.x}, ${c.y})`}
+                className="cursor-pointer transition-transform hover:scale-115"
+                onClick={() => {
+                  handleZoomIn();
+                  setPan({ x: (360 - c.x) * 0.5, y: (350 - c.y) * 0.5 });
+                }}
               >
-                {c.count}
-              </text>
-            </g>
-          ))}
+                <circle
+                  r="14"
+                  fill={badgeColor}
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
+                  filter="drop-shadow(0px 3px 8px rgba(0,0,0,0.6))"
+                />
+                <text
+                  y="4"
+                  textAnchor="middle"
+                  fill="#FFFFFF"
+                  fontSize="11"
+                  fontWeight="bold"
+                  fontFamily="sans-serif"
+                >
+                  {c.count}
+                </text>
+              </g>
+            );
+          })}
 
-        {/* Devices & Markers (CEO_REFERENCE Symbology) */}
+        {/* Devices & Markers (CEO_REFERENCE Symbology: B6) */}
         {activeLayers.devices &&
           enrichedMarkers.map((m) => {
             const isSelected = selectedId === m.id || selectedId === 'EVT_0128' && m.id === 'DEV_002';
 
-            // Incident devices render as labeled pills with soft glow (CEO_REFERENCE)
+            // Incident devices render as compact pills (height 28px, radius 14px, 20px round icon, white ID text, no status word) (B6)
             if (m.isOffline || m.isStale || m.isAttention) {
-              const label = m.isOffline
-                ? `${m.id.replace('_', '-')} Offline`
-                : m.isAttention
-                ? `${m.id.replace('_', '-')} Attention`
-                : `${m.id.replace('_', '-')} Stale`;
-
+              const pillWidth = 98;
               const filterUrl = m.isOffline
                 ? 'url(#offlineGlow)'
                 : m.isAttention
                 ? 'url(#attentionGlow)'
-                : 'url(#staleGlow)';
+                : undefined; // Stale has NO colored glow per B6
 
-              const pillBg = m.isOffline
-                ? 'rgba(239, 68, 68, 0.22)'
+              const pillStroke = m.isOffline
+                ? 'rgba(239, 68, 68, 0.6)'
                 : m.isAttention
-                ? 'rgba(245, 158, 11, 0.25)'
-                : 'rgba(234, 179, 8, 0.22)';
-
-              const pillStroke = m.isOffline ? '#ef4444' : m.isAttention ? '#f59e0b' : '#eab308';
-              const pillWidth = m.isAttention ? 124 : 112;
+                ? 'rgba(245, 158, 11, 0.6)'
+                : 'rgba(148, 163, 184, 0.4)';
 
               return (
                 <g
@@ -473,14 +457,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   }}
                   onMouseLeave={() => setHoveredMarker(null)}
                 >
-                  {/* Selected ring */}
+                  {/* Selected pulse ring */}
                   {isSelected && (
                     <rect
                       x={-(pillWidth / 2) - 4}
-                      y="-16"
+                      y="-18"
                       width={pillWidth + 8}
-                      height="32"
-                      rx="16"
+                      height="36"
+                      rx="18"
                       fill="none"
                       stroke="#00d2ff"
                       strokeWidth="2.5"
@@ -488,61 +472,84 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     />
                   )}
 
-                  {/* Pulse halo on new incident events (Section 8.5) */}
-                  {m.isNewEvent && (
-                    <rect
-                      x={-(pillWidth / 2) - 3}
-                      y="-15"
-                      width={pillWidth + 6}
-                      height="30"
-                      rx="15"
-                      fill="none"
-                      stroke="#f59e0b"
-                      strokeWidth="2"
-                      className="animate-ping motion-reduce:hidden opacity-75"
-                    />
-                  )}
-
-                  {/* Pill Background with Soft Glow */}
+                  {/* Incident Pill: Dark glass background, 1px subtle border, height 28px, radius 14px (B6) */}
                   <rect
                     x={-(pillWidth / 2)}
-                    y="-12"
+                    y="-14"
                     width={pillWidth}
-                    height="24"
-                    rx="12"
-                    fill={pillBg}
+                    height="28"
+                    rx="14"
+                    fill="rgba(15, 23, 42, 0.88)"
                     stroke={pillStroke}
-                    strokeWidth="1.5"
+                    strokeWidth="1"
                     filter={filterUrl}
                   />
 
-                  {/* Icon & Label inside Pill */}
+                  {/* 20px Round Status Icon on Left (B6) */}
                   {m.isOffline ? (
-                    <rect x={-(pillWidth / 2) + 8} y="-4" width="8" height="8" rx="1.5" fill="#ef4444" />
+                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
+                      <circle r="9" fill="#ef4444" />
+                      <text
+                        y="3.5"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="11"
+                        fontWeight="bold"
+                        fontFamily="sans-serif"
+                      >
+                        !
+                      </text>
+                    </g>
                   ) : m.isAttention ? (
-                    <polygon
-                      points={`${-(pillWidth / 2) + 12},-5 ${-(pillWidth / 2) + 17},5 ${-(pillWidth / 2) + 7},5`}
-                      fill="#f59e0b"
-                    />
+                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
+                      <polygon
+                        points="0,-8 8,7 -8,7"
+                        fill="#f59e0b"
+                      />
+                      <text
+                        y="4.5"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="9.5"
+                        fontWeight="bold"
+                        fontFamily="sans-serif"
+                      >
+                        !
+                      </text>
+                    </g>
                   ) : (
-                    <circle cx={-(pillWidth / 2) + 12} cy="0" r="4" fill="none" stroke="#eab308" strokeWidth="2" />
+                    /* Stale: grey circle with exclamation (B6: stale must be grey!) */
+                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
+                      <circle r="9" fill="#64748b" />
+                      <text
+                        y="3.5"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="11"
+                        fontWeight="bold"
+                        fontFamily="sans-serif"
+                      >
+                        !
+                      </text>
+                    </g>
                   )}
 
+                  {/* White ID text at 13px semibold, NO status word inside pill (B6) */}
                   <text
-                    x={-(pillWidth / 2) + 24}
-                    y="3.5"
+                    x={-(pillWidth / 2) + 28}
+                    y="4.5"
                     fill="#FFFFFF"
-                    fontSize="9.5"
-                    fontWeight="700"
-                    fontFamily="monospace"
+                    fontSize="13"
+                    fontWeight="600"
+                    fontFamily="sans-serif"
                   >
-                    {label}
+                    {formatId(m.id)}
                   </text>
                 </g>
               );
             }
 
-            // Online devices render as small green dots (CEO_REFERENCE)
+            // Online devices: 10px green dots with a white ring and NO label (B6, CEO_REFERENCE)
             return (
               <g
                 key={m.id}
@@ -571,10 +578,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   />
                 )}
                 <circle
-                  r="4.5"
+                  r="5"
                   fill="#22c55e"
                   stroke="#FFFFFF"
-                  strokeWidth="1.2"
+                  strokeWidth="1.5"
                   filter="drop-shadow(0px 1px 3px rgba(0,0,0,0.6))"
                 />
               </g>
