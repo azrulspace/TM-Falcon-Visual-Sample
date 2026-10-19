@@ -2,9 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { formatId } from '../lib/utils.ts';
 import { attention } from '../data/attention.ts';
-import { events } from '../data/events.ts';
 import { devices } from '../data/devices.ts';
-import { cases } from '../data/cases.ts';
 
 test('ID formatting matches unified hyphenated production format (D4)', () => {
   assert.equal(formatId('DEV_004'), 'DEV-004');

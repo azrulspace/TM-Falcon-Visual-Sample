@@ -126,124 +126,123 @@ export default function Overview() {
   const isMobile = windowWidth < 768;
 
   return (
-    <div className="w-full h-full relative overflow-hidden select-none font-sans bg-background">
-      {/* 1. Full-Bleed Hero Map Canvas (Fills 100% of viewport, 0 outer padding, 0 card border) */}
-      <MapCanvas
-        selectedId={selectedId}
-        onMarkerClick={(id) => handleSelectItem(id, id)}
-        timeMode={timeMode}
-        basemap={basemap}
-        activeLayers={activeLayers}
-        className="w-full h-full"
-      />
+    <div className="w-full h-full flex flex-col relative overflow-hidden select-none font-sans bg-background">
+      {/* 1. Full-Bleed Hero Map Canvas (Fills viewport above docked 64px TimeBar) */}
+      <div className="flex-1 w-full relative overflow-hidden">
+        <MapCanvas
+          selectedId={selectedId}
+          onMarkerClick={(id) => handleSelectItem(id, id)}
+          timeMode={timeMode}
+          basemap={basemap}
+          activeLayers={activeLayers}
+          className="w-full h-full"
+        />
 
-      {/* 2. Subtle Edge Gradient Scrims (Ensures text contrast over any imagery) */}
-      <div className="scrim-top" />
-      <div className="scrim-bottom" />
+        {/* 2. Subtle Edge Gradient Scrims (Ensures text contrast over any imagery) */}
+        <div className="scrim-top" />
+        <div className="scrim-bottom" />
 
-      {/* 3. Floating Glass Overlays Container (Pointer events pass through to map) */}
-      <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-3">
-        {/* TOP ROW: KPI Strip (Top-Left) */}
-        <div className="flex items-start justify-between w-full">
-          {/* KPI Strip */}
-          <div className={`pointer-events-auto w-full overflow-x-auto no-scrollbar ${
-            panelCollapsed ? 'max-w-full' : 'max-w-full lg:max-w-[calc(100%-420px)]'
-          }`}>
-            <KpiStrip
-              activeFilter={activeKpiFilter}
-              onFilterChange={setActiveKpiFilter}
-            />
-          </div>
-
-          {/* Presentation Mode / Clean Map Toggle when Right Panel is Collapsed */}
-          {isDesktop && panelCollapsed && (
-            <div className="pointer-events-auto animate-in fade-in-50 duration-200">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPanelCollapsed(false)}
-                className="h-8 gap-1.5 glass-panel text-xs font-semibold shadow-xl border-border/80 hover:bg-card/90"
-              >
-                <SlidersHorizontal className="size-3.5 text-primary" />
-                <span>Show incidents (4)</span>
-                <ChevronLeft className="size-3 text-muted-foreground ml-0.5" />
-              </Button>
+        {/* 3. Floating Glass Overlays Container (Pointer events pass through to map) */}
+        <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-4">
+          {/* TOP ROW: KPI Strip (Top-Left, 16px margin) */}
+          <div className="flex items-start justify-between w-full">
+            {/* KPI Strip */}
+            <div className={`pointer-events-auto overflow-x-auto no-scrollbar ${
+              panelCollapsed ? 'max-w-full' : 'max-w-full lg:max-w-[calc(100%-416px)]'
+            }`}>
+              <KpiStrip
+                activeFilter={activeKpiFilter}
+                onFilterChange={setActiveKpiFilter}
+              />
             </div>
-          )}
-        </div>
 
-        {/* CENTER ROW: Layer Rail (Left-Center) & Incidents Panel (Right) */}
-        <div className="flex-1 min-h-0 flex items-stretch justify-between my-2 relative">
-          {/* Left-Center: Layer Rail (CEO_REFERENCE) */}
-          <div className="self-center pointer-events-auto hidden sm:block">
-            <LayerRail
-              basemap={basemap}
-              onBasemapChange={handleBasemapChange}
-              layers={activeLayers}
-              onToggleLayer={handleToggleLayer}
-              onOpenSearch={() => setFindDialogOpen(true)}
-            />
-          </div>
-
-          {/* Right: Floating Incidents Panel (400px Desktop, collapsible) */}
-          {isDesktop && (
-            <div
-              className={`absolute top-0 right-0 bottom-14 w-[380px] xl:w-[400px] pointer-events-auto transition-transform duration-300 ease-in-out ${
-                panelCollapsed ? 'translate-x-[calc(100%+16px)]' : 'translate-x-0'
-              }`}
-            >
-              <div className="relative w-full h-full glass-panel flex flex-col overflow-hidden shadow-2xl border border-border/80 rounded-xl">
-                {/* Collapse / Expand Handle Tab */}
-                <button
-                  onClick={() => setPanelCollapsed(!panelCollapsed)}
-                  className="absolute -left-7 top-4 z-30 size-7 glass-panel rounded-l-md border-r-0 flex items-center justify-center text-muted-foreground hover:text-foreground shadow-lg transition-colors cursor-pointer"
-                  aria-label={panelCollapsed ? 'Expand incidents panel' : 'Collapse incidents panel'}
-                  title={panelCollapsed ? 'Expand incidents panel' : 'Collapse incidents panel'}
+            {/* Presentation Mode / Clean Map Toggle when Right Panel is Collapsed */}
+            {isDesktop && panelCollapsed && (
+              <div className="pointer-events-auto animate-in fade-in-50 duration-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPanelCollapsed(false)}
+                  className="h-8 gap-1.5 glass-panel text-xs font-semibold shadow-xl border-border/80 hover:bg-card/90"
                 >
-                  {panelCollapsed ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
-                </button>
-
-                {/* Panel Content: Docked Inspector (when selected) OR Attention Queue (when unselected) */}
-                {selectedId ? (
-                  <DockedInspector
-                    selectedId={selectedId}
-                    onBack={() => setSelectedId(null)}
-                    onClose={() => setSelectedId(null)}
-                    onSelectEntity={(id) => handleSelectItem(id, id)}
-                  />
-                ) : (
-                  <AttentionQueue
-                    selectedId={selectedId}
-                    onSelectItem={handleSelectItem}
-                    activeKpiFilter={activeKpiFilter}
-                    density="default"
-                  />
-                )}
+                  <SlidersHorizontal className="size-3.5 text-primary" />
+                  <span>Show incidents (10)</span>
+                  <ChevronLeft className="size-3 text-muted-foreground ml-0.5" />
+                </Button>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* BOTTOM ROW: Time Bar & Floating Assets Pill */}
-        <div className="flex flex-col gap-2 w-full">
-          {/* Floating Assets Pill (Bottom-Right, above time bar) */}
+          {/* CENTER ROW: Layer Rail (Left, anchored 16px under KPI strip) & Incidents Panel (Right, 380px) */}
+          <div className="flex-1 min-h-0 flex items-stretch justify-between my-2 relative">
+            {/* Left: Layer Rail anchored 16px under KPI strip (E1) */}
+            <div className="self-start pointer-events-auto hidden sm:block pt-1">
+              <LayerRail
+                basemap={basemap}
+                onBasemapChange={handleBasemapChange}
+                layers={activeLayers}
+                onToggleLayer={handleToggleLayer}
+                onOpenSearch={() => setFindDialogOpen(true)}
+              />
+            </div>
+
+            {/* Right: Floating Incidents Panel (380px Desktop, collapsible, D6) */}
+            {isDesktop && (
+              <div
+                className={`absolute top-0 right-0 bottom-2 w-[380px] pointer-events-auto transition-transform duration-300 ease-in-out ${
+                  panelCollapsed ? 'translate-x-[calc(100%+24px)]' : 'translate-x-0'
+                }`}
+              >
+                <div className="relative w-full h-full glass-panel flex flex-col overflow-hidden shadow-2xl border border-border/80 rounded-xl">
+                  {/* Collapse / Expand Handle Tab */}
+                  <button
+                    onClick={() => setPanelCollapsed(!panelCollapsed)}
+                    className="absolute -left-7 top-4 z-30 size-7 glass-panel rounded-l-md border-r-0 flex items-center justify-center text-muted-foreground hover:text-foreground shadow-lg transition-colors cursor-pointer"
+                    aria-label={panelCollapsed ? 'Expand incidents panel' : 'Collapse incidents panel'}
+                    title={panelCollapsed ? 'Expand incidents panel' : 'Collapse incidents panel'}
+                  >
+                    {panelCollapsed ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
+                  </button>
+
+                  {/* Panel Content: Docked Inspector (when selected) OR Attention Queue (when unselected) */}
+                  {selectedId ? (
+                    <DockedInspector
+                      selectedId={selectedId}
+                      onBack={() => setSelectedId(null)}
+                      onClose={() => setSelectedId(null)}
+                      onSelectEntity={(id) => handleSelectItem(id, id)}
+                    />
+                  ) : (
+                    <AttentionQueue
+                      selectedId={selectedId}
+                      onSelectItem={handleSelectItem}
+                      activeKpiFilter={activeKpiFilter}
+                      density="default"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* BOTTOM OF MAP: Floating Assets Pill (Bottom-Right, sits cleanly above docked TimeBar) */}
           <div className="flex justify-end pr-1 pointer-events-auto">
             <AssetsPill
               isOpen={assetsDrawerOpen}
               onToggle={() => setAssetsDrawerOpen(!assetsDrawerOpen)}
             />
           </div>
-
-          {/* Full-Width 52px Glass Time Bar */}
-          <div className="w-full pointer-events-auto">
-            <TimeBar
-              timeMode={timeMode}
-              onTimeModeChange={setTimeMode}
-              historyRange={historyRange}
-              onHistoryRangeChange={setHistoryRange}
-            />
-          </div>
         </div>
+      </div>
+
+      {/* 4. Docked 64px Footer TimeBar under map (full width, 64px high, top border, no floating) (F1) */}
+      <div className="w-full shrink-0 z-30 pointer-events-auto">
+        <TimeBar
+          timeMode={timeMode}
+          onTimeModeChange={setTimeMode}
+          historyRange={historyRange}
+          onHistoryRangeChange={setHistoryRange}
+        />
       </div>
 
       {/* 4. Bottom Sheet: Device Status Table (Opened via Assets Pill) */}
@@ -312,7 +311,7 @@ export default function Overview() {
             <div className="w-10 h-1.5 rounded-full bg-muted-foreground/40" />
             <div className="flex items-center justify-between w-full px-4 pt-1">
               <span className="text-xs font-bold text-foreground">
-                Needs attention (4)
+                Needs attention (10)
               </span>
               <span className="text-[10px] text-primary font-mono font-semibold">
                 {mobileDrawerSnap === 'peek' ? 'Tap to expand' : 'Tap to toggle size'}

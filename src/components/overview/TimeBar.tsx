@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, Radio } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -42,7 +41,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
         second: '2-digit',
         hour12: false,
       });
-      setLiveClock(`${datePart} ${timePart} MYT`);
+      setLiveClock(`KLT ${datePart} ${timePart}`);
     };
     updateTime();
     const timer = setInterval(updateTime, 1000);
@@ -57,87 +56,121 @@ export const TimeBar: React.FC<TimeBarProps> = ({
     if (onScrubTime) onScrubTime(percent);
   };
 
-  // Mock tick marks representing incident telemetry density across the 24h window
-  const ticks = [5, 12, 18, 25, 33, 40, 52, 65, 71, 80, 88, 94];
+  // 24 hour ticks (one tick per hour)
+  const hourlyTicks = Array.from({ length: 25 }, (_, i) => ({
+    hour: i,
+    percent: (i / 24) * 100,
+    isMajor: i % 6 === 0,
+  }));
+
+  // Event dots along the timeline colored by incident severity (F1)
+  const eventDots = [
+    { percent: 12, color: 'bg-sky-400', label: 'Telemetry batch' },
+    { percent: 28, color: 'bg-sky-400', label: 'Telemetry batch' },
+    { percent: 40, color: 'bg-muted-foreground', label: 'DEV-003 Stale' },
+    { percent: 54, color: 'bg-sky-400', label: 'Nominal poll' },
+    { percent: 68, color: 'bg-sky-400', label: 'Nominal poll' },
+    { percent: 78, color: 'bg-status-warning', label: 'EVT-0007 Medium' },
+    { percent: 84, color: 'bg-destructive', label: 'DEV-004 Offline' },
+    { percent: 90, color: 'bg-destructive', label: 'DEV-011 Offline' },
+    { percent: 98, color: 'bg-severity-high', label: 'EVT-0001 High' },
+  ];
 
   return (
-    <div className="glass-panel h-13 px-4 flex items-center justify-between gap-4 select-none shadow-2xl border border-border/80">
-      {/* Left: Time range label + Segmented switch (Active now / History) */}
+    <footer
+      className="w-full h-16 px-4 lg:px-6 flex items-center justify-between gap-4 select-none bg-card/95 border-t border-border shadow-md"
+      aria-label="Time navigation and live clock"
+    >
+      {/* Left: Time range label + Segmented switch (Active now / History) (F1) */}
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-xs text-muted-foreground font-semibold hidden md:inline">
+        <span className="text-xs text-muted-foreground font-medium hidden md:inline">
           Time range
         </span>
 
-        <Tabs value={timeMode} onValueChange={onTimeModeChange} className="h-8">
-          <TabsList className="h-8 p-0.5 bg-muted/60 border border-border/70 rounded-md">
-            <TabsTrigger
-              value="Active now"
-              className="h-7 px-3 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-sm transition-all"
-            >
-              Active now
-            </TabsTrigger>
-            <TabsTrigger
-              value="History"
-              className="h-7 px-3 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-sm transition-all"
-            >
-              History
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center p-0.5 bg-muted/60 border border-border/70 rounded-lg">
+          <button
+            onClick={() => onTimeModeChange('Active now')}
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-all ${
+              timeMode === 'Active now'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Radio className="size-3.5" />
+            <span>Active now</span>
+          </button>
+          <button
+            onClick={() => onTimeModeChange('History')}
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-all ${
+              timeMode === 'History'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Clock className="size-3.5" />
+            <span>History</span>
+          </button>
+        </div>
       </div>
 
-      {/* Center: Interactive Event Density Timeline */}
-      <div className="flex-1 max-w-2xl px-3 flex flex-col justify-center relative">
+      {/* Center: Structured 24h Timeline Track with hourly ticks & event dots (F1) */}
+      <div className="flex-1 max-w-2xl px-4 flex flex-col justify-center relative">
         <div
           onClick={handleTimelineClick}
-          className={`h-5 flex items-center relative cursor-pointer group ${
+          className={`h-9 flex items-center relative cursor-pointer select-none group ${
             timeMode === 'History' ? 'cursor-ew-resize' : 'cursor-default'
           }`}
         >
-          {/* Timeline track */}
-          <div className="w-full h-1 bg-border/80 rounded-full relative overflow-visible">
-            {/* Density ticks */}
-            {ticks.map((t, idx) => (
-              <span
-                key={idx}
-                style={{ left: `${t}%` }}
-                className="absolute top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-primary/70 group-hover:bg-primary transition-colors"
+          {/* Main Horizontal Timeline Bar */}
+          <div className="w-full h-0.5 bg-border/90 relative overflow-visible flex items-center">
+            {/* Hourly & 6-Hourly Ticks */}
+            {hourlyTicks.map((t) => (
+              <div
+                key={t.hour}
+                style={{ left: `${t.percent}%` }}
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 ${
+                  t.isMajor
+                    ? 'w-[1.5px] h-2.5 bg-muted-foreground/60'
+                    : 'w-[1px] h-1.5 bg-border'
+                }`}
               />
             ))}
 
-            {/* Now marker or Draggable scrubber */}
-            {timeMode === 'Active now' ? (
-              <div
-                style={{ left: '100%' }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
-              >
-                <div className="size-3 rounded-full bg-status-online border-2 border-background shadow-xs ring-2 ring-status-online/30 animate-pulse" />
-              </div>
-            ) : (
+            {/* Event Dots colored by severity */}
+            {eventDots.map((d, idx) => (
+              <span
+                key={idx}
+                style={{ left: `${d.percent}%` }}
+                title={d.label}
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-1.5 rounded-full ${d.color} shadow-xs ring-1 ring-background`}
+              />
+            ))}
+
+            {/* "Now" Marker Line with label above it (F1) */}
+            <div
+              style={{ left: timeMode === 'History' ? `${scrubberPos}%` : '100%' }}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10"
+            >
+              <span className="text-[10px] font-sans font-semibold text-primary -translate-y-3.5 select-none">
+                {timeMode === 'History' ? `-${Math.round(24 * (1 - scrubberPos / 100))}h` : 'Now'}
+              </span>
+              <div className="w-0.5 h-5 bg-primary rounded-full shadow-sm" />
+            </div>
+
+            {/* Draggable Scrubber Thumb in History Mode */}
+            {timeMode === 'History' && (
               <div
                 style={{ left: `${scrubberPos}%` }}
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center z-10"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20"
               >
-                <div className="size-3.5 rounded-full bg-primary border-2 border-background shadow-md ring-2 ring-primary/40" />
-                <span className="absolute -top-6 px-1.5 py-0.5 rounded bg-popover border border-border text-[10px] font-mono text-popover-foreground whitespace-nowrap shadow-sm">
-                  -{Math.round(24 * (1 - scrubberPos / 100))}h
-                </span>
+                <div className="size-3.5 rounded-full bg-primary border-2 border-white shadow-md cursor-grab active:cursor-grabbing ring-2 ring-primary/40 hover:scale-125 transition-transform" />
               </div>
             )}
           </div>
         </div>
-
-        {/* Labels below timeline */}
-        <div className="flex justify-between items-center text-[10px] text-muted-foreground/80 font-mono -mt-0.5">
-          <span>-24h</span>
-          <span className="text-[11px] font-semibold text-primary">
-            {timeMode === 'Active now' ? 'Now' : 'Historical Scrubber'}
-          </span>
-          <span>Present</span>
-        </div>
       </div>
 
-      {/* Right: Range selector + Monospaced MYT Clock */}
+      {/* Right: Range selector + Sans Tabular Clock (F1, H1) */}
       <div className="flex items-center gap-3 shrink-0">
         <Select value={historyRange} onValueChange={onHistoryRangeChange}>
           <SelectTrigger className="h-8 w-36 text-xs bg-muted/50 border-border text-foreground font-medium">
@@ -154,11 +187,11 @@ export const TimeBar: React.FC<TimeBarProps> = ({
 
         <span className="h-4 w-px bg-border/80 hidden sm:inline" />
 
-        <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-foreground font-medium tabular-nums">
-          <Clock className="size-3.5 text-muted-foreground" />
-          <span>{liveClock || 'MYT'}</span>
+        {/* Clock in Sans Tabular Figures (CEO_REFERENCE) */}
+        <div className="hidden sm:flex items-center font-sans text-xs text-foreground/90 font-medium tabular-nums tracking-normal">
+          <span>{liveClock || 'KLT'}</span>
         </div>
       </div>
-    </div>
+    </footer>
   );
 };
