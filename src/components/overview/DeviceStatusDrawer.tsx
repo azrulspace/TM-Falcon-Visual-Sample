@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { formatId } from '@/lib/formatters';
 import { devices } from '@/data/devices';
 
 interface DeviceStatusDrawerProps {
@@ -128,7 +129,7 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
         ),
         cell: (info) => (
           <div className="flex flex-col min-w-0">
-            <span className="font-mono text-xs font-bold text-primary">{info.getValue()}</span>
+            <span className="font-mono text-xs font-bold text-primary">{formatId(info.getValue())}</span>
             <span className="text-[11px] text-muted-foreground truncate">{info.row.original.type}</span>
           </div>
         ),
@@ -146,7 +147,7 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
         cell: (info) => (
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-medium text-foreground truncate">{info.getValue()}</span>
-            <span className="font-mono text-[11px] text-muted-foreground">{info.row.original.asset}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{formatId(info.row.original.asset)}</span>
           </div>
         ),
       }),
