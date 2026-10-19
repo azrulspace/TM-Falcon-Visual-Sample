@@ -24,12 +24,16 @@ import { segments } from '@/data/segments';
 import type { KpiFilterType } from '@/components/overview/KpiRibbon';
 
 export default function Overview() {
-  // Theme & Basemap persistence
+  // Theme & Basemap persistence (Default Satellite in dark theme, Terrain in light theme per Section 8.2)
   const [basemap, setBasemap] = useState<'satellite' | 'dark' | 'terrain' | 'streets'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('falcon_basemap') as any;
       if (saved) return saved;
-      const isDark = document.documentElement.classList.contains('dark');
+      const themeVal = localStorage.getItem('ds_theme');
+      const isDark =
+        themeVal === 'dark' ||
+        document.documentElement.classList.contains('dark') ||
+        document.documentElement.classList.contains('theme_dark');
       return isDark ? 'satellite' : 'terrain';
     }
     return 'satellite';
@@ -142,7 +146,9 @@ export default function Overview() {
         {/* TOP ROW: KPI Strip (Top-Left) */}
         <div className="flex items-start justify-between w-full">
           {/* KPI Strip */}
-          <div className="pointer-events-auto max-w-[calc(100%-420px)] overflow-x-auto no-scrollbar">
+          <div className={`pointer-events-auto w-full overflow-x-auto no-scrollbar ${
+            panelCollapsed ? 'max-w-full' : 'max-w-full lg:max-w-[calc(100%-420px)]'
+          }`}>
             <KpiStrip
               activeFilter={activeKpiFilter}
               onFilterChange={setActiveKpiFilter}

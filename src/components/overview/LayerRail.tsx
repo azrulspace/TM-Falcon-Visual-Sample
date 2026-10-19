@@ -112,7 +112,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
               onClick={() => onBasemapChange('satellite')}
               className={`flex flex-col items-center justify-center size-10 rounded-lg transition-all ${
                 basemap === 'satellite'
-                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
                   : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
               aria-label="Satellite basemap"
@@ -133,7 +133,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
               onClick={() => onBasemapChange('terrain')}
               className={`flex flex-col items-center justify-center size-10 rounded-lg transition-all ${
                 basemap === 'terrain'
-                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
                   : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
               aria-label="Terrain basemap"
@@ -154,7 +154,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
               onClick={() => onBasemapChange('dark')}
               className={`flex flex-col items-center justify-center size-10 rounded-lg transition-all ${
                 basemap === 'dark'
-                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
                   : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
               aria-label="Dark control room basemap"

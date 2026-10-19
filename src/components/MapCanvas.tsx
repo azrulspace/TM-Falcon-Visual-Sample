@@ -158,7 +158,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/${ty}/${tx}`;
     }
     if (bm === 'dark') {
-      return `https://basemaps.cartocdn.com/dark_all/12/${tx}/${ty}.png`;
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/12/${ty}/${tx}`;
     }
     return `https://tile.openstreetmap.org/12/${tx}/${ty}.png`;
   };
