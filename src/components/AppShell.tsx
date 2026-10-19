@@ -1,13 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Radio,
-  ClipboardList,
-  ShieldAlert,
-  MapPinned,
-  BarChart3,
-  Settings,
   LogOut,
   Moon,
   Sun,
@@ -16,7 +9,8 @@ import {
   Search,
   Bell,
   ChevronRight,
-  RadioTower,
+  ChevronDown,
+  Menu,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -32,7 +26,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { GlobalSearchCommand } from './GlobalSearchCommand';
+import { navigationConfig, type NavItem } from '@/config/navigation';
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
@@ -40,9 +36,35 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const isOverview = location.pathname === '/overview';
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Default to minimized 56px rail on Overview page as per Section 8.1
-  const [sidebarMinimized, setSidebarMinimized] = useState(isOverview);
+
+  // Mobile navigation drawer (< 1024px)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Desktop rail vs expanded (>= 1024px)
+  // Default to 56px collapsed rail on Overview as per Section 5.2.a
+  const [sidebarMinimized, setSidebarMinimized] = useState<boolean>(() => {
+    const saved = localStorage.getItem('falcon_sidebar_minimized');
+    if (saved !== null) return saved === 'true';
+    return isOverview;
+  });
+
+  // Persist open collapsible groups in expanded sidebar
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('falcon_nav_open_groups');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Collapsed rail hover/click flyout panel state
+  const [activeFlyoutItem, setActiveFlyoutItem] = useState<{
+    item: NavItem;
+    top: number;
+  } | null>(null);
+  const flyoutCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [theme, setTheme] = useState(
     document.documentElement.classList.contains("theme_dark") || document.documentElement.classList.contains("dark")
       ? "dark"
@@ -55,7 +77,6 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      // Format as e.g. "14:32:05 MYT"
       const timeStr = now.toLocaleTimeString('en-GB', {
         timeZone: 'Asia/Kuala_Lumpur',
         hour: '2-digit',
@@ -82,92 +103,135 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     setTheme(newTheme);
   };
 
+  const handleToggleSidebar = () => {
+    const next = !sidebarMinimized;
+    setSidebarMinimized(next);
+    localStorage.setItem('falcon_sidebar_minimized', String(next));
+    setActiveFlyoutItem(null);
+  };
+
+  const toggleGroup = (id: string) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      localStorage.setItem('falcon_nav_open_groups', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const handleLogout = () => {
     setAccountLabel(null);
     navigate('/signin');
   };
 
-  const navItems = [
-    { label: 'Overview', icon: LayoutDashboard, route: '/overview' },
-    {
-      label: 'Event inbox',
-      icon: Radio,
-      route: '/events',
-      children: [
-        { label: 'Event inbox', route: '/events' },
-        { label: 'Intervention outcomes', route: '/planned/intervention' },
-      ],
-      group: 'EVENTS',
-    },
-    { label: 'Cases', icon: ClipboardList, route: '/planned/cases', group: 'EVENTS' },
-    {
-      label: 'Risk & preventive work',
-      icon: ShieldAlert,
-      route: '/risk',
-      children: [
-        { label: 'Risk overview', route: '/risk' },
-        { label: 'Work queue', route: '/planned/work-queue' },
-      ],
-      group: 'RISK',
-    },
-    {
-      label: 'Assets & devices',
-      icon: MapPinned,
-      route: '/assets/inventory',
-      children: [
-        { label: 'Inventory register', route: '/assets/inventory' },
-        { label: 'Devices', route: '/planned/devices' },
-        { label: 'Fleet health', route: '/planned/fleet' },
-      ],
-      group: 'ASSETS',
-    },
-    { label: 'Reports', icon: BarChart3, route: '/planned/reports', group: 'SYSTEM' },
-    { label: 'Administration', icon: Settings, route: '/planned/admin' },
-  ];
+  // Derive current breadcrumbs
+  const breadcrumbs = useMemo(() => {
+    const path = location.pathname;
+    if (path === '/overview') return ['Overview'];
+    if (path.startsWith('/events')) return ['Events', 'Event inbox'];
+    if (path.startsWith('/risk')) return ['Risk & preventive', 'Risk overview'];
+    if (path.startsWith('/assets/inventory/devices/new')) return ['Assets & devices', 'Inventory', 'New device'];
+    if (path.startsWith('/assets/inventory/devices')) return ['Assets & devices', 'Inventory', 'Device detail'];
+    if (path.startsWith('/assets/inventory')) return ['Assets & devices', 'Inventory register'];
+    if (path.startsWith('/planned/cases')) return ['Events', 'Cases'];
+    if (path.startsWith('/planned/work-queue')) return ['Risk', 'Work queue'];
+    if (path.startsWith('/planned/devices')) return ['Assets', 'Device health'];
+    if (path.startsWith('/planned/fleet')) return ['Assets', 'Infrastructure health'];
+    if (path.startsWith('/planned/reports')) return ['System', 'Reports'];
+    if (path.startsWith('/planned/admin')) return ['System', 'Administration'];
+    return ['Dashboard', path.replace('/', '').toUpperCase()];
+  }, [location.pathname]);
+
+  // Handle flyout mouse enter / leave with grace period
+  const handleRailMouseEnter = (item: NavItem, event: React.MouseEvent<HTMLElement>) => {
+    if (!item.children || item.children.length === 0) {
+      if (flyoutCloseTimerRef.current) clearTimeout(flyoutCloseTimerRef.current);
+      setActiveFlyoutItem(null);
+      return;
+    }
+    if (flyoutCloseTimerRef.current) clearTimeout(flyoutCloseTimerRef.current);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setActiveFlyoutItem({
+      item,
+      top: Math.max(8, Math.min(rect.top - 52, window.innerHeight - 340)),
+    });
+  };
+
+  const handleRailMouseLeave = () => {
+    flyoutCloseTimerRef.current = setTimeout(() => {
+      setActiveFlyoutItem(null);
+    }, 200);
+  };
+
+  const handleFlyoutMouseEnter = () => {
+    if (flyoutCloseTimerRef.current) clearTimeout(flyoutCloseTimerRef.current);
+  };
+
+  const handleFlyoutMouseLeave = () => {
+    flyoutCloseTimerRef.current = setTimeout(() => {
+      setActiveFlyoutItem(null);
+    }, 200);
+  };
 
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-        {/* Top Bar (56px, no wasted space) */}
-        <header className="h-14 border-b border-border bg-card flex items-center justify-between px-3 z-30 shrink-0 gap-3">
-          {/* Left: Sidebar trigger, Logo, Breadcrumbs */}
-          <div className="flex items-center gap-3 shrink-0">
+        {/* 5.6 Top Bar (52px, sleek and functional) */}
+        <header className="h-[52px] border-b border-border bg-card/90 backdrop-blur-md flex items-center justify-between px-3 z-30 shrink-0 gap-3">
+          {/* Left: Sidebar trigger, Logo, Platform Subtitle, Breadcrumbs */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Desktop collapse toggle */}
             <button
-              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              onClick={() => {
-                if (window.innerWidth < 1024) {
-                  setSidebarOpen(!sidebarOpen);
-                } else {
-                  setSidebarMinimized(!sidebarMinimized);
-                }
-              }}
+              className="hidden lg:flex p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onClick={handleToggleSidebar}
               aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {sidebarMinimized ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+              {sidebarMinimized ? <PanelLeftOpen className="size-4.5" /> : <PanelLeftClose className="size-4.5" />}
+            </button>
+
+            {/* Mobile menu trigger */}
+            <button
+              className="flex lg:hidden p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="size-4.5" />
             </button>
 
             <Link to="/overview" className="flex items-center gap-2">
               <Logo className="h-6" markOnly={sidebarMinimized} />
             </Link>
 
+            {/* Subtitle (Hidden below 1280px) */}
+            <span className="hidden xl:inline text-[11px] text-muted-foreground font-normal border-l border-border pl-2.5 ml-1 select-none">
+              Telecom Infrastructure Monitoring Platform
+            </span>
+
+            {/* Dynamic Breadcrumbs */}
             <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-border text-xs text-muted-foreground">
-              <span className="hover:text-foreground cursor-pointer" onClick={() => navigate('/overview')}>Falcon</span>
-              <ChevronRight className="size-3.5 text-muted-foreground/60" />
-              <span className="font-semibold text-foreground">
-                {location.pathname === '/overview' ? 'Overview' : location.pathname.split('/')[1]?.toUpperCase() || 'Page'}
+              <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
+                Falcon
               </span>
+              {breadcrumbs.map((crumb, idx) => (
+                <React.Fragment key={crumb + idx}>
+                  <ChevronRight className="size-3 text-muted-foreground/60" />
+                  <span className={idx === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'hover:text-foreground cursor-pointer'}>
+                    {crumb}
+                  </span>
+                </React.Fragment>
+              ))}
             </div>
           </div>
 
-          {/* Center: Global Search Command Trigger */}
-          <div className="flex-1 max-w-xl mx-2">
+          {/* Center: Global Search Command Trigger (Full field above 1280px, icon button below) */}
+          <div className="flex-1 max-w-lg mx-2 flex justify-center">
+            {/* Full search bar on >= 1280px */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-full h-8 px-3 rounded-md bg-muted/60 hover:bg-muted border border-border flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
+              className="hidden xl:flex w-full h-8 px-3 rounded-md bg-muted/60 hover:bg-muted border border-border items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
             >
               <div className="flex items-center gap-2 truncate">
                 <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">Search poles, spans, devices, events, cases...</span>
+                <span className="truncate">Search navigation, poles, spans, devices, events, cases...</span>
               </div>
               <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono font-medium text-muted-foreground/80 pl-2">
                 <kbd className="px-1.5 py-0.5 rounded bg-card border border-border">⌘K</kbd>
@@ -175,28 +239,37 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 <kbd className="px-1.5 py-0.5 rounded bg-card border border-border">/</kbd>
               </div>
             </button>
+
+            {/* Compact search button on < 1280px */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex xl:hidden items-center gap-1.5 px-2.5 h-8 rounded-md bg-muted/50 hover:bg-muted border border-border text-xs text-muted-foreground transition-colors"
+            >
+              <Search className="size-3.5 text-muted-foreground" />
+              <span className="text-[11px] hidden md:inline">Search (⌘K)</span>
+            </button>
           </div>
 
           {/* Right: Live indicator, Notifications, Theme toggle, User profile */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Live Indicator */}
-            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-status-online-tint border border-status-online-border text-xs font-medium text-status-online">
+            {/* Live Indicator with MYT timezone */}
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-status-online-tint border border-status-online-border text-xs font-medium text-status-online select-none">
               <span className="relative flex size-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-online opacity-75"></span>
                 <span className="relative inline-flex rounded-full size-2 bg-status-online"></span>
               </span>
-              <span className="font-semibold tracking-wide text-[11px]">LIVE</span>
-              <span className="text-muted-foreground font-mono text-[11px] tabular-nums pl-1 border-l border-status-online-border/60">
+              <span className="font-bold tracking-wide text-[10px]">LIVE</span>
+              <span className="text-muted-foreground font-mono text-[11px] tabular-nums pl-1 border-l border-status-online-border/60 hidden sm:inline">
                 {currentTime || 'MYT'}
               </span>
             </div>
 
-            {/* Notifications Button with count badge */}
+            {/* Notifications Button */}
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
                 <Button variant="ghost" size="icon-sm" className="relative text-muted-foreground hover:text-foreground">
                   <Bell className="size-4" />
-                  <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                  <span className="absolute top-1 right-1 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-white">
                     4
                   </span>
                 </Button>
@@ -225,11 +298,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <button className="flex items-center gap-2 p-1 rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <Avatar className="size-7 border border-border">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {accountLabel ? accountLabel.substring(0, 2).toUpperCase() : 'AS'}
+                        {accountLabel ? accountLabel.substring(0, 2).toUpperCase() : 'AD'}
                       </AvatarFallback>
                     </Avatar>
                     <span className="hidden xl:inline text-xs font-medium text-foreground pr-1">
-                      {accountLabel || 'Ahmad Syukri'}
+                      {accountLabel || 'Admin (sample)'}
                     </span>
                   </button>
                 }
@@ -238,18 +311,16 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</span>
-                    <span className="text-[11px] text-muted-foreground">TM Operations • Admin</span>
+                    <span className="text-xs font-semibold">{accountLabel || 'Admin User'}</span>
+                    <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
-                  <Settings className="mr-2 size-3.5" />
                   <span>Administration Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
-                  <RadioTower className="mr-2 size-3.5" />
-                  <span>System Diagnostics</span>
+                  <span>Reports & Audits</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
@@ -266,110 +337,248 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
         {/* Main Body with Sidebar + Viewport */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Mobile backdrop */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-
-          {/* Sidebar (Collapsible to 56px icon rail) */}
+          {/* Desktop Sidebar (56px icon rail by default, expandable to 264px) */}
           <aside
-            style={{ width: sidebarMinimized ? '56px' : '240px' }}
-            className={`bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-all duration-200 z-30 select-none ${
-              sidebarOpen ? 'fixed top-14 bottom-0 left-0 z-50 w-60' : 'hidden lg:flex'
-            }`}
+            style={{ width: sidebarMinimized ? '56px' : '264px' }}
+            className="bg-sidebar border-r border-sidebar-border hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
+            onMouseLeave={handleRailMouseLeave}
           >
-            <div className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto overflow-x-hidden">
-              {navItems.map((item, i) => {
-                const isParentActive = location.pathname.startsWith(item.route);
-                const isLeafActive = isParentActive && !item.children;
-                return (
-                  <React.Fragment key={i}>
-                    {item.group && !sidebarMinimized && (
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-sidebar-label px-3 mt-3 mb-1">
-                        {item.group}
-                      </div>
-                    )}
+            {/* Scrollable Nav Sections */}
+            <div className="flex flex-col gap-3 p-2 flex-1 overflow-y-auto overflow-x-hidden">
+              {navigationConfig.map((sec) => (
+                <div key={sec.id} className="flex flex-col gap-1">
+                  {!sidebarMinimized && (
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-sidebar-label px-2.5 mt-2 mb-0.5 text-muted-foreground/70">
+                      {sec.label}
+                    </div>
+                  )}
 
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <div
-                          className={`flex items-center gap-3 px-2.5 h-9 rounded-md cursor-pointer text-xs font-medium transition-all relative ${
-                            sidebarMinimized ? 'justify-center' : ''
-                          } ${
-                            isLeafActive
-                              ? 'bg-sidebar-active text-sidebar font-semibold'
-                              : isParentActive
-                              ? 'text-sidebar hover:bg-sidebar-hover'
-                              : 'text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover'
-                          } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring`}
-                          onClick={() => {
-                            navigate(item.route);
-                            setSidebarOpen(false);
-                          }}
-                          tabIndex={0}
-                          role="link"
-                          aria-current={isLeafActive ? 'page' : undefined}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') navigate(item.route);
-                          }}
-                        >
-                          {isLeafActive && (
-                            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-r" />
-                          )}
-                          <item.icon className={`size-4.5 shrink-0 ${isParentActive ? 'text-sidebar' : 'text-sidebar-muted'}`} />
-                          {!sidebarMinimized && <span className="truncate">{item.label}</span>}
-                        </div>
-                      </Tooltip.Trigger>
-                      {sidebarMinimized && (
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            side="right"
-                            sideOffset={12}
-                            className="bg-popover text-popover-foreground border border-border shadow-lg px-2.5 py-1 rounded text-xs z-50 font-medium"
-                          >
-                            {item.label}
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      )}
-                    </Tooltip.Root>
+                  {sec.items.map((item) => {
+                    const isParentActive = location.pathname.startsWith(item.route);
+                    const isLeafActive = location.pathname === item.route;
+                    const hasChildren = item.children && item.children.length > 0;
+                    const isExpanded = openGroups[item.id] !== false; // default open
 
-                    {item.children && isParentActive && !sidebarMinimized && (
-                      <div className="ml-4 pl-3 border-l border-sidebar-border flex flex-col gap-1 my-0.5">
-                        {item.children.map((child) => {
-                          const isChildActive =
-                            location.pathname === child.route || location.pathname.startsWith(child.route + '/');
-                          return (
+                    return (
+                      <div key={item.id} className="flex flex-col">
+                        <Tooltip.Root>
+                          <Tooltip.Trigger asChild>
                             <div
-                              key={child.route}
-                              className={`relative px-2.5 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
-                                isChildActive
+                              className={`flex items-center gap-2.5 px-2.5 h-9 rounded-md cursor-pointer text-xs font-medium transition-all relative ${
+                                sidebarMinimized ? 'justify-center' : 'justify-between'
+                              } ${
+                                isLeafActive
                                   ? 'bg-sidebar-active text-sidebar font-semibold'
+                                  : isParentActive
+                                  ? 'text-sidebar hover:bg-sidebar-hover'
                                   : 'text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover'
-                              }`}
+                              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring`}
                               onClick={() => {
-                                navigate(child.route);
-                                setSidebarOpen(false);
+                                if (hasChildren && !sidebarMinimized) {
+                                  toggleGroup(item.id);
+                                } else {
+                                  navigate(item.route);
+                                }
+                              }}
+                              onMouseEnter={(e) => {
+                                if (sidebarMinimized) handleRailMouseEnter(item, e);
                               }}
                               tabIndex={0}
                               role="link"
-                              aria-current={isChildActive ? 'page' : undefined}
+                              aria-current={isLeafActive ? 'page' : undefined}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') navigate(child.route);
+                                if (e.key === 'Enter') {
+                                  if (hasChildren && !sidebarMinimized) toggleGroup(item.id);
+                                  else navigate(item.route);
+                                } else if (e.key === 'ArrowRight' && sidebarMinimized && hasChildren) {
+                                  handleRailMouseEnter(item, e as any);
+                                }
                               }}
                             >
-                              {child.label}
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {isLeafActive && (
+                                  <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r" />
+                                )}
+                                <item.icon className={`size-4 shrink-0 ${isParentActive ? 'text-primary' : 'text-sidebar-muted'}`} />
+                                {!sidebarMinimized && <span className="truncate">{item.label}</span>}
+                              </div>
+
+                              {!sidebarMinimized && (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {item.badge !== undefined && (
+                                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive/20 text-destructive font-bold">
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                  {hasChildren && (
+                                    <ChevronDown
+                                      className={`size-3 text-muted-foreground transition-transform duration-150 ${
+                                        isExpanded ? 'rotate-0' : '-rotate-90'
+                                      }`}
+                                    />
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          );
-                        })}
+                          </Tooltip.Trigger>
+
+                          {/* Rail Tooltip on collapsed state */}
+                          {sidebarMinimized && (
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                side="right"
+                                sideOffset={12}
+                                className="bg-popover text-popover-foreground border border-border shadow-lg px-2.5 py-1 rounded text-xs z-50 font-medium"
+                              >
+                                <span>{item.label}</span>
+                                {item.badge !== undefined && (
+                                  <span className="ml-1.5 px-1 rounded bg-destructive text-white text-[10px]">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          )}
+                        </Tooltip.Root>
+
+                        {/* Expanded Children Tree (Up to 3 levels) */}
+                        {!sidebarMinimized && hasChildren && isExpanded && (
+                          <div className="ml-4 pl-3 border-l border-sidebar-border flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
+                            {item.children?.map((child) => {
+                              const isChildActive = location.pathname === child.route;
+                              const hasGrandChildren = child.children && child.children.length > 0;
+
+                              return (
+                                <div key={child.id} className="flex flex-col">
+                                  <div
+                                    className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
+                                      isChildActive
+                                        ? 'bg-sidebar-active text-sidebar font-semibold'
+                                        : 'text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover'
+                                    }`}
+                                    onClick={() => navigate(child.route)}
+                                  >
+                                    <span className="truncate">{child.label}</span>
+                                    {child.badge !== undefined && (
+                                      <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
+                                        {child.badge}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* 3rd Level Indentation */}
+                                  {hasGrandChildren && (
+                                    <div className="ml-3 pl-2 border-l border-sidebar-border/60 flex flex-col gap-0.5 my-0.5">
+                                      {child.children?.map((grandChild) => {
+                                        const isGrandActive = location.pathname === grandChild.route;
+                                        return (
+                                          <div
+                                            key={grandChild.id}
+                                            className={`px-2 py-1 text-[11px] rounded cursor-pointer transition-colors flex items-center justify-between ${
+                                              isGrandActive
+                                                ? 'text-primary font-semibold'
+                                                : 'text-sidebar-muted hover:text-sidebar'
+                                            }`}
+                                            onClick={() => navigate(grandChild.route)}
+                                          >
+                                            <span className="truncate">{grandChild.label}</span>
+                                            {grandChild.badge !== undefined && (
+                                              <span className="text-[10px] font-mono text-muted-foreground">
+                                                {grandChild.badge}
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ))}
             </div>
+
+            {/* Collapsed Rail Flyout Panel */}
+            {sidebarMinimized && activeFlyoutItem && (
+              <div
+                style={{ top: `${activeFlyoutItem.top}px` }}
+                className="absolute left-[58px] w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
+                onMouseEnter={handleFlyoutMouseEnter}
+                onMouseLeave={handleFlyoutMouseLeave}
+              >
+                <div className="flex items-center gap-2 pb-2 mb-2 border-b border-border">
+                  <activeFlyoutItem.item.icon className="size-4 text-primary" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
+                      {activeFlyoutItem.item.label}
+                    </span>
+                    {activeFlyoutItem.item.description && (
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {activeFlyoutItem.item.description}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 max-h-80 overflow-y-auto">
+                  {activeFlyoutItem.item.children?.map((sub) => (
+                    <div key={sub.id} className="flex flex-col">
+                      <div
+                        onClick={() => {
+                          navigate(sub.route);
+                          setActiveFlyoutItem(null);
+                        }}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+                          location.pathname === sub.route
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        }`}
+                      >
+                        <span className="truncate">{sub.label}</span>
+                        {sub.badge !== undefined && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white font-bold">
+                            {sub.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 3rd level inside flyout */}
+                      {sub.children && (
+                        <div className="ml-3 pl-2 border-l border-border/60 flex flex-col gap-1 my-1">
+                          {sub.children.map((leaf) => (
+                            <div
+                              key={leaf.id}
+                              onClick={() => {
+                                navigate(leaf.route);
+                                setActiveFlyoutItem(null);
+                              }}
+                              className={`px-2 py-1 rounded text-[11px] cursor-pointer transition-colors flex items-center justify-between ${
+                                location.pathname === leaf.route
+                                  ? 'text-primary font-semibold'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              <span className="truncate">{leaf.label}</span>
+                              {leaf.badge !== undefined && (
+                                <span className="text-[10px] font-mono text-muted-foreground">
+                                  {leaf.badge}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Bottom Log out button */}
             <div className="p-2 border-t border-sidebar-border mt-auto">
@@ -405,8 +614,91 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             </div>
           </aside>
 
-          {/* Main workspace container */}
-          <main className={`flex-1 flex flex-col min-w-0 ${isOverview ? 'overflow-hidden p-3' : 'overflow-y-auto p-4 lg:p-6'}`}>
+          {/* Mobile Sheet Navigation (< 1024px) */}
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetContent side="left" className="p-0 w-72 bg-sidebar border-r border-sidebar-border flex flex-col">
+              <SheetHeader className="p-4 border-b border-sidebar-border flex flex-row items-center justify-between">
+                <SheetTitle className="text-sm font-bold text-foreground">
+                  <Logo className="h-6" />
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                {navigationConfig.map((sec) => (
+                  <div key={sec.id} className="space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-2">
+                      {sec.label}
+                    </div>
+                    {sec.items.map((item) => (
+                      <div key={item.id} className="space-y-1">
+                        <div
+                          onClick={() => {
+                            navigate(item.route);
+                            setMobileNavOpen(false);
+                          }}
+                          className={`flex items-center justify-between h-11 px-3 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+                            location.pathname.startsWith(item.route)
+                              ? 'bg-primary/10 text-primary font-semibold'
+                              : 'text-foreground/80 hover:bg-muted/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <item.icon className="size-4.5 text-primary" />
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge !== undefined && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-destructive text-white font-bold">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+
+                        {item.children && (
+                          <div className="ml-6 pl-3 border-l border-border/60 space-y-1">
+                            {item.children.map((child) => (
+                              <div
+                                key={child.id}
+                                onClick={() => {
+                                  navigate(child.route);
+                                  setMobileNavOpen(false);
+                                }}
+                                className={`flex items-center justify-between h-9 px-2 text-xs font-medium rounded cursor-pointer transition-colors ${
+                                  location.pathname === child.route
+                                    ? 'text-primary font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                <span>{child.label}</span>
+                                {child.badge !== undefined && (
+                                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
+                                    {child.badge}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 border-t border-sidebar-border">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="size-4" />
+                  <span>Log out</span>
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Main Workspace: Full Bleed for Overview (p-0) */}
+          <main className={`flex-1 flex flex-col min-w-0 ${isOverview ? 'overflow-hidden p-0 relative h-full' : 'overflow-y-auto p-4 lg:p-6'}`}>
             {children}
           </main>
         </div>
@@ -414,4 +706,3 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     </Tooltip.Provider>
   );
 };
-

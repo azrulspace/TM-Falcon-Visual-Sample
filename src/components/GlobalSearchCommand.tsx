@@ -13,7 +13,8 @@ import { devices } from '@/data/devices';
 import { events } from '@/data/events';
 import { cases } from '@/data/cases';
 import { segments } from '@/data/segments';
-import { AlertCircle, Briefcase, Camera, Cable } from 'lucide-react';
+import { AlertCircle, Briefcase, Camera, Cable, Compass } from 'lucide-react';
+import { getFlattenedNavRoutes } from '@/config/navigation';
 
 interface GlobalSearchCommandProps {
   open: boolean;
@@ -27,6 +28,7 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
   onSelectItem,
 }) => {
   const navigate = useNavigate();
+  const navRoutes = getFlattenedNavRoutes();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -48,11 +50,40 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
     }
   };
 
+  const handleNavSelect = (route: string) => {
+    onOpenChange(false);
+    navigate(route);
+  };
+
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Search poles, spans, devices, events and cases... (Esc to close)" />
+      <CommandInput placeholder="Search navigation, poles, spans, devices, events and cases... (Esc to close)" />
       <CommandList>
         <CommandEmpty>No matching infrastructure assets or events found.</CommandEmpty>
+
+        <CommandGroup heading="Navigation & Workflows">
+          {navRoutes.map((item) => {
+            const Icon = item.icon || Compass;
+            return (
+              <CommandItem
+                key={item.id + item.route}
+                value={`${item.fullPath.join(' ')} ${item.label}`}
+                onSelect={() => handleNavSelect(item.route)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Icon className="size-4 text-primary shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-foreground">{item.label}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {item.fullPath.join(' › ')}
+                  </span>
+                </div>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+
+        <CommandSeparator />
 
         <CommandGroup heading="Events">
           {events.map((evt) => (
