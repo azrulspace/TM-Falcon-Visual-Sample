@@ -77,7 +77,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
             <button
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-lg transition-all group ${
                 layersOpen
-                  ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
+                  ? 'bg-brand-solid text-white font-semibold shadow-sm ring-1 ring-brand-solid/40'
                   : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
               aria-label="Map layers and overlays"
@@ -221,7 +221,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
                 onClick={() => onBasemapChange('terrain')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-lg transition-all ${
                   basemap === 'terrain'
-                    ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
+                    ? 'bg-brand-solid text-white font-semibold shadow-sm ring-1 ring-brand-solid/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                 }`}
                 aria-label="Terrain basemap"
@@ -244,7 +244,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
                 onClick={() => onBasemapChange('satellite')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-lg transition-all ${
                   basemap === 'satellite'
-                    ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
+                    ? 'bg-brand-solid text-white font-semibold shadow-sm ring-1 ring-brand-solid/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                 }`}
                 aria-label="Satellite basemap"
@@ -267,7 +267,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
                 onClick={() => onBasemapChange('dark')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-lg transition-all ${
                   basemap === 'dark'
-                    ? 'bg-primary text-white font-semibold shadow-sm ring-1 ring-primary/40'
+                    ? 'bg-brand-solid text-white font-semibold shadow-sm ring-1 ring-brand-solid/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
                 }`}
                 aria-label="Dark basemap"
@@ -292,7 +292,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
             <button
               className={`flex flex-col items-center justify-center w-14 h-10 rounded-lg transition-colors group ${
                 legendOpen
-                  ? 'bg-primary text-white'
+                  ? 'bg-brand-solid text-white'
                   : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground'
               }`}
               aria-label="Map GIS symbology legend"

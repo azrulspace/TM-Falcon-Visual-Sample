@@ -236,27 +236,40 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
           </Link>
         </div>
 
-        {/* Compact Controls Row: Filters Popover & Untruncated Sort Select */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Tabs: All, Events, Devices, Cases */}
-          <Tabs value={tab} onValueChange={(val: any) => setTab(val)} className="flex-1">
-            <TabsList className="h-7 w-full p-0.5 bg-muted/60 border border-border grid grid-cols-4 rounded-md">
-              <TabsTrigger value="All" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                All ({enrichedItems.length})
-              </TabsTrigger>
-              <TabsTrigger value="EVENT" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Events ({enrichedItems.filter((i) => i.kind === 'EVENT').length})
-              </TabsTrigger>
-              <TabsTrigger value="DEVICE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Devices ({enrichedItems.filter((i) => i.kind === 'DEVICE').length})
-              </TabsTrigger>
-              <TabsTrigger value="CASE" className="text-[11px] h-6 px-1 data-[state=active]:bg-card font-medium">
-                Cases ({enrichedItems.filter((i) => i.kind === 'CASE').length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Full-width Tabs Row (D1) */}
+        <Tabs value={tab} onValueChange={(val: any) => setTab(val)} className="w-full">
+          <TabsList className="h-7 w-full p-0.5 bg-muted/60 border border-border grid grid-cols-4 rounded-md">
+            <TabsTrigger value="All" className="text-xs h-6 px-1 data-[state=active]:bg-card font-medium">
+              All ({enrichedItems.length})
+            </TabsTrigger>
+            <TabsTrigger value="EVENT" className="text-xs h-6 px-1 data-[state=active]:bg-card font-medium">
+              Events ({enrichedItems.filter((i) => i.kind === 'EVENT').length})
+            </TabsTrigger>
+            <TabsTrigger value="DEVICE" className="text-xs h-6 px-1 data-[state=active]:bg-card font-medium">
+              Devices ({enrichedItems.filter((i) => i.kind === 'DEVICE').length})
+            </TabsTrigger>
+            <TabsTrigger value="CASE" className="text-xs h-6 px-1 data-[state=active]:bg-card font-medium">
+              Cases ({enrichedItems.filter((i) => i.kind === 'CASE').length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-          <div className="flex items-center gap-1 shrink-0">
+        {/* Compact Controls Row: Group Similar Items Switch (left) + Filter & Untruncated Sort (right) */}
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-border/60">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
+              <Layers className="size-3 text-muted-foreground" />
+              Group
+            </span>
+            <Switch
+              checked={groupSimilar}
+              onCheckedChange={setGroupSimilar}
+              aria-label="Group similar items"
+              className="scale-90"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Filter Popover */}
             <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
               <PopoverTrigger
@@ -301,7 +314,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
               </PopoverContent>
             </Popover>
 
-            {/* Sort Select */}
+            {/* Sort Select (Untruncated) */}
             <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
               <SelectTrigger className="h-7 w-32 text-xs bg-muted/40 border-border">
                 <SelectValue placeholder="Sort by" />
@@ -313,20 +326,6 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        {/* Group Similar Items Switch */}
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-border/60">
-          <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5">
-            <Layers className="size-3 text-muted-foreground" />
-            Group similar items
-          </span>
-          <Switch
-            checked={groupSimilar}
-            onCheckedChange={setGroupSimilar}
-            aria-label="Group similar items"
-            className="scale-90"
-          />
         </div>
       </div>
 

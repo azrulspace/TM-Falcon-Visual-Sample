@@ -92,7 +92,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
             onClick={() => onTimeModeChange('Active now')}
             className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-all ${
               timeMode === 'Active now'
-                ? 'bg-primary text-white shadow-xs'
+                ? 'bg-brand-solid text-white shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -103,7 +103,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
             onClick={() => onTimeModeChange('History')}
             className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-all ${
               timeMode === 'History'
-                ? 'bg-primary text-white shadow-xs'
+                ? 'bg-brand-solid text-white shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
