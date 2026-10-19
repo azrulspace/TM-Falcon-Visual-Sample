@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusBadge } from '@/components/common/StatusBadge';
-import { formatId } from '@/lib/formatters';
+import { formatId } from '@/lib/utils';
 import { devices } from '@/data/devices';
 
 interface DeviceStatusDrawerProps {
