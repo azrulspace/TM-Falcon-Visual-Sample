@@ -11,7 +11,9 @@
         var t;
         try { t = localStorage.getItem("ds_theme"); } catch (e) {}
         if (!t) t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.remove("theme_light", "theme_dark", "dark");
         document.documentElement.classList.add("theme_" + t);
+        if (t === "dark") document.documentElement.classList.add("dark");
       })();
     </script>
   </head>
