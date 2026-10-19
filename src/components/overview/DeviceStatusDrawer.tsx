@@ -41,6 +41,8 @@ interface DeviceStatusDrawerProps {
   selectedId: string | null;
   onSelectDevice: (id: string) => void;
   timeMode?: string;
+  isSheet?: boolean;
+  onClose?: () => void;
 }
 
 interface DeviceRow {
@@ -60,6 +62,8 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
   selectedId,
   onSelectDevice,
   timeMode = 'Active now',
+  isSheet = false,
+  onClose,
 }) => {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -245,6 +249,97 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
   const onlineCount = data.filter((d) => d.status === 'online').length;
   const offlineCount = data.filter((d) => d.status === 'offline').length;
   const staleCount = data.filter((d) => d.status === 'stale').length;
+
+  if (isSheet) {
+    return (
+      <div className="flex flex-col h-full bg-card text-foreground select-none overflow-hidden">
+        {/* Sheet Header */}
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0 bg-muted/40">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold tracking-tight text-foreground flex items-center gap-2">
+              <SlidersHorizontal className="size-4 text-primary" />
+              Assets & devices ({data.length})
+            </span>
+            <span className="text-xs text-muted-foreground font-mono hidden sm:inline">
+              <span className="text-status-online font-semibold">● {onlineCount} online</span> •{' '}
+              <span className="text-status-offline font-semibold">● {offlineCount} offline</span> •{' '}
+              <span className="text-status-stale font-semibold">● {staleCount} stale</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="h-8 px-2.5 text-xs gap-1.5 border-border opacity-70 cursor-not-allowed"
+                >
+                  <Download className="size-3.5" />
+                  <span>Export CSV</span>
+                </Button>
+              } />
+              <TooltipContent side="top" className="text-xs">
+                Export telemetry CSV
+              </TooltipContent>
+            </Tooltip>
+
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={onClose}
+                className="size-8 text-muted-foreground hover:text-foreground"
+                aria-label="Close assets table"
+              >
+                ✕
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable Table Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 border-b border-border">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="text-xs font-semibold py-2">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => {
+                const isSelected = selectedId === row.original.id;
+                return (
+                  <TableRow
+                    key={row.id}
+                    onClick={() => onSelectDevice(row.original.id)}
+                    className={`cursor-pointer transition-colors text-xs ${
+                      isSelected ? 'bg-accent font-semibold border-l-2 border-l-primary' : 'hover:bg-muted/40'
+                    }`}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-2.5">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-t border-border bg-card shrink-0 select-none shadow-lg z-30 transition-all duration-200">
