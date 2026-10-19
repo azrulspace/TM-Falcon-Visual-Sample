@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="theme_light">
+<html lang="en" class="theme_dark dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -10,7 +10,7 @@
       (function () {
         var t;
         try { t = localStorage.getItem("ds_theme"); } catch (e) {}
-        if (!t) t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        if (!t) t = "dark";
         document.documentElement.classList.remove("theme_light", "theme_dark", "dark");
         document.documentElement.classList.add("theme_" + t);
         if (t === "dark") document.documentElement.classList.add("dark");

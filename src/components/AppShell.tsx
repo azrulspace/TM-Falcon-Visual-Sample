@@ -402,7 +402,14 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             {/* Theme Toggle */}
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={toggleTheme} className="text-muted-foreground hover:text-foreground">
+                <Button
+                  id="theme-toggle-btn"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={toggleTheme}
+                  aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
                 </Button>
               </Tooltip.Trigger>
