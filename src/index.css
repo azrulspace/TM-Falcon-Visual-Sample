@@ -96,6 +96,14 @@
     --radius-control: 6px;
     --row-height-default: 36px;
     --row-height-compact: 28px;
+
+    /* Glass Overlay Tokens (V2) */
+    --overlay-bg: rgba(255, 255, 255, 0.88);
+    --overlay-border: rgba(221, 227, 238, 0.85);
+    --overlay-blur: 14px;
+    --overlay-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --scrim-top: linear-gradient(to bottom, rgba(246, 248, 252, 0.85) 0%, rgba(246, 248, 252, 0) 100%);
+    --scrim-bottom: linear-gradient(to top, rgba(246, 248, 252, 0.90) 0%, rgba(246, 248, 252, 0) 100%);
   }
 
   .dark,
@@ -170,6 +178,14 @@
     --radius-control: 6px;
     --row-height-default: 36px;
     --row-height-compact: 28px;
+
+    /* Glass Overlay Tokens (V2) */
+    --overlay-bg: rgba(15, 23, 41, 0.82);
+    --overlay-border: rgba(31, 42, 68, 0.80);
+    --overlay-blur: 14px;
+    --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+    --scrim-top: linear-gradient(to bottom, rgba(10, 16, 28, 0.80) 0%, rgba(10, 16, 28, 0) 100%);
+    --scrim-bottom: linear-gradient(to top, rgba(10, 16, 28, 0.85) 0%, rgba(10, 16, 28, 0) 100%);
   }
 
   * {
@@ -180,5 +196,22 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background-color: var(--overlay-bg);
+    border: 1px solid var(--overlay-border);
+    backdrop-filter: blur(var(--overlay-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-blur));
+    box-shadow: var(--overlay-shadow);
+    border-radius: 12px;
+  }
+  .scrim-top {
+    background: var(--scrim-top);
+  }
+  .scrim-bottom {
+    background: var(--scrim-bottom);
   }
 }
