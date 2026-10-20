@@ -1,11 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import {
-  ZoomIn,
-  ZoomOut,
-  Maximize,
-  Compass,
-  Info,
-} from 'lucide-react';
+import { Info } from 'lucide-react';
 import { mapMarkers, mapClusters, mapRoutes, mapPoles, mapCameras } from '@/data/map';
 import { devices } from '@/data/devices';
 import { events } from '@/data/events';
@@ -21,6 +15,8 @@ export interface MapCanvasProps {
   className?: string;
   onMouseMoveCoords?: (coords: { lat: number; lon: number }) => void;
   onZoomChange?: (scale: number) => void;
+  zoomInSignal?: number;
+  zoomOutSignal?: number;
 }
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
@@ -39,12 +35,16 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   },
   className = '',
   onMouseMoveCoords,
+  zoomInSignal,
+  zoomOutSignal,
 }) => {
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hoveredMarker, setHoveredMarker] = useState<any | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
-  const [mouseCoords, setMouseCoords] = useState<{ lat: number; lon: number }>({
+  const [hoveredRoute, setHoveredRoute] = useState<{ id: string; type: string; length: string; status: string } | null>(null);
+  const [hoverRoutePos, setHoverRoutePos] = useState<{ x: number; y: number } | null>(null);
+  const [, setMouseCoords] = useState<{ lat: number; lon: number }>({
     lat: 1.5535,
     lon: 110.3421,
   });
@@ -97,10 +97,19 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   // Zoom handlers
   const handleZoomIn = useCallback(() => setScale((s) => Math.min(s + 0.35, 2.8)), []);
   const handleZoomOut = useCallback(() => setScale((s) => Math.max(s - 0.35, 0.85)), []);
-  const handleReset = useCallback(() => {
-    setScale(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+
+  // React to external Zoom In / Zoom Out controls
+  useEffect(() => {
+    if (zoomInSignal && zoomInSignal > 0) {
+      handleZoomIn();
+    }
+  }, [zoomInSignal, handleZoomIn]);
+
+  useEffect(() => {
+    if (zoomOutSignal && zoomOutSignal > 0) {
+      handleZoomOut();
+    }
+  }, [zoomOutSignal, handleZoomOut]);
 
   // Mouse pan handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -314,42 +323,178 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           </g>
         )}
 
-        {/* Cable Routes: Fibre (Solid Blue Glow) and Copper (Dashed Amber) (B7, CEO_REFERENCE) */}
+        {/* Geographic Labels & Highway Badges (Figma visual parity) */}
+        <g className="geo-labels pointer-events-none select-none">
+          {/* AH150 Highway Shield */}
+          <g transform="translate(182, 228)">
+            <rect x="0" y="0" width="46" height="20" rx="4" fill="#1e40af" stroke="#60a5fa" strokeWidth="1" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
+            <text x="23" y="14" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">AH150</text>
+          </g>
+
+          {/* Pending */}
+          <text x="55" y="390" fill="#cbd5e1" fontSize="13" fontWeight="600" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Pending</text>
+
+          {/* Kuching International Airport */}
+          <g transform="translate(65, 540)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">
+            <path d="M12 2L10 8L4 10L4 12L10 11L10 16L8 18L8 20L12 19L16 20L16 18L14 16L14 11L20 12L20 10L14 8L12 2Z" fill="#e2e8f0" transform="translate(0, 0) scale(0.8)" />
+            <text x="24" y="10" fill="#f1f5f9" fontSize="11" fontWeight="600">Kuching</text>
+            <text x="24" y="22" fill="#cbd5e1" fontSize="10" fontWeight="500">International Airport</text>
+          </g>
+
+          {/* Satok */}
+          <text x="230" y="670" fill="#f8fafc" fontSize="15" fontWeight="600" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Satok</text>
+
+          {/* Kuching (Primary City Label) */}
+          <text x="318" y="495" fill="#ffffff" fontSize="23" fontWeight="700" letterSpacing="0.5px" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.9))">Kuching</text>
+
+          {/* Sungai Sarawak (Waterway Label) */}
+          <text x="540" y="350" fill="#93c5fd" fontSize="13" fontWeight="500" fontStyle="italic" opacity="0.85" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Sungai Sarawak</text>
+
+          {/* Telaga Air */}
+          <text x="615" y="165" fill="#f1f5f9" fontSize="14" fontWeight="600" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Telaga Air</text>
+
+          {/* Batu Lintang */}
+          <text x="595" y="630" fill="#f1f5f9" fontSize="14" fontWeight="600" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Batu Lintang</text>
+
+          {/* Samarahan */}
+          <text x="765" y="700" fill="#f1f5f9" fontSize="14" fontWeight="600" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">Samarahan</text>
+        </g>
+
+        {/* Cable Routes: Blue network (Trunk solid 3px bright blue with soft glow, Branch dashed 2px) */}
         {activeLayers.cableRoutes &&
           mapRoutes.map((route, i) => {
-            const isFibre = i % 2 === 0;
-            const isSpanSelected = activeSelectedSpanId === 'CBL_SPN_041' && i === 0;
+            const isTrunk = i === 1 || i === 3 || i === 4 || i === 6 || i === 8 || i === 9; // Core trunk backbone
+            const isSpanSelected = (activeSelectedSpanId === 'CBL_SPN_041' && i === 0) || (selectedId && selectedId.includes(String(i + 1)));
+            const routeId = `CBL-KCH-${String(i + 1).padStart(2, '0')}`;
+            const isHovered = hoveredRoute?.id === routeId;
+            const hasHoveredOther = Boolean(hoveredRoute && hoveredRoute.id !== routeId);
+
+            // Downstream of offline device
+            const isDownstreamOffline = (selectedId === 'DEV_004' && i === 9) || (selectedId === 'DEV_011' && i === 1);
+            // Stale device segment shimmer
+            const isStaleSegment = (selectedId === 'DEV_003' && i === 4) || (selectedId === 'DEV_008' && i === 2);
+
+            let strokeColor = '#38bdf8';
+            let strokeWidth = isTrunk ? '3' : '2';
+            let strokeDash = isTrunk ? 'none' : '6 4';
+
+            if (isDownstreamOffline) {
+              strokeColor = '#e33f50';
+              strokeDash = '4 4';
+            } else if (isStaleSegment) {
+              strokeColor = '#f59e0b';
+            } else if (isSpanSelected || isHovered) {
+              strokeColor = '#00d2ff';
+              strokeWidth = '4.5';
+            }
 
             return (
-              <g key={i}>
-                {/* Soft outer glow underlay (B7: blurred wider stroke at ~35% opacity) */}
+              <g
+                key={i}
+                className="cursor-pointer transition-opacity duration-150"
+                style={{ opacity: hasHoveredOther ? 0.55 : 1 }}
+                onClick={() => {
+                  if (onMarkerClick) onMarkerClick(routeId);
+                }}
+                onMouseEnter={(e) => {
+                  const rect = containerRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setHoveredRoute({
+                      id: routeId,
+                      type: isTrunk ? 'Fibre Primary Trunk (24-Core SM)' : 'Fibre Feeder Branch Span',
+                      length: `${(2.4 + (i * 0.8) % 3.6).toFixed(1)} km`,
+                      status: isDownstreamOffline ? 'Fault • Signal Interrupted' : isStaleSegment ? 'Degraded • Delayed Telemetry' : 'Normal (99.98% SLA)',
+                    });
+                    setHoverRoutePos({
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    });
+                  }
+                }}
+                onMouseMove={(e) => {
+                  const rect = containerRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setHoverRoutePos({
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    });
+                  }
+                }}
+                onMouseLeave={() => setHoveredRoute(null)}
+              >
+                {/* Soft outer glow underlay */}
                 <polyline
                   points={route.map((p) => p.join(',')).join(' ')}
                   fill="none"
-                  stroke={isSpanSelected ? '#00d2ff' : isFibre ? '#38bdf8' : '#f59e0b'}
-                  strokeWidth={isSpanSelected ? '10' : isFibre ? '6' : '4'}
+                  stroke={isDownstreamOffline ? '#e33f50' : isSpanSelected || isHovered ? '#00d2ff' : '#38bdf8'}
+                  strokeWidth={isSpanSelected || isHovered ? '10' : '6'}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity={isSpanSelected ? 0.85 : isFibre ? 0.35 : 0.2}
-                  filter={isSpanSelected ? 'url(#selectedSpanGlow)' : isFibre ? 'url(#fibreGlow)' : undefined}
+                  opacity={isSpanSelected || isHovered ? 0.85 : 0.35}
+                  filter={isSpanSelected || isHovered ? 'url(#selectedSpanGlow)' : 'url(#fibreGlow)'}
                 />
 
-                {/* Main line: 3px solid blue for fibre, 3px dashed amber for copper (B7) */}
+                {/* Main route path line */}
                 <polyline
                   points={route.map((p) => p.join(',')).join(' ')}
                   fill="none"
-                  stroke={isSpanSelected ? '#ffffff' : isFibre ? '#0284c7' : '#d97706'}
-                  strokeWidth={isSpanSelected ? '5' : '3'}
-                  strokeDasharray={isFibre ? 'none' : '6 4'}
+                  stroke={isSpanSelected ? '#ffffff' : strokeColor}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={strokeDash}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity={timeMode === 'History' ? 0.45 : 0.95}
+                  opacity={timeMode === 'History' ? 0.5 : 0.95}
+                />
+
+                {/* Ambient Telemetry Flow (Blue dashes marching along line, capped at 30 fps) */}
+                {timeMode !== 'History' && !isDownstreamOffline && (
+                  <polyline
+                    points={route.map((p) => p.join(',')).join(' ')}
+                    fill="none"
+                    stroke="#93c5fd"
+                    strokeWidth={isHovered ? '2.5' : '1.5'}
+                    strokeDasharray="6 6"
+                    className="data-flow-active pointer-events-none"
+                    opacity={isHovered ? 1 : 0.75}
+                  />
+                )}
+
+                {/* Wide invisible hit target for comfortable hover */}
+                <polyline
+                  points={route.map((p) => p.join(',')).join(' ')}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth="20"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </g>
             );
           })}
 
-        {/* 60+ Utility Poles (Small white dots with dark outline) (B6, B7) */}
+        {/* Circular network junction markers (22x22 halo, 20px body) */}
+        {activeLayers.cableRoutes && [
+          [365, 190], [345, 225], [312, 292], [295, 355], [238, 388], [272, 455],
+          [442, 462], [578, 358], [742, 442], [652, 572], [615, 610], [422, 552], [178, 482]
+        ].map(([nx, ny], idx) => (
+          <g key={`junction-node-${idx}`} transform={`translate(${nx}, ${ny})`} className="pointer-events-none">
+            <circle r="11" fill="rgba(16, 185, 129, 0.25)" />
+            <circle r="8" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+          </g>
+        ))}
+
+        {/* Amber warning triangles for network warnings (vegetation / cable sag) */}
+        {activeLayers.events && [
+          [392, 279], [492, 183], [597, 492]
+        ].map(([wx, wy], idx) => (
+          <g key={`hazard-warn-${idx}`} transform={`translate(${wx}, ${wy})`} className="cursor-pointer transition-transform hover:scale-125">
+            <circle r="11" fill="rgba(245, 158, 11, 0.25)" />
+            <polygon points="0,-7 7,5 -7,5" fill="#f59e0b" stroke="#ffffff" strokeWidth="0.8" />
+            <text y="3.5" textAnchor="middle" fill="#000000" fontSize="7.5" fontWeight="bold">!</text>
+          </g>
+        ))}
+
+        {/* 42 Utility Poles (Small white dots with dark outline) */}
         {activeLayers.poles &&
           mapPoles.map(([px, py], idx) => (
             <circle
@@ -360,33 +505,34 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               fill="#FFFFFF"
               stroke="#0f172a"
               strokeWidth="0.8"
-              opacity="0.9"
+              opacity="0.95"
             />
           ))}
 
-        {/* CCTV Surveillance Camera Feeds (B6, B7) */}
+        {/* 6 CCTV Surveillance Cameras (Dark navy body with thin blue ring and video icon) */}
         {activeLayers.cctv &&
           mapCameras.map((cam) => (
             <g
               key={cam.id}
               transform={`translate(${cam.x}, ${cam.y})`}
-              opacity="0.95"
               className="cursor-pointer transition-transform hover:scale-125"
+              onClick={() => onMarkerClick(cam.id)}
             >
               <title>{cam.name}</title>
-              <circle r="8" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
+              <circle r="11" fill="rgba(56, 189, 248, 0.25)" />
+              <circle r="8.5" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
               <path
-                d="M -3.5 -2.5 L 2 -2.5 L 2 2.5 L -3.5 2.5 Z M 2 -1 L 4.5 -2.5 L 4.5 2.5 L 2 1 Z"
+                d="M -3.5 -2.5 L 1.5 -2.5 L 1.5 2.5 L -3.5 2.5 Z M 1.5 -1 L 4 -2.5 L 4 2.5 L 1.5 1 Z"
                 fill="#ffffff"
               />
             </g>
           ))}
 
-        {/* Clustered Event Badges with highest severity halo (B7) */}
+        {/* Clustered Event Badges at low zoom */}
         {activeLayers.events &&
           mapClusters.map((c) => {
             const badgeColor =
-              c.severity === 'high' ? '#ef4444' : c.severity === 'medium' ? '#f59e0b' : '#0284c7';
+              c.severity === 'high' ? '#e33f50' : c.severity === 'medium' ? '#f59e0b' : '#1850a0';
 
             return (
               <g
@@ -399,11 +545,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 }}
               >
                 <circle
-                  r="14"
+                  r="13"
                   fill={badgeColor}
                   stroke="#FFFFFF"
                   strokeWidth="2"
-                  filter="drop-shadow(0px 3px 8px rgba(0,0,0,0.6))"
+                  filter="drop-shadow(0px 3px 6px rgba(0,0,0,0.6))"
                 />
                 <text
                   y="4"
@@ -419,31 +565,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             );
           })}
 
-        {/* Devices & Markers (CEO_REFERENCE Symbology: B6) */}
+        {/* Devices & Markers (Figma Section 4.10: 81x26 pill for incident devices only) */}
         {activeLayers.devices &&
           enrichedMarkers.map((m) => {
-            const isSelected = selectedId === m.id || selectedId === 'EVT_0128' && m.id === 'DEV_002';
+            const isSelected = selectedId === m.id || (selectedId === 'EVT_0128' && m.id === 'DEV_002');
 
-            // Incident devices render as compact pills (height 28px, radius 14px, 20px round icon, white ID text, no status word) (B6)
-            if (m.isOffline || m.isStale || m.isAttention) {
-              const pillWidth = 98;
-              const filterUrl = m.isOffline
-                ? 'url(#offlineGlow)'
-                : m.isAttention
-                ? 'url(#attentionGlow)'
-                : undefined; // Stale has NO colored glow per B6
-
-              const pillStroke = m.isOffline
-                ? 'rgba(239, 68, 68, 0.6)'
-                : m.isAttention
-                ? 'rgba(245, 158, 11, 0.6)'
-                : 'rgba(148, 163, 184, 0.4)';
+            // Incident devices render as exact 81x26 pills (radius 13px, 20px round status icon inset 2px on left, white ID text 12px semibold)
+            if (m.isOffline || m.isStale) {
+              const pillWidth = 81;
+              const pillHeight = 26;
+              const isOffline = m.isOffline;
 
               return (
                 <g
                   key={m.id}
                   transform={`translate(${m.x}, ${m.y})`}
-                  className="cursor-pointer transition-all duration-150 hover:scale-110"
+                  className="cursor-pointer transition-all duration-150 hover:scale-110 select-none"
                   onClick={() => onMarkerClick(m.id)}
                   onMouseEnter={(e) => {
                     const rect = containerRef.current?.getBoundingClientRect();
@@ -457,91 +594,63 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   }}
                   onMouseLeave={() => setHoveredMarker(null)}
                 >
-                  {/* Selected pulse ring */}
+                  {/* Selection pulse ring */}
                   {isSelected && (
                     <rect
-                      x={-(pillWidth / 2) - 4}
-                      y="-18"
-                      width={pillWidth + 8}
-                      height="36"
-                      rx="18"
+                      x={-(pillWidth / 2) - 3}
+                      y={-(pillHeight / 2) - 3}
+                      width={pillWidth + 6}
+                      height={pillHeight + 6}
+                      rx="16"
                       fill="none"
                       stroke="#00d2ff"
-                      strokeWidth="2.5"
+                      strokeWidth="2"
                       className="animate-pulse"
                     />
                   )}
 
-                  {/* Incident Pill: Dark glass background, 1px subtle border, height 28px, radius 14px (B6) */}
+                  {/* Dark translucent background pill matching Figma node 132:10820 */}
                   <rect
                     x={-(pillWidth / 2)}
-                    y="-14"
+                    y={-(pillHeight / 2)}
                     width={pillWidth}
-                    height="28"
-                    rx="14"
-                    fill="rgba(15, 23, 42, 0.88)"
-                    stroke={pillStroke}
+                    height={pillHeight}
+                    rx="13"
+                    fill="rgba(20, 27, 35, 0.90)"
+                    stroke={isOffline ? 'rgba(247, 128, 139, 0.6)' : 'rgba(203, 208, 216, 0.4)'}
                     strokeWidth="1"
-                    filter={filterUrl}
+                    filter={isOffline ? 'url(#offlineGlow)' : undefined}
                   />
 
-                  {/* 20px Round Status Icon on Left (B6) */}
-                  {m.isOffline ? (
-                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
-                      <circle r="9" fill="#ef4444" />
-                      <text
-                        y="3.5"
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize="11"
-                        fontWeight="bold"
-                        fontFamily="sans-serif"
-                      >
-                        !
-                      </text>
-                    </g>
-                  ) : m.isAttention ? (
-                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
-                      <polygon
-                        points="0,-8 8,7 -8,7"
-                        fill="#f59e0b"
-                      />
-                      <text
-                        y="4.5"
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize="9.5"
-                        fontWeight="bold"
-                        fontFamily="sans-serif"
-                      >
-                        !
-                      </text>
-                    </g>
-                  ) : (
-                    /* Stale: grey circle with exclamation (B6: stale must be grey!) */
-                    <g transform={`translate(${-(pillWidth / 2) + 14}, 0)`}>
-                      <circle r="9" fill="#64748b" />
-                      <text
-                        y="3.5"
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize="11"
-                        fontWeight="bold"
-                        fontFamily="sans-serif"
-                      >
-                        !
-                      </text>
-                    </g>
-                  )}
+                  {/* 20px Round Status Circle inset 2px on left (Figma 132:10822) */}
+                  <g transform={`translate(${-(pillWidth / 2) + 12}, 0)`}>
+                    <circle
+                      r="9"
+                      fill={isOffline ? '#e33f50' : '#a5acb8'}
+                      stroke={isOffline ? '#f7808b' : '#cbd0d8'}
+                      strokeWidth="0.8"
+                    />
+                    <text
+                      y="3.5"
+                      textAnchor="middle"
+                      fill={isOffline ? '#ffffff' : '#424a57'}
+                      fontSize="11"
+                      fontWeight="bold"
+                      fontFamily="sans-serif"
+                    >
+                      !
+                    </text>
+                  </g>
 
-                  {/* White ID text at 13px semibold, NO status word inside pill (B6) */}
+                  {/* Device ID text in white 12px semibold (Figma 132:10824) */}
                   <text
-                    x={-(pillWidth / 2) + 28}
-                    y="4.5"
+                    x={-(pillWidth / 2) + 26}
+                    y="4"
                     fill="#FFFFFF"
-                    fontSize="13"
+                    fontSize="12"
                     fontWeight="600"
                     fontFamily="sans-serif"
+                    letterSpacing="0.2px"
                   >
                     {formatId(m.id)}
                   </text>
@@ -549,7 +658,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               );
             }
 
-            // Online devices: 10px green dots with a white ring and NO label (B6, CEO_REFERENCE)
+            // Online devices: 22x22 halo with green body and white ring (Section 4.10)
             return (
               <g
                 key={m.id}
@@ -570,16 +679,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               >
                 {isSelected && (
                   <circle
-                    r="12"
+                    r="14"
                     fill="none"
                     stroke="#00d2ff"
                     strokeWidth="2"
                     className="animate-pulse"
                   />
                 )}
+                {/* 22px Halo */}
+                <circle
+                  r="11"
+                  fill="rgba(16, 185, 129, 0.25)"
+                />
+                {/* 20px / 10px body */}
                 <circle
                   r="5"
-                  fill="#22c55e"
+                  fill="#10b981"
                   stroke="#FFFFFF"
                   strokeWidth="1.5"
                   filter="drop-shadow(0px 1px 3px rgba(0,0,0,0.6))"
@@ -634,77 +749,43 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         </div>
       )}
 
-      {/* Scale Bar & Mouse Coordinates (Bottom-Left) (B5) */}
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none select-none z-20">
-        <div className="flex items-center gap-3">
-          {/* 3-tick scale bar (0, 2.5, 5 km) */}
-          <div className="flex flex-col gap-0.5">
-            <div className="relative w-28 h-2">
-              <div className="w-full h-[1.5px] bg-white shadow-sm mt-1" />
-              <div className="absolute left-0 top-0 h-2 w-[1.5px] bg-white" />
-              <div className="absolute left-1/2 top-0 h-2 w-[1.5px] bg-white" />
-              <div className="absolute right-0 top-0 h-2 w-[1.5px] bg-white" />
+      {/* Cable Route Hover Tooltip (Enterprise Polish) */}
+      {hoveredRoute && hoverRoutePos && (
+        <div
+          style={{
+            left: `${Math.min(hoverRoutePos.x + 16, (containerSize.width || 1200) - 280)}px`,
+            top: `${Math.min(hoverRoutePos.y - 30, (containerSize.height || 700) - 120)}px`,
+          }}
+          className="absolute z-40 w-64 rounded-lg border border-[#2a323d] bg-[#151a22]/95 p-3 text-white shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in-50 duration-150 select-none"
+        >
+          <div className="flex items-center justify-between border-b border-[#2a323d] pb-1.5 mb-2">
+            <span className="font-mono text-xs font-bold text-sky-400">{hoveredRoute.id}</span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">
+              ACTIVE
+            </span>
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="text-[11px] text-slate-300 font-medium">{hoveredRoute.type}</div>
+            <div className="flex justify-between text-slate-400 text-[11px] pt-1">
+              <span>Length:</span>
+              <span className="font-mono text-white font-medium">{hoveredRoute.length}</span>
             </div>
-            <div className="flex justify-between w-28 text-[11px] font-sans font-medium text-white/95 drop-shadow">
-              <span>0</span>
-              <span>2.5</span>
-              <span>5 km</span>
+            <div className="text-[10.5px] text-emerald-400 pt-0.5 flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{hoveredRoute.status}</span>
             </div>
           </div>
-
-          {/* Quieter Mouse Coordinates */}
-          <span className="text-[11px] text-white/70 font-mono ml-2 drop-shadow">
-            {mouseCoords.lat}° N, {mouseCoords.lon}° E
-          </span>
         </div>
-      </div>
+      )}
 
-      {/* Attribution & Classification Label (Bottom-Right) (B5) */}
-      <div className="absolute bottom-3 right-4 flex items-center gap-1.5 text-[10px] text-white/75 font-sans pointer-events-none select-none drop-shadow z-20">
+      {/* Attribution & Classification Label (Bottom-Center/Right above timeline) */}
+      <div className="absolute bottom-2.5 right-6 flex items-center gap-1.5 text-[10px] text-white/50 font-sans pointer-events-none select-none drop-shadow z-10">
         <span>Maxar Technologies, OpenStreetMap contributors</span>
         <span className="opacity-40">|</span>
-        <span className="font-semibold text-white/90">TM FALCON (Internal Use Only)</span>
+        <span className="font-semibold text-white/70">TM FALCON (Internal Use Only)</span>
         <span className="pointer-events-auto cursor-pointer opacity-70 hover:opacity-100 transition-opacity ml-0.5">
           <Info className="size-3" />
         </span>
-      </div>
-
-      {/* Vertical Map Controls (Bottom-Right, above assets pill) (B5) */}
-      <div className="absolute bottom-16 right-4 flex flex-col gap-1.5 z-20 pointer-events-auto">
-        <div className="flex flex-col rounded-lg border border-border/80 glass-panel overflow-hidden shadow-2xl">
-          <button
-            className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
-            onClick={handleZoomIn}
-            aria-label="Zoom in"
-            title="Zoom in"
-          >
-            <ZoomIn className="size-4" />
-          </button>
-          <button
-            className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
-            onClick={handleZoomOut}
-            aria-label="Zoom out"
-            title="Zoom out"
-          >
-            <ZoomOut className="size-4" />
-          </button>
-          <button
-            className="size-8 flex items-center justify-center hover:bg-muted/60 text-foreground transition-colors border-b border-border/60"
-            onClick={handleReset}
-            aria-label="Fit to data"
-            title="Fit to data"
-          >
-            <Maximize className="size-4" />
-          </button>
-          <button
-            className="size-8 flex items-center justify-center hover:bg-muted/60 text-primary transition-colors"
-            onClick={handleReset}
-            aria-label="Compass heading reset"
-            title="Reset orientation"
-          >
-            <Compass className="size-4" />
-          </button>
-        </div>
       </div>
     </div>
   );

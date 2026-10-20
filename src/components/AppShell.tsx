@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   LogOut,
@@ -11,10 +11,12 @@ import {
   ChevronRight,
   ChevronDown,
   Menu,
+  Laptop,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { useAppContext } from '../contexts/AppContext';
+import { useOverview } from '../contexts/OverviewContext';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -27,83 +29,72 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GlobalSearchCommand } from './GlobalSearchCommand';
+import { NetworkSummaryRow } from './overview/NetworkSummaryRow';
 import { navigationConfig, type NavItem } from '@/config/navigation';
-
-interface HeaderModuleTab {
-  id: string;
-  label: string;
-  route: string;
-  isMatch: (pathname: string) => boolean;
-  children?: { id: string; label: string; route: string; badge?: number | string }[];
-}
-
-const headerModules: HeaderModuleTab[] = [
-  {
-    id: 'overview',
-    label: 'Overview',
-    route: '/overview',
-    isMatch: (p) => p === '/overview',
-  },
-  {
-    id: 'events',
-    label: 'Events',
-    route: '/events',
-    isMatch: (p) => p.startsWith('/events') || p.startsWith('/planned/cases'),
-    children: [
-      { id: 'event-inbox', label: 'Event inbox', route: '/events', badge: 3 },
-      { id: 'cases', label: 'Cases & field tickets', route: '/planned/cases', badge: 1 },
-    ],
-  },
-  {
-    id: 'risk',
-    label: 'Risk & preventive work',
-    route: '/risk',
-    isMatch: (p) => p.startsWith('/risk') || p.startsWith('/planned/work-queue'),
-    children: [
-      { id: 'risk-overview', label: 'Risk overview', route: '/risk' },
-      { id: 'work-queue', label: 'Work queue', route: '/planned/work-queue', badge: 5 },
-    ],
-  },
-  {
-    id: 'assets',
-    label: 'Assets & devices',
-    route: '/assets/inventory',
-    isMatch: (p) => p.startsWith('/assets') || p.startsWith('/planned/devices') || p.startsWith('/planned/fleet'),
-    children: [
-      { id: 'inventory', label: 'Inventory register', route: '/assets/inventory' },
-      { id: 'devices', label: 'Device health', route: '/planned/devices', badge: 4 },
-      { id: 'fleet', label: 'Infrastructure health', route: '/planned/fleet' },
-    ],
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    route: '/planned/reports',
-    isMatch: (p) => p.startsWith('/planned/reports'),
-    children: [
-      { id: 'reports-sla', label: 'Network uptime SLA', route: '/planned/reports/sla' },
-      { id: 'reports-audit', label: 'Audit trails', route: '/planned/reports/audit' },
-    ],
-  },
-  {
-    id: 'admin',
-    label: 'Administration',
-    route: '/planned/admin',
-    isMatch: (p) => p.startsWith('/planned/admin'),
-    children: [
-      { id: 'admin-users', label: 'User management', route: '/planned/admin/users' },
-      { id: 'admin-roles', label: 'Role permissions', route: '/planned/admin/roles' },
-    ],
-  },
-];
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
+  const overview = useOverview();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isOverview = location.pathname === '/overview';
+
+  // Notifications state
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(4);
+  const [notificationsList] = useState([
+    {
+      id: 'notif-1',
+      deviceId: 'DEV-004',
+      badge: 'Offline',
+      title: 'DEV-004 Signal Lost',
+      desc: 'Batu Lintang Relay Tower • No telemetry signal for 2h 14m',
+      time: '2h 14m ago',
+    },
+    {
+      id: 'notif-2',
+      deviceId: 'DEV-011',
+      badge: 'Offline',
+      title: 'DEV-011 Mains Blackout',
+      desc: 'Pending Industrial Substation • Power loss detected',
+      time: '5h 03m ago',
+    },
+    {
+      id: 'notif-3',
+      deviceId: 'DEV-003',
+      badge: 'Stale',
+      title: 'DEV-003 Telemetry Delayed',
+      desc: 'Petra Jaya Hub Cabinet B • Last packet 08:14 MYT',
+      time: '8h 27m ago',
+    },
+    {
+      id: 'notif-4',
+      deviceId: 'DEV-008',
+      badge: 'Stale',
+      title: 'DEV-008 Telemetry Delayed',
+      desc: 'Telaga Air Coastal Station • Last packet 10:31 MYT',
+      time: '6h 11m ago',
+    },
+    {
+      id: 'notif-5',
+      deviceId: 'CBL-KCH-01',
+      badge: 'Restored',
+      title: 'Trunk Link Nominal',
+      desc: 'Kuching - Samarahan 18km optical path healthy',
+      time: '12m ago',
+    },
+    {
+      id: 'notif-6',
+      deviceId: 'DEV-002',
+      badge: 'Updated',
+      title: 'Firmware Patch Applied',
+      desc: 'Satok repeater node upgraded to v3.2 build 410',
+      time: '1h 45m ago',
+    },
+  ]);
 
   // Mobile navigation drawer (< 1024px)
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -139,19 +130,27 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       : "light"
   );
   const [searchOpen, setSearchOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('Tue, 26 Aug 2025');
+  const [currentTime, setCurrentTime] = useState('14:32 MYT');
 
-  // Keep live time updated with MYT timezone
+  // Keep live date & time updated with MYT timezone
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
       const timeStr = now.toLocaleTimeString('en-GB', {
         timeZone: 'Asia/Kuala_Lumpur',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: false,
       });
+      setCurrentDate(dateStr);
       setCurrentTime(`${timeStr} MYT`);
     };
     updateClock();
@@ -159,7 +158,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const r = document.documentElement;
     const newTheme = theme === "dark" ? "light" : "dark";
     r.classList.remove("theme_light", "theme_dark", "dark");
@@ -169,7 +168,23 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     }
     localStorage.setItem("ds_theme", newTheme);
     setTheme(newTheme);
-  };
+  }, [theme]);
+
+  // Keyboard shortcut '/' to trigger global search and Shift+T for theme
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === '/') {
+        e.preventDefault();
+        setSearchOpen(true);
+      } else if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
+        e.preventDefault();
+        toggleTheme();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleTheme]);
 
   const handleToggleSidebar = () => {
     const next = !sidebarMinimized;
@@ -243,220 +258,268 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-        {/* 64px Solid Control Room Header matching CEO_REFERENCE */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 z-30 shrink-0 gap-3">
-          {/* Left: Mobile trigger, Wordmark Lockup */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Mobile menu trigger */}
-            <button
-              className="flex lg:hidden p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open navigation menu"
-            >
-              <Menu className="size-5" />
-            </button>
-
-            {/* Desktop sidebar toggle only on non-overview */}
-            {!isOverview && (
+        {/* Header matching Figma: 60px brand row + 72px network summary row (132px on Overview) */}
+        <header className="border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex flex-col z-30 shrink-0 select-none">
+          {/* Row 1: Brand & Account Row (60px) */}
+          <div className="h-[60px] flex items-center justify-between px-6 z-30 shrink-0 gap-4 transition-colors">
+            {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
+            <div className="flex items-center gap-3.5 shrink-0">
+              {/* Mobile menu trigger */}
               <button
-                className="hidden lg:flex p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mr-1"
-                onClick={handleToggleSidebar}
-                aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
+                className="flex lg:hidden p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none"
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open navigation menu"
               >
-                {sidebarMinimized ? <PanelLeftOpen className="size-4.5" /> : <PanelLeftClose className="size-4.5" />}
+                <Menu className="size-5" />
               </button>
-            )}
 
-            <Link to="/overview" className="flex items-center gap-2 mr-1">
-              <Logo className="h-6 w-auto" markOnly={true} />
-              <span className="text-xl font-bold tracking-wider text-foreground select-none">
-                FALCON
-              </span>
-            </Link>
-
-            {/* Subtitle (Hidden below 1280px) */}
-            <span className="hidden xl:inline-block h-6 w-px bg-border mx-2" />
-            <div className="hidden xl:flex flex-col text-[10px] leading-tight text-muted-foreground select-none">
-              <span>Telecom Infrastructure</span>
-              <span>Monitoring Platform</span>
-            </div>
-          </div>
-
-          {/* Center: Module Navigation Tabs (Overview, Events, Risk..., Assets..., Reports, Administration) */}
-          <nav className="hidden lg:flex items-center h-full gap-0.5 xl:gap-1 mx-1 xl:mx-2 shrink-0">
-            {headerModules.map((mod) => {
-              const isActive = mod.isMatch(location.pathname);
-              const hasChildren = mod.children && mod.children.length > 0;
-
-              return (
-                <div key={mod.id} className="relative h-full flex items-center">
-                  {hasChildren ? (
-                    <DropdownMenu>
-                      <div className="flex items-center h-full">
-                        <Link
-                          to={mod.route}
-                          className={`flex items-center h-full px-2 xl:px-2.5 text-xs xl:text-[13px] font-medium transition-colors select-none ${
-                            isActive
-                              ? 'text-foreground font-semibold'
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {mod.label}
-                        </Link>
-                        <DropdownMenuTrigger
-                          render={
-                            <button
-                              className="p-0.5 -ml-1 mr-0.5 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-                              aria-label={`${mod.label} sub-navigation`}
-                            >
-                              <ChevronDown className="size-3 opacity-60 hover:opacity-100" />
-                            </button>
-                          }
-                        />
-                      </div>
-
-                      <DropdownMenuContent align="start" className="w-52 bg-popover border border-border text-popover-foreground z-50">
-                        {mod.children?.map((child) => (
-                          <DropdownMenuItem
-                            key={child.id}
-                            onClick={() => navigate(child.route)}
-                            className="cursor-pointer text-xs flex items-center justify-between py-2"
-                          >
-                            <span className={location.pathname === child.route ? 'font-semibold text-primary' : ''}>
-                              {child.label}
-                            </span>
-                            {child.badge !== undefined && (
-                              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive/20 text-destructive font-bold">
-                                {child.badge}
-                              </span>
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Link
-                      to={mod.route}
-                      className={`flex items-center h-full px-2 xl:px-2.5 text-xs xl:text-[13px] font-medium transition-colors select-none ${
-                        isActive
-                          ? 'text-foreground font-semibold'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {mod.label}
-                    </Link>
-                  )}
-
-                  {/* Animated active underline bar */}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-1.5 right-1.5 h-[2.5px] bg-primary rounded-t-sm shadow-[0_-1px_6px_rgba(56,189,248,0.5)]" />
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-
-          {/* Right: Search, Live indicator, Notifications, Theme toggle, User profile */}
-          <div className="flex items-center gap-1.5 xl:gap-2 shrink-0">
-            {/* Search Trigger (~240-280px wide) */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="w-36 lg:w-44 xl:w-56 2xl:w-[260px] h-8 px-2.5 rounded-md bg-muted/50 hover:bg-muted border border-border flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">Search location, device...</span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0 text-[10px] font-mono text-muted-foreground/80 pl-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-card border border-border text-[10px]">⌘K</kbd>
-              </div>
-            </button>
-
-            {/* Live Indicator with MYT timezone */}
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-status-online-tint border border-status-online-border text-xs font-medium text-status-online select-none">
-              <span className="relative flex size-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-online opacity-75"></span>
-                <span className="relative inline-flex rounded-full size-2 bg-status-online"></span>
-              </span>
-              <span className="font-bold tracking-wide text-[10px]">LIVE</span>
-              <span className="text-muted-foreground font-mono text-[11px] tabular-nums pl-1 border-l border-status-online-border/60 hidden sm:inline">
-                {currentTime || 'MYT'}
-              </span>
-            </div>
-
-            {/* Notifications Button */}
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <Button variant="ghost" size="icon-sm" className="relative text-muted-foreground hover:text-foreground">
-                  <Bell className="size-4" />
-                  <span className="absolute top-1 right-1 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-white">
-                    4
+              <Link to="/overview" className="flex items-center gap-3.5">
+                <Logo className="h-7 w-auto" markOnly={true} />
+                <div className="h-[37px] w-px bg-slate-200 dark:bg-[#2a323d]" />
+                <div className="flex flex-col select-none">
+                  <span className="text-[20px] font-bold text-slate-900 dark:text-[#e2e7ef] leading-tight tracking-tight">
+                    FALCON
                   </span>
-                </Button>
-              </Tooltip.Trigger>
-              <Tooltip.Content side="bottom" className="text-xs bg-popover text-popover-foreground border border-border p-1.5 rounded shadow-md z-50">
-                4 unread critical events
-              </Tooltip.Content>
-            </Tooltip.Root>
+                  <span className="text-[10px] text-slate-500 dark:text-[#a3adbd] leading-tight font-normal">
+                    Telecom Infrastructure Monitoring
+                  </span>
+                </div>
+              </Link>
+            </div>
 
-            {/* Theme Toggle */}
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <Button
-                  id="theme-toggle-btn"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={toggleTheme}
-                  aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-                </Button>
-              </Tooltip.Trigger>
-              <Tooltip.Content side="bottom" className="text-xs bg-popover text-popover-foreground border border-border p-1.5 rounded shadow-md z-50">
-                Switch to {theme === 'dark' ? 'light' : 'dark'} mode
-              </Tooltip.Content>
-            </Tooltip.Root>
+            {/* Center: Global Search Input with shortcut badge '/' (Figma exact match) */}
+            <div className="flex-1 flex justify-center max-w-sm mx-auto">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="w-[298px] h-[36px] px-[11px] rounded-[8px] border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] flex items-center justify-between text-xs text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary shadow-xs cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <Search className="size-4 shrink-0 text-slate-400 dark:text-[#a3adbd]" />
+                  <span className="text-[11px] text-slate-600 dark:text-[#a3adbd] font-normal truncate">Search devices, sites, poles, cables...</span>
+                </div>
+                <div className="flex items-center shrink-0">
+                  <kbd className="h-[19px] min-w-[18px] px-1 border dark:border-[#2a323d] border-slate-200 rounded flex items-center justify-center text-[11px] font-mono text-slate-500 dark:text-[#778394] dark:bg-[#10151c] bg-slate-100">
+                    /
+                  </kbd>
+                </div>
+              </button>
+            </div>
 
-            {/* User Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button className="flex items-center gap-2 p-1 rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <Avatar className="size-7 border border-border">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {accountLabel ? accountLabel.substring(0, 2).toUpperCase() : 'AS'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden 2xl:inline text-xs font-medium text-foreground pr-1">
-                      {accountLabel || 'Admin (sample)'}
-                    </span>
-                  </button>
-                }
-              />
-
-              <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold">{accountLabel || 'Admin User'}</span>
-                    <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
+            {/* Right: Notifications, Live data dropdown, Clock, User Profile */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Notifications Popover with unread indicator and list */}
+              <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="relative text-slate-600 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632] cursor-pointer"
+                      aria-label="View notifications"
+                    >
+                      <Bell className="size-4.5" />
+                      {unreadNotifications > 0 && (
+                        <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 dark:ring-[#151a22] ring-white" />
+                      )}
+                    </Button>
+                  }
+                />
+                <PopoverContent align="end" side="bottom" sideOffset={10} className="w-80 p-0 bg-popover border border-border shadow-2xl rounded-xl z-50 text-xs overflow-hidden">
+                  <div className="flex items-center justify-between p-3 border-b border-border bg-muted/40">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">Notifications</span>
+                      {unreadNotifications > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white font-bold">
+                          {unreadNotifications} new
+                        </span>
+                      )}
+                    </div>
+                    {unreadNotifications > 0 && (
+                      <button
+                        onClick={() => setUnreadNotifications(0)}
+                        className="text-[11px] text-primary hover:underline cursor-pointer"
+                      >
+                        Mark all read
+                      </button>
+                    )}
                   </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
-                  <span>Administration Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
-                  <span>Reports & Audits</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 size-3.5" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                  <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
+                    {notificationsList.map((notif) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => {
+                          overview.setSelectedId(notif.deviceId);
+                          if (!isOverview) navigate('/overview');
+                          setNotificationsOpen(false);
+                        }}
+                        className="p-2.5 hover:bg-muted/50 cursor-pointer transition-colors flex flex-col gap-1"
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-foreground truncate">{notif.title}</span>
+                          <span className="text-[10px] text-muted-foreground whitespace-nowrap font-mono">{notif.time}</span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground line-clamp-2">{notif.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
+
+              {/* Live Data Status Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <button className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors text-xs font-medium text-slate-800 dark:text-[#ecf0f5] select-none cursor-pointer">
+                      <span className="relative flex size-2.5">
+                        {overview.liveState === 'live' ? (
+                          <>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
+                            <span className="relative inline-flex rounded-full size-2.5 bg-[#10b981]" />
+                          </>
+                        ) : (
+                          <span className="relative inline-flex rounded-full size-2.5 bg-[#ffa114]" />
+                        )}
+                      </span>
+                      <span className="text-[11.4px]">
+                        {overview.liveState === 'live' ? 'Live data' : 'Updates paused'}
+                      </span>
+                      <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+                    </button>
+                  }
+                />
+                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
+                  <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
+                    <span>Telemetry Feed</span>
+                    <span className="text-[10px] font-normal text-muted-foreground">{overview.lastUpdatedTime}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => overview.setLiveState('live')}
+                    className={`cursor-pointer font-medium ${overview.liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
+                  >
+                    <span className="size-2 rounded-full bg-[#10b981] mr-2 inline-block" />
+                    <span>Live stream active</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => overview.setLiveState('paused')}
+                    className={`cursor-pointer ${overview.liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
+                  >
+                    <span className="size-2 rounded-full bg-[#ffa114] mr-2 inline-block" />
+                    <span>Pause telemetry stream</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={overview.refreshNow} className="cursor-pointer">
+                    <span>Refresh now (shimmer)</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Refresh Interval
+                  </DropdownMenuLabel>
+                  {[5, 15, 30, 60].map((sec) => (
+                    <DropdownMenuItem
+                      key={sec}
+                      onClick={() => overview.setRefreshInterval(sec)}
+                      className="cursor-pointer flex items-center justify-between"
+                    >
+                      <span>{sec < 60 ? `${sec} seconds` : '1 minute'}</span>
+                      {overview.refreshInterval === sec && <span className="text-primary text-[10px]">✓</span>}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
+
+              {/* Real-time date/time display */}
+              <div className="flex flex-col text-left leading-[1.35] select-none pr-1">
+                <span className="text-[9.5px] text-slate-500 dark:text-[#bdc5d1]">{currentDate}</span>
+                <span className="text-[12.4px] font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums">{currentTime}</span>
+              </div>
+
+              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
+
+              {/* User Profile Avatar with dropdown (appearance, admin, reports, logout) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <button className="flex items-center gap-3 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer">
+                      <Avatar className="size-[34px] border dark:border-[#2a323d] border-slate-200">
+                        <AvatarFallback className="dark:bg-[#2b3440] bg-slate-200 dark:text-[#e2e7ef] text-slate-800 text-xs font-bold">
+                          AS
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col text-left leading-tight hidden xl:flex">
+                        <span className="text-[11px] font-semibold text-slate-800 dark:text-[#e2e7ef]">Ahmad Syukri</span>
+                        <span className="text-[9px] text-slate-500 dark:text-[#a3adbd]">TM Operations</span>
+                      </div>
+                      <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+                    </button>
+                  }
+                />
+
+                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</span>
+                      <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
+                    <span>Administration Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
+                    <span>Reports & Audits</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">Appearance</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (theme !== 'light') toggleTheme();
+                    }}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sun className="size-3.5" />
+                      <span>Light Theme</span>
+                    </div>
+                    {theme === 'light' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (theme !== 'dark') toggleTheme();
+                    }}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Moon className="size-3.5" />
+                      <span>Dark Theme</span>
+                    </div>
+                    {theme === 'dark' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => toggleTheme()}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Laptop className="size-3.5" />
+                      <span>Toggle (Shift+T)</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 size-3.5" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+
+          {/* Row 2: Network summary row (72px) when on Overview */}
+          {isOverview && <NetworkSummaryRow />}
         </header>
 
         {/* Global Search Dialog */}
@@ -464,19 +527,29 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
         {/* Main Body with Sidebar + Viewport */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Desktop Sidebar (Only rendered on non-overview pages) */}
-          {!isOverview && (
-            <aside
-              style={{ width: sidebarMinimized ? '56px' : '264px' }}
-              className="bg-sidebar border-r border-sidebar-border hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
-              onMouseLeave={handleRailMouseLeave}
-            >
+          {/* Desktop Left Sidebar (72px collapsed dock persistent across all pages including Overview) */}
+          <aside
+            style={{ width: sidebarMinimized ? '72px' : '264px' }}
+            className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
+            onMouseLeave={handleRailMouseLeave}
+          >
+            {/* Top expand/collapse toggle container matching Figma node 132:10631 */}
+            <div className="flex items-center justify-center p-3 border-b dark:border-[#2a323d]/60 border-slate-200 shrink-0">
+              <button
+                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none"
+                onClick={handleToggleSidebar}
+                aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {sidebarMinimized ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+              </button>
+            </div>
+
             {/* Scrollable Nav Sections */}
-            <div className="flex flex-col gap-3 p-2 flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex flex-col gap-2 p-2 flex-1 overflow-y-auto overflow-x-hidden">
               {navigationConfig.map((sec) => (
                 <div key={sec.id} className="flex flex-col gap-1">
                   {!sidebarMinimized && (
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-sidebar-label px-2.5 mt-2 mb-0.5 text-muted-foreground/70">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#778394] px-2.5 mt-2 mb-0.5">
                       {sec.label}
                     </div>
                   )}
@@ -492,15 +565,15 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         <Tooltip.Root>
                           <Tooltip.Trigger asChild>
                             <div
-                              className={`flex items-center gap-2.5 px-2.5 h-9 rounded-md cursor-pointer text-xs font-medium transition-all relative ${
+                              className={`flex items-center gap-2.5 h-[40px] px-[12px] rounded-[6px] cursor-pointer text-xs font-medium transition-all relative ${
                                 sidebarMinimized ? 'justify-center' : 'justify-between'
                               } ${
                                 isLeafActive
-                                  ? 'bg-sidebar-active text-sidebar font-semibold'
+                                  ? 'bg-[#261c80] text-white font-semibold shadow-xs'
                                   : isParentActive
-                                  ? 'text-sidebar hover:bg-sidebar-hover'
-                                  : 'text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover'
-                              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring`}
+                                  ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                  : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary`}
                               onClick={() => {
                                 if (hasChildren && !sidebarMinimized) {
                                   toggleGroup(item.id);
@@ -523,13 +596,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                 }
                               }}
                             >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                {isLeafActive && (
-                                  <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r" />
-                                )}
-                                <item.icon className={`size-4 shrink-0 ${isParentActive ? 'text-primary' : 'text-sidebar-muted'}`} />
-                                {!sidebarMinimized && <span className="truncate">{item.label}</span>}
-                              </div>
+                              {/* Active purple accent bar on left edge matching Figma node 132:10644 */}
+                              {isLeafActive && (
+                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#7b72e0] rounded-r-[6px]" />
+                              )}
+                              <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-[#e2e7ef]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
+                              {!sidebarMinimized && <span className="truncate">{item.label}</span>}
 
                               {!sidebarMinimized && (
                                 <div className="flex items-center gap-1.5 shrink-0">
@@ -555,8 +627,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             <Tooltip.Portal>
                               <Tooltip.Content
                                 side="right"
-                                sideOffset={12}
-                                className="bg-popover text-popover-foreground border border-border shadow-lg px-2.5 py-1 rounded text-xs z-50 font-medium"
+                                sideOffset={14}
+                                className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
                               >
                                 <span>{item.label}</span>
                                 {item.badge !== undefined && (
@@ -571,7 +643,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                         {/* Expanded Children Tree (Up to 3 levels) */}
                         {!sidebarMinimized && hasChildren && isExpanded && (
-                          <div className="ml-4 pl-3 border-l border-sidebar-border flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
+                          <div className="ml-4 pl-3 border-l border-[#2a323d] flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
                             {item.children?.map((child) => {
                               const isChildActive = location.pathname === child.route;
                               const hasGrandChildren = child.children && child.children.length > 0;
@@ -581,14 +653,14 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                   <div
                                     className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
                                       isChildActive
-                                        ? 'bg-sidebar-active text-sidebar font-semibold'
-                                        : 'text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover'
+                                        ? 'bg-[#261c80] text-white font-semibold'
+                                        : 'text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]'
                                     }`}
                                     onClick={() => navigate(child.route)}
                                   >
                                     <span className="truncate">{child.label}</span>
                                     {child.badge !== undefined && (
-                                      <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
+                                      <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-[#1c232e] text-[#a3adbd]">
                                         {child.badge}
                                       </span>
                                     )}
@@ -596,7 +668,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                                   {/* 3rd Level Indentation */}
                                   {hasGrandChildren && (
-                                    <div className="ml-3 pl-2 border-l border-sidebar-border/60 flex flex-col gap-0.5 my-0.5">
+                                    <div className="ml-3 pl-2 border-l border-[#2a323d]/60 flex flex-col gap-0.5 my-0.5">
                                       {child.children?.map((grandChild) => {
                                         const isGrandActive = location.pathname === grandChild.route;
                                         return (
@@ -605,13 +677,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                             className={`px-2 py-1 text-[11px] rounded cursor-pointer transition-colors flex items-center justify-between ${
                                               isGrandActive
                                                 ? 'text-primary font-semibold'
-                                                : 'text-sidebar-muted hover:text-sidebar'
+                                                : 'text-[#a3adbd] hover:text-[#e2e7ef]'
                                             }`}
                                             onClick={() => navigate(grandChild.route)}
                                           >
                                             <span className="truncate">{grandChild.label}</span>
                                             {grandChild.badge !== undefined && (
-                                              <span className="text-[10px] font-mono text-muted-foreground">
+                                              <span className="text-[10px] font-mono text-[#a3adbd]">
                                                 {grandChild.badge}
                                               </span>
                                             )}
@@ -632,11 +704,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               ))}
             </div>
 
-            {/* Collapsed Rail Flyout Panel */}
+            {/* Collapsed Rail Flyout Panel anchored directly to 72px dock with hover intent bridge */}
             {sidebarMinimized && activeFlyoutItem && (
               <div
                 style={{ top: `${activeFlyoutItem.top}px` }}
-                className="absolute left-[58px] w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
+                className="absolute left-[72px] w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
                 onMouseEnter={handleFlyoutMouseEnter}
                 onMouseLeave={handleFlyoutMouseLeave}
               >
@@ -708,12 +780,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               </div>
             )}
 
-            {/* Bottom Log out button */}
-            <div className="p-2 border-t border-sidebar-border mt-auto">
+            {/* Bottom Log out button matching Figma node 132:10680 */}
+            <div className="p-3 border-t border-[#2a323d] mt-auto shrink-0">
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                   <div
-                    className={`flex items-center gap-3 px-2.5 h-9 rounded-md cursor-pointer text-xs font-medium transition-all text-sidebar-muted hover:text-sidebar hover:bg-sidebar-hover ${
+                    className={`flex items-center gap-3 px-3 h-10 rounded-md cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632] ${
                       sidebarMinimized ? 'justify-center' : ''
                     }`}
                     onClick={handleLogout}
@@ -723,7 +795,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       if (e.key === 'Enter') handleLogout();
                     }}
                   >
-                    <LogOut className="size-4.5 shrink-0" />
+                    <LogOut className="size-5 shrink-0" />
                     {!sidebarMinimized && <span className="truncate">Log out</span>}
                   </div>
                 </Tooltip.Trigger>
@@ -731,17 +803,16 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <Tooltip.Portal>
                     <Tooltip.Content
                       side="right"
-                      sideOffset={12}
-                      className="bg-popover text-popover-foreground border border-border shadow-lg px-2.5 py-1 rounded text-xs z-50 font-medium"
+                      sideOffset={14}
+                      className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
                     >
-                      Log out
+                      <span>Log out</span>
                     </Tooltip.Content>
                   </Tooltip.Portal>
                 )}
               </Tooltip.Root>
             </div>
           </aside>
-        )}
 
           {/* Mobile Sheet Navigation (< 1024px) */}
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>

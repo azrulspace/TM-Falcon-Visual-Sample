@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard,
+  LayoutGrid,
   Radio,
   ClipboardList,
   ShieldAlert,
@@ -40,7 +40,7 @@ export const navigationConfig: NavSection[] = [
       {
         id: 'overview',
         label: 'Overview',
-        icon: LayoutDashboard,
+        icon: LayoutGrid,
         route: '/overview',
         description: 'Command room map & high-density event triage desk',
       },

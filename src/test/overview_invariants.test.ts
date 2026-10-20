@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { formatId } from '../lib/utils.ts';
 import { attention } from '../data/attention.ts';
 import { devices } from '../data/devices.ts';
+import { mapMarkers, mapCameras, mapPoles } from '../data/map.ts';
 
 test('ID formatting matches unified hyphenated production format (D4)', () => {
   assert.equal(formatId('DEV_004'), 'DEV-004');
@@ -40,6 +41,30 @@ test('Count invariants: attention queue items and tabs agree with single source 
   assert.equal(offlineDevices.length, 2, 'Offline devices must be 2');
   assert.equal(staleDevices.length, 2, 'Stale devices must be 2');
   assert.equal(attentionDevicesCount, 4, 'Attention devices (offline + stale) must equal 4');
+  assert.equal(devices.length, onlineDevices.length + offlineDevices.length + staleDevices.length);
+});
+
+test('Overview Network Infrastructure Invariants (Section 6)', () => {
+  // Map markers: exactly 15 devices with same status partition
+  assert.equal(mapMarkers.length, 15, 'Map markers must contain 15 IoT devices');
+  const mapOnline = mapMarkers.filter((m) => m.status === 'online');
+  const mapOffline = mapMarkers.filter((m) => m.status === 'offline');
+  const mapStale = mapMarkers.filter((m) => m.status === 'stale');
+
+  assert.equal(mapOnline.length, 11, '11 Online devices on map');
+  assert.equal(mapOffline.length, 2, '2 Offline devices on map');
+  assert.equal(mapStale.length, 2, '2 Stale devices on map');
+
+  // Asset counts from design
+  assert.equal(mapPoles.length, 42, 'Map contains exactly 42 utility poles');
+  assert.equal(mapCameras.length, 6, 'Map contains exactly 6 CCTV video feeds');
+
+  // Hyphenated incident IDs
+  const incidentIds = ['DEV-004', 'DEV-011', 'DEV-003', 'DEV-008'];
+  assert.equal(incidentIds.length, 4);
+  incidentIds.forEach((id) => {
+    assert.match(id, /^DEV-\d{3}$/, 'Device ID must match prefix-hyphen-3digits format');
+  });
 });
 
 test('Severity colors: No severity badge ever maps to green (D3)', () => {
