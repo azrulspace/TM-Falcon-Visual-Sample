@@ -31,7 +31,6 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GlobalSearchCommand } from './GlobalSearchCommand';
-import { NetworkSummaryRow } from './overview/NetworkSummaryRow';
 import { navigationConfig, type NavItem } from '@/config/navigation';
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
@@ -258,11 +257,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-        {/* Header matching Figma: 60px brand row + 72px network summary row (132px on Overview) */}
-        <header className="border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex flex-col z-30 shrink-0 select-none">
-          {/* Row 1: Brand & Account Row (60px) */}
-          <div className="h-[60px] flex items-center justify-between px-6 z-30 shrink-0 gap-4 transition-colors">
-            {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
+        {/* Header matching Figma: 60px brand row */}
+        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between px-6 z-30 shrink-0 select-none gap-4 transition-colors">
+          {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
             <div className="flex items-center gap-3.5 shrink-0">
               {/* Mobile menu trigger */}
               <button
@@ -515,11 +512,22 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          </div>
 
-          {/* Row 2: Network summary row (72px) when on Overview */}
-          {isOverview && <NetworkSummaryRow />}
+              {/* Explicit Theme Toggle Button matching Figma node 138:13096 / 138:14047 */}
+              <button
+                id="theme-toggle-button"
+                onClick={() => toggleTheme()}
+                className="flex items-center justify-center size-[36px] rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none cursor-pointer"
+                aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+                title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="size-4" />
+                ) : (
+                  <Moon className="size-4" />
+                )}
+              </button>
+            </div>
         </header>
 
         {/* Global Search Dialog */}

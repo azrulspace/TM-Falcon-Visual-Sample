@@ -4,6 +4,7 @@ import { TimeBar } from '@/components/overview/TimeBar';
 import { IncidentsPanel } from '@/components/overview/IncidentsPanel';
 import { MapLayersToolbar } from '@/components/overview/MapLayersToolbar';
 import { MapScaleZoom } from '@/components/overview/MapScaleZoom';
+import { NetworkSummaryRow } from '@/components/overview/NetworkSummaryRow';
 import { useOverview } from '@/contexts/OverviewContext';
 import type { LayerVisibility } from '@/components/overview/LayerRail';
 
@@ -87,7 +88,10 @@ export default function Overview() {
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden select-none font-sans dark:bg-[#0B101B] bg-slate-900 text-foreground transition-colors">
-      {/* 1. Map Canvas & Floating Panels Workspace (Fills remaining height: 720px in 1512x946 frame) */}
+      {/* 1. Network Summary Row (72px, Section 4.2 / Figma node 138:13178 / 138:14055) */}
+      <NetworkSummaryRow />
+
+      {/* 2. Map Canvas & Floating Panels Workspace (Fills remaining height: 705px) */}
       <div className="flex-1 w-full relative overflow-hidden">
         <MapCanvas
           selectedId={selectedId}

@@ -373,10 +373,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             const isDownstreamOffline = (selectedId === 'DEV_004' && i === 9) || (selectedId === 'DEV_011' && i === 1);
             // Stale device segment shimmer
             const isStaleSegment = (selectedId === 'DEV_003' && i === 4) || (selectedId === 'DEV_008' && i === 2);
+            // Airport & Satok spur (amber dashed cable span matching Figma)
+            const isAirportSpur = i === 11 || i === 12;
 
-            let strokeColor = '#38bdf8';
+            let strokeColor = isAirportSpur ? '#f59e0b' : '#38bdf8';
             let strokeWidth = isTrunk ? '3' : '2';
-            let strokeDash = isTrunk ? 'none' : '6 4';
+            let strokeDash = isAirportSpur ? '5 4' : isTrunk ? 'none' : '6 4';
 
             if (isDownstreamOffline) {
               strokeColor = '#e33f50';
@@ -426,7 +428,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 <polyline
                   points={route.map((p) => p.join(',')).join(' ')}
                   fill="none"
-                  stroke={isDownstreamOffline ? '#e33f50' : isSpanSelected || isHovered ? '#00d2ff' : '#38bdf8'}
+                  stroke={isDownstreamOffline ? '#e33f50' : isSpanSelected || isHovered ? '#00d2ff' : isAirportSpur ? '#f59e0b' : '#38bdf8'}
                   strokeWidth={isSpanSelected || isHovered ? '10' : '6'}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -446,12 +448,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   opacity={timeMode === 'History' ? 0.5 : 0.95}
                 />
 
-                {/* Ambient Telemetry Flow (Blue dashes marching along line, capped at 30 fps) */}
+                {/* Ambient Telemetry Flow (Blue/Amber dashes marching along line, capped at 30 fps) */}
                 {timeMode !== 'History' && !isDownstreamOffline && (
                   <polyline
                     points={route.map((p) => p.join(',')).join(' ')}
                     fill="none"
-                    stroke="#93c5fd"
+                    stroke={isAirportSpur ? '#fde68a' : '#93c5fd'}
                     strokeWidth={isHovered ? '2.5' : '1.5'}
                     strokeDasharray="6 6"
                     className="data-flow-active pointer-events-none"
@@ -565,16 +567,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             );
           })}
 
-        {/* Devices & Markers (Figma Section 4.10: 81x26 pill for incident devices only) */}
+        {/* Devices & Markers (Figma Section 4.10: 81x26 pill for incident devices & DEV-002 warning) */}
         {activeLayers.devices &&
           enrichedMarkers.map((m) => {
             const isSelected = selectedId === m.id || (selectedId === 'EVT_0128' && m.id === 'DEV_002');
 
-            // Incident devices render as exact 81x26 pills (radius 13px, 20px round status icon inset 2px on left, white ID text 12px semibold)
-            if (m.isOffline || m.isStale) {
-              const pillWidth = 81;
+            // Incident devices & warning DEV-002 render as pills
+            if (m.isOffline || m.isStale || m.id === 'DEV_002') {
+              const pillWidth = 84;
               const pillHeight = 26;
               const isOffline = m.isOffline;
+              const isWarning = m.id === 'DEV_002';
 
               return (
                 <g
@@ -609,7 +612,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     />
                   )}
 
-                  {/* Dark translucent background pill matching Figma node 132:10820 */}
+                  {/* Dark translucent background pill matching Figma */}
                   <rect
                     x={-(pillWidth / 2)}
                     y={-(pillHeight / 2)}
@@ -617,32 +620,41 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                     height={pillHeight}
                     rx="13"
                     fill="rgba(20, 27, 35, 0.90)"
-                    stroke={isOffline ? 'rgba(247, 128, 139, 0.6)' : 'rgba(203, 208, 216, 0.4)'}
+                    stroke={isOffline ? 'rgba(247, 128, 139, 0.6)' : isWarning ? 'rgba(245, 158, 11, 0.6)' : 'rgba(203, 208, 216, 0.4)'}
                     strokeWidth="1"
-                    filter={isOffline ? 'url(#offlineGlow)' : undefined}
+                    filter={isOffline ? 'url(#offlineGlow)' : isWarning ? 'url(#attentionGlow)' : undefined}
                   />
 
-                  {/* 20px Round Status Circle inset 2px on left (Figma 132:10822) */}
+                  {/* Status Circle or Warning Triangle inset 2px on left */}
                   <g transform={`translate(${-(pillWidth / 2) + 12}, 0)`}>
-                    <circle
-                      r="9"
-                      fill={isOffline ? '#e33f50' : '#a5acb8'}
-                      stroke={isOffline ? '#f7808b' : '#cbd0d8'}
-                      strokeWidth="0.8"
-                    />
-                    <text
-                      y="3.5"
-                      textAnchor="middle"
-                      fill={isOffline ? '#ffffff' : '#424a57'}
-                      fontSize="11"
-                      fontWeight="bold"
-                      fontFamily="sans-serif"
-                    >
-                      !
-                    </text>
+                    {isWarning ? (
+                      <>
+                        <polygon points="0,-7 7,5 -7,5" fill="#f59e0b" stroke="#ffffff" strokeWidth="0.8" />
+                        <text y="3.5" textAnchor="middle" fill="#000000" fontSize="7.5" fontWeight="bold">!</text>
+                      </>
+                    ) : (
+                      <>
+                        <circle
+                          r="9"
+                          fill={isOffline ? '#e33f50' : '#a5acb8'}
+                          stroke={isOffline ? '#f7808b' : '#cbd0d8'}
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          y="3.5"
+                          textAnchor="middle"
+                          fill={isOffline ? '#ffffff' : '#424a57'}
+                          fontSize="11"
+                          fontWeight="bold"
+                          fontFamily="sans-serif"
+                        >
+                          !
+                        </text>
+                      </>
+                    )}
                   </g>
 
-                  {/* Device ID text in white 12px semibold (Figma 132:10824) */}
+                  {/* Device ID text in white 12px semibold */}
                   <text
                     x={-(pillWidth / 2) + 26}
                     y="4"
@@ -778,15 +790,6 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         </div>
       )}
 
-      {/* Attribution & Classification Label (Bottom-Center/Right above timeline) */}
-      <div className="absolute bottom-2.5 right-6 flex items-center gap-1.5 text-[10px] text-white/50 font-sans pointer-events-none select-none drop-shadow z-10">
-        <span>Maxar Technologies, OpenStreetMap contributors</span>
-        <span className="opacity-40">|</span>
-        <span className="font-semibold text-white/70">TM FALCON (Internal Use Only)</span>
-        <span className="pointer-events-auto cursor-pointer opacity-70 hover:opacity-100 transition-opacity ml-0.5">
-          <Info className="size-3" />
-        </span>
-      </div>
     </div>
   );
 };

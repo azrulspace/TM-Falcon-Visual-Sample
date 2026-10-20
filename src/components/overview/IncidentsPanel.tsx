@@ -146,22 +146,22 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
     <>
       <div
         style={{
-          width: isInspectorMode ? '360px' : '279px',
+          width: isInspectorMode ? '360px' : '280px',
         }}
-        className="pointer-events-auto flex flex-col rounded-[12px] border dark:border-[#0e1520] border-slate-200/80 dark:bg-[#141b23]/92 bg-white/92 backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
-        data-node-id="132:10717"
+        className="pointer-events-auto flex flex-col rounded-[12px] border dark:border-[#222b38] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
+        data-node-id="138:13630"
         data-name="Incidents and attention"
       >
         {!activeIncident ? (
-          /* ================= DEFAULT 279px LIST VIEW ================= */
+          /* ================= DEFAULT 280px LIST VIEW ================= */
           <>
-            {/* Header (40px) */}
+            {/* Header (42px) */}
             <div
-              className="flex items-center justify-between h-[40px] px-[15px] border-b dark:border-[#0d131b] border-slate-200 shrink-0"
-              data-node-id="132:10718"
+              className="flex items-center justify-between h-[42px] px-[15px] border-b dark:border-[#222b38] border-slate-200 shrink-0"
+              data-node-id="138:13631"
               data-name="Incident panel header"
             >
-              <span className="text-[11px] font-semibold text-slate-800 dark:text-[#e2e7ef] tracking-tight">
+              <span className="text-[12px] font-semibold text-slate-800 dark:text-[#e2e7ef] tracking-tight">
                 Incidents &amp; attention ({displayedIncidents.length})
               </span>
               <button
@@ -175,8 +175,8 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
               </button>
             </div>
 
-            {/* Incident Rows (87px tall each matching Figma) */}
-            <div className="flex flex-col">
+            {/* Incident Rows (61px tall each matching Figma node 138:13643) */}
+            <div className="flex flex-col p-2 gap-1.5">
               {displayedIncidents.map((incident) => {
                 const isSelected = selectedId && formatId(selectedId) === formatId(incident.id);
                 const isOffline = incident.badge === 'Offline';
@@ -185,10 +185,10 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                   <div
                     key={incident.id}
                     onClick={() => onSelectItem(incident.id)}
-                    className={`flex flex-col justify-between h-[87px] pt-[11px] pb-[8px] pl-[15px] pr-[13px] border-b dark:border-[#0d131b] border-slate-100 transition-all cursor-pointer relative ${
+                    className={`flex flex-col justify-between h-[61px] p-2.5 rounded-lg border transition-all cursor-pointer relative ${
                       isSelected
-                        ? 'dark:bg-[#1e2632] bg-sky-50/70 border-l-[3px] border-l-[#1850a0]'
-                        : 'dark:bg-[#171e27] bg-white hover:dark:bg-[#1a232e] hover:bg-slate-50'
+                        ? 'dark:bg-[#1e2632] bg-sky-50/70 border-primary ring-1 ring-primary/40'
+                        : 'dark:bg-[#161c24] bg-white border-slate-200/60 dark:border-[#222b38] hover:dark:bg-[#1c2430] hover:bg-slate-50 shadow-xs'
                     }`}
                     tabIndex={0}
                     role="button"
@@ -197,66 +197,68 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                     }}
                     data-name="Incident"
                   >
-                    {/* Line 1: Attention indicator, Device ID, Status badge, Age */}
-                    <div className="flex items-center gap-[9px]">
-                      {/* Attention circle indicator 18px */}
-                      <div
-                        className={`size-[18px] rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 border ${
-                          isOffline
-                            ? 'bg-[#e33f50] border-[#f7808b] text-white animate-pulse'
-                            : 'bg-[#a5acb8] border-[#cbd0d8] text-[#424a57]'
-                        }`}
-                        data-name="Attention indicator"
-                      >
-                        !
+                    {/* Line 1: Attention indicator, Device ID, Status badge, and right-aligned Age */}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        {/* Attention circle indicator 16px */}
+                        <div
+                          className={`size-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 border ${
+                            isOffline
+                              ? 'bg-[#e33f50] border-[#f7808b] text-white animate-pulse'
+                              : 'bg-[#a5acb8] border-[#cbd0d8] text-[#424a57]'
+                          }`}
+                          data-name="Attention indicator"
+                        >
+                          !
+                        </div>
+
+                        {/* Device ID (11px semibold font-mono) */}
+                        <span className="font-semibold text-xs dark:text-[#e2e7ef] text-slate-800 font-mono">
+                          {formatId(incident.id)}
+                        </span>
+
+                        {/* Status badge */}
+                        <div
+                          className={`h-[18px] px-1.5 rounded flex items-center justify-center text-[10px] font-medium leading-none ${
+                            isOffline
+                              ? 'dark:bg-[#e33f50]/15 bg-[#e33f50]/10 text-[#e33f50] border border-[#e33f50]/30'
+                              : 'dark:bg-slate-700/50 bg-slate-200 text-slate-700 dark:text-slate-300'
+                          }`}
+                          data-name="Status badge"
+                        >
+                          {incident.badge}
+                        </div>
                       </div>
 
-                      {/* Device ID (11px semibold) */}
-                      <span className="font-semibold text-[11px] dark:text-[#e2e7ef] text-slate-800 font-mono w-[54px]">
-                        {formatId(incident.id)}
-                      </span>
-
-                      {/* Status badge (h-[21px] rounded-[3px] px-[7px]) */}
-                      <div
-                        className={`h-[21px] px-[7px] rounded-[3px] flex items-center justify-center text-[10px] font-normal leading-none ${
-                          isOffline
-                            ? 'bg-[#b83243] text-white font-medium'
-                            : 'bg-[#a5acb8] text-[#272d37] font-medium'
-                        }`}
-                        data-name="Status badge"
-                      >
-                        {incident.badge}
-                      </div>
-
-                      {/* Age / Duration */}
+                      {/* Age / Duration right-aligned */}
                       <span
-                        className={`text-[10px] font-normal font-mono ${
-                          isOffline ? 'text-[#d9646d]' : 'dark:text-[#a3adbd] text-slate-500'
+                        className={`text-[10px] font-mono ${
+                          isOffline ? 'text-[#e33f50]' : 'dark:text-[#a3adbd] text-slate-500'
                         }`}
                       >
                         {incident.duration}
                       </span>
                     </div>
 
-                    {/* Line 2: Type icon, Location, Cause */}
-                    <div className="flex items-center gap-[12px] pl-[3px]">
-                      {incident.type === 'tower' ? (
-                        <RadioTower className="size-[20px] dark:text-[#a3adbd] text-slate-500 shrink-0" />
-                      ) : (
-                        <Monitor className="size-[20px] dark:text-[#a3adbd] text-slate-500 shrink-0" />
-                      )}
-                      <div className="flex flex-col text-left leading-tight min-w-0">
-                        <span className="text-[11px] dark:text-[#a3adbd] text-slate-600 truncate font-normal">
+                    {/* Line 2: Type icon, Location - Cause, and right-aligned chevron */}
+                    <div className="flex items-center justify-between w-full pl-0.5 text-xs text-slate-500 dark:text-[#a3adbd]">
+                      <div className="flex items-center gap-1.5 min-w-0 truncate text-[11px]">
+                        {incident.type === 'tower' ? (
+                          <RadioTower className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />
+                        ) : (
+                          <Monitor className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />
+                        )}
+                        <span className="font-medium dark:text-slate-300 text-slate-700 truncate">
                           {incident.location}
                         </span>
-                        <span className="text-[10px] dark:text-[#7d8899] text-slate-400 truncate">
+                        <span className="text-slate-400 dark:text-[#64748b]">•</span>
+                        <span className="truncate text-slate-500 dark:text-[#94a3b8]">
                           {incident.issue}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Chevron Right (12px at right edge) */}
-                    <ChevronRight className="absolute right-[13px] top-[36px] size-[14px] dark:text-[#7d8899] text-slate-400 shrink-0" />
+                      <ChevronRight className="size-3.5 text-slate-400 dark:text-[#718096] shrink-0" />
+                    </div>
                   </div>
                 );
               })}
