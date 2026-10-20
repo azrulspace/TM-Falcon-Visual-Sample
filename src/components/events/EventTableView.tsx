@@ -57,6 +57,48 @@ export interface EventTableViewProps {
   onOpenCreateCaseDialog: (id: string) => void;
 }
 
+
+interface SortHeaderProps {
+  label: string;
+  sortKey: string;
+  className?: string;
+  sortConfig: { key: string; direction: 'asc' | 'desc' };
+  onSort: (key: string) => void;
+}
+
+const SortHeader: React.FC<SortHeaderProps> = ({
+  label,
+  sortKey,
+  className,
+  sortConfig,
+  onSort,
+}) => {
+  const isActive = sortConfig.key === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={cn(
+        'text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 select-none cursor-pointer hover:bg-muted/40 transition-colors',
+        isActive && 'text-foreground font-bold',
+        className
+      )}
+    >
+      <div className="flex items-center gap-1.5">
+        <span>{label}</span>
+        {isActive ? (
+          sortConfig.direction === 'asc' ? (
+            <ArrowUp className="size-3 text-primary" />
+          ) : (
+            <ArrowDown className="size-3 text-primary" />
+          )
+        ) : (
+          <ArrowUpDown className="size-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+      </div>
+    </th>
+  );
+};
+
 export const EventTableView: React.FC<EventTableViewProps> = ({
   events,
   selectedIds,
@@ -80,51 +122,25 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
   const { acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
 
-  const totalEvents = events.length;
-  const totalPages = Math.ceil(totalEvents / rowsPerPage) || 1;
-  const paginatedEvents = React.useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return events.slice(start, start + rowsPerPage);
-  }, [events, currentPage, rowsPerPage]);
-
-  const pageIds = React.useMemo(() => paginatedEvents.map((e) => e.id), [paginatedEvents]);
-  const isAllPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
-  const isSomePageSelected = pageIds.some((id) => selectedIds.has(id)) && !isAllPageSelected;
-
-  const handleCopyLink = (id: string) => {
+  const handleCopyLink = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const url = `${window.location.origin}/events/${id}`;
     navigator.clipboard.writeText(url);
     addToast('success', `Copied link to ${id}`);
   };
 
-  const SortHeader = ({ label, sortKey, className }: { label: string; sortKey: string; className?: string }) => {
-    const isActive = sortConfig.key === sortKey;
-    return (
-      <th
-        onClick={() => onSort(sortKey)}
-        className={cn(
-          'text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 select-none cursor-pointer hover:bg-muted/40 transition-colors',
-          isActive && 'text-foreground font-bold',
-          className
-        )}
-      >
-        <div className="flex items-center gap-1.5">
-          <span>{label}</span>
-          {isActive ? (
-            sortConfig.direction === 'asc' ? (
-              <ArrowUp className="size-3 text-primary" />
-            ) : (
-              <ArrowDown className="size-3 text-primary" />
-            )
-          ) : (
-            <ArrowUpDown className="size-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-          )}
-        </div>
-      </th>
-    );
-  };
-
   const rowHeightClass = density === 'comfortable' ? 'h-14' : 'h-11';
+
+  // Pagination calculation
+  const totalEvents = events.length;
+  const totalRows = totalEvents;
+  const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedEvents = events.slice(startIndex, startIndex + rowsPerPage);
+
+  const pageIds = paginatedEvents.map((e) => e.id);
+  const isAllPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const isSomePageSelected = pageIds.some((id) => selectedIds.has(id)) && !isAllPageSelected;
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden select-none">
@@ -145,25 +161,73 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
               </th>
 
               {/* Event (280px) */}
-              {columns.event && <SortHeader label="Event" sortKey="id" className="w-[280px] min-w-[260px]" />}
+              {columns.event && (
+                <SortHeader
+                  label="Event"
+                  sortKey="id"
+                  className="w-[280px] min-w-[260px]"
+                  sortConfig={sortConfig}
+                  onSort={onSort}
+                />
+              )}
 
               {/* Captured (140px) */}
-              {columns.captured && <SortHeader label="Captured" sortKey="captured" className="w-[140px]" />}
+              {columns.captured && (
+                <SortHeader
+                  label="Captured"
+                  sortKey="captured"
+                  className="w-[140px]"
+                  sortConfig={sortConfig}
+                  onSort={onSort}
+                />
+              )}
 
               {/* Type / Activity (200px) */}
-              {columns.type && <SortHeader label="Type / Activity" sortKey="type" className="w-[200px]" />}
+              {columns.type && (
+                <SortHeader
+                  label="Type / Activity"
+                  sortKey="type"
+                  className="w-[200px]"
+                  sortConfig={sortConfig}
+                  onSort={onSort}
+                />
+              )}
 
               {/* Device (120px) */}
-              {columns.device && <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">Device</th>}
+              {columns.device && (
+                <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">
+                  Device
+                </th>
+              )}
 
               {/* Asset (120px) */}
-              {columns.asset && <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">Asset</th>}
+              {columns.asset && (
+                <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">
+                  Asset
+                </th>
+              )}
 
               {/* Priority (110px) */}
-              {columns.priority && <SortHeader label="Priority" sortKey="priority" className="w-[110px]" />}
+              {columns.priority && (
+                <SortHeader
+                  label="Priority"
+                  sortKey="priority"
+                  className="w-[110px]"
+                  sortConfig={sortConfig}
+                  onSort={onSort}
+                />
+              )}
 
               {/* Status (130px) */}
-              {columns.status && <SortHeader label="Status" sortKey="status" className="w-[130px]" />}
+              {columns.status && (
+                <SortHeader
+                  label="Status"
+                  sortKey="status"
+                  className="w-[130px]"
+                  sortConfig={sortConfig}
+                  onSort={onSort}
+                />
+              )}
 
               {/* Case (110px) */}
               {columns.case && <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[110px]">Case</th>}
