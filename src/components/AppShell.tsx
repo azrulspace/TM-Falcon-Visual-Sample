@@ -563,8 +563,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   )}
 
                   {sec.items.map((item) => {
-                    const isParentActive = location.pathname.startsWith(item.route);
-                    const isLeafActive = location.pathname === item.route;
+                    const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
+                    const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute;
+                    const isLeafActive = location.pathname === item.route || isEventsRoute;
                     const hasChildren = item.children && item.children.length > 0;
                     const isExpanded = openGroups[item.id] !== false; // default open
 
@@ -577,7 +578,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                 sidebarMinimized ? 'justify-center' : 'justify-between'
                               } ${
                                 isLeafActive
-                                  ? 'bg-[#261c80] text-white font-semibold shadow-xs'
+                                  ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
                                   : isParentActive
                                   ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
                                   : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
@@ -604,11 +605,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                 }
                               }}
                             >
-                              {/* Active purple accent bar on left edge matching Figma node 132:10644 */}
+                              {/* Active blue accent bar on left edge */}
                               {isLeafActive && (
-                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#7b72e0] rounded-r-[6px]" />
+                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
                               )}
-                              <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-[#e2e7ef]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
+                              <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-blue-600 dark:text-[#60a5fa]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
                               {!sidebarMinimized && <span className="truncate">{item.label}</span>}
 
                               {!sidebarMinimized && (
@@ -661,7 +662,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                   <div
                                     className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
                                       isChildActive
-                                        ? 'bg-[#261c80] text-white font-semibold'
+                                        ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold'
                                         : 'text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]'
                                     }`}
                                     onClick={() => navigate(child.route)}
@@ -907,7 +908,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
           {/* Main Workspace: Full Bleed for Overview (p-0) */}
           <main className={`flex-1 flex flex-col min-w-0 ${isOverview ? 'overflow-hidden p-0 relative h-full' : 'overflow-y-auto p-4 lg:p-6'}`}>
-            {!isOverview && (
+            {!isOverview && !location.pathname.startsWith('/events') && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 select-none">
                 <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
                   Falcon

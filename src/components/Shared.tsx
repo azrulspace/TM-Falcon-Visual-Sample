@@ -1,8 +1,10 @@
 import React from 'react';
-import { Link,  } from 'react-router-dom';
-import { ChevronRight, Check, CheckCircle2, User, Search, Eye, ShieldAlert, Info, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronRight, Search, Eye, ShieldAlert, Info, MapPin } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { StatusBadge as CommonStatusBadge } from '@/components/common/StatusBadge';
+import { PriorityBadge as CommonPriorityBadge } from '@/components/common/PriorityBadge';
 
 export const PageHeader = ({ title, description, breadcrumbs, actions, openQuestion, pageId, roles, tabs = false }: any) => {
   return (
@@ -76,27 +78,13 @@ export const StatCard = ({ overline, number, helper, accent, onShowMap, icon: Ic
 
 export const StatusBadge = ({ kind, value }: { kind?: 'priority' | 'state' | 'device' | 'action' | 'case', value: string }) => {
   if (kind === 'priority') {
-    const map: any = {
-      High: 'badge_error badge_dot',
-      Medium: 'badge_warning badge_dot',
-      Low: 'badge_info badge_dot',
-    };
-    return <span className={`badge ${map[value] || 'badge_neutral'}`}>{value}</span>;
+    return <CommonPriorityBadge priority={value} />;
   }
   if (kind === 'state') {
-    if (value === 'New') return <span className="badge badge_brand">{value}</span>;
-    if (value === 'Acknowledged') return <span className="badge badge_neutral"><Check className="w-3 h-3" /> {value}</span>;
-    if (value === 'Assigned') return <span className="badge badge_neutral"><User className="w-3 h-3" /> {value}</span>;
-    if (value === 'Closed') return <span className="badge badge_success"><CheckCircle2 className="w-3 h-3" /> {value}</span>;
-    return <span className="badge badge_neutral">{value}</span>;
+    return <CommonStatusBadge status={value} />;
   }
   if (kind === 'device') {
-    const map: any = {
-      online: 'badge_success badge_dot',
-      stale: 'badge_warning badge_dot',
-      offline: 'badge_error badge_dot',
-    };
-    return <span className={`badge ${map[value.toLowerCase()] || 'badge_neutral'}`}>{value}</span>;
+    return <CommonStatusBadge status={value} />;
   }
   if (kind === 'action') {
     let ActionIcon = ShieldAlert;
@@ -106,7 +94,7 @@ export const StatusBadge = ({ kind, value }: { kind?: 'priority' | 'state' | 'de
     return <span className="badge badge_neutral"><ActionIcon className="w-3 h-3" /> {value}</span>;
   }
   if (kind === 'case') {
-    return <span className="badge badge_info">{value}</span>;
+    return <CommonStatusBadge status="in case" label={value} />;
   }
   
   // fallback for old usages
