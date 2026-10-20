@@ -8,6 +8,7 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import Overview from './pages/Overview';
 import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
 import Risk from './pages/Risk';
 import Inventory from './pages/Inventory';
 import CreateDevice from './pages/CreateDevice';
@@ -39,6 +40,7 @@ export default function App() {
             
             <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
             <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
             <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
