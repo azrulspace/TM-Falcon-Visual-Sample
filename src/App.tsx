@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { OverviewProvider } from './contexts/OverviewContext';
+import { EventsProvider } from './contexts/EventsContext';
 import { AppShell } from './components/AppShell';
 import { TooltipProvider } from './components/ui/tooltip';
 import SignIn from './pages/SignIn';
@@ -29,7 +30,8 @@ export default function App() {
   return (
     <AppProvider>
       <OverviewProvider>
-        <TooltipProvider>
+        <EventsProvider>
+          <TooltipProvider>
           <Routes>
             <Route path="/" element={<DefaultRedirect />} />
             <Route path="/signin" element={<SignIn />} />
@@ -46,6 +48,7 @@ export default function App() {
             <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
           </Routes>
         </TooltipProvider>
+        </EventsProvider>
       </OverviewProvider>
     </AppProvider>
   );
