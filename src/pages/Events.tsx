@@ -1,419 +1,642 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { PageHeader, StatusBadge, EmptyState } from '../components/Shared';
-import { useAppContext } from '../contexts/AppContext';
-import { useToast } from '../contexts/ToastContext';
-import { events as initialEvents } from '../data/events';
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  InboxHeader,
+  type ColumnVisibility,
+} from '@/components/events/InboxHeader';
+import { SummaryStrip } from '@/components/events/SummaryStrip';
+import {
+  InboxToolbar,
+  type InboxFilters,
+} from '@/components/events/InboxToolbar';
+import { EventTableView } from '@/components/events/EventTableView';
+import { EventGroupedView } from '@/components/events/EventGroupedView';
+import { EventGalleryView } from '@/components/events/EventGalleryView';
+import { EventPeekPanel } from '@/components/events/EventPeekPanel';
+import { BulkActionBar } from '@/components/events/BulkActionBar';
+import { CreateCaseDialog } from '@/components/events/dialogs/CreateCaseDialog';
+import { DismissEventDialog } from '@/components/events/dialogs/DismissEventDialog';
+import { AssignEventDialog } from '@/components/events/dialogs/AssignEventDialog';
+import { KeyboardShortcutsDialog } from '@/components/events/dialogs/KeyboardShortcutsDialog';
+import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
+import { useEvents } from '@/contexts/EventsContext';
+import { useToast } from '@/contexts/ToastContext';
+import { useOverview } from '@/contexts/OverviewContext';
+import { Bell, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  ChevronDown, Search, Info, Calendar,
-  ArrowUpDown, ArrowDown, ArrowUp,
-  ChevronLeft, ChevronRight, ExternalLink
-} from 'lucide-react';
-
-// A custom dropdown filter to avoid native select popup styling issues
-const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: { icon?: React.ElementType, value: string, options: string[], onChange: (v: string) => void, prefix?: string }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger render={
-      <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
-        {Icon && <Icon className="w-4 h-4 text-secondary" />}
-        <span>{prefix}{value}</span>
-        <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
-      </Button>
-    } />
-    <DropdownMenuContent className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-1 min-w-[160px] z-50 flex flex-col gap-1" align="start" sideOffset={4}>
-      {options.map(opt => (
-        <DropdownMenuItem 
-          key={opt}
-          className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
-          style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
-          onSelect={() => onChange(opt)}
-        >
-          {prefix}{opt}
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+import type { FalconEvent } from '@/data/events';
 
 export default function Events() {
-  const { reviewMode } = useAppContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const overview = useOverview();
+  const {
+    events,
+    activeEventId,
+    setActiveEventId,
+    activeEvent,
+    bulkAcknowledge,
+    incomingNewEventsCount,
+    mergeNewEvents,
+  } = useEvents();
   const { addToast } = useToast();
-  
-  const [events, setEvents] = useState(initialEvents);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterPriority, setFilterPriority] = useState('All');
-  const [filterState, setFilterState] = useState('All');
-  const [filterCase, setFilterCase] = useState('All');
-  const [dateRange, setDateRange] = useState('Last 24h');
-  const [openOnly, setOpenOnly] = useState(false);
-  
-  type SortConfig = { key: string, direction: 'asc' | 'desc' } | null;
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'captured', direction: 'desc' });
-  
+
+  // 1. Filter State (synced with URL)
+  const [filters, setFilters] = useState<InboxFilters>(() => ({
+    tab: (searchParams.get('tab') as InboxFilters['tab']) || 'all',
+    search: searchParams.get('q') || '',
+    timeRange: searchParams.get('time') || undefined,
+    priority: searchParams.get('priority') || undefined,
+    status: searchParams.get('status') || undefined,
+    caseFilter: searchParams.get('case') || undefined,
+    device: searchParams.get('device') || undefined,
+    asset: searchParams.get('asset') || undefined,
+    type: searchParams.get('type') || undefined,
+    source: searchParams.get('source') || undefined,
+  }));
+
+  // Keep URL search params in sync with filter changes
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (filters.tab && filters.tab !== 'all') next.set('tab', filters.tab);
+      else next.delete('tab');
+
+      if (filters.search) next.set('q', filters.search);
+      else next.delete('q');
+
+      if (filters.timeRange) next.set('time', filters.timeRange);
+      else next.delete('time');
+
+      if (filters.priority) next.set('priority', filters.priority);
+      else next.delete('priority');
+
+      if (filters.status) next.set('status', filters.status);
+      else next.delete('status');
+
+      if (filters.caseFilter) next.set('case', filters.caseFilter);
+      else next.delete('case');
+
+      if (filters.device) next.set('device', filters.device);
+      else next.delete('device');
+
+      if (filters.asset) next.set('asset', filters.asset);
+      else next.delete('asset');
+
+      if (filters.type) next.set('type', filters.type);
+      else next.delete('type');
+
+      if (filters.source) next.set('source', filters.source);
+      else next.delete('source');
+
+      return next;
+    }, { replace: true });
+  }, [filters, setSearchParams]);
+
+  // 2. View Mode and Density
+  const [viewMode, setViewMode] = useState<'table' | 'grouped' | 'gallery'>('table');
+  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+
+  // 3. Column Visibility
+  const [columns, setColumns] = useState<ColumnVisibility>({
+    event: true,
+    captured: true,
+    type: true,
+    device: true,
+    asset: true,
+    priority: true,
+    status: true,
+    case: true,
+    source: false,
+    actions: true,
+  });
+
+  // 4. Quick filter from SummaryStrip
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
+
+  const handleSelectQuickFilter = (key: string | null) => {
+    setActiveQuickFilter(key);
+    if (key === 'new') {
+      setFilters((f) => ({ ...f, tab: 'new' }));
+    } else if (key === 'high_priority') {
+      setFilters((f) => ({ ...f, priority: 'High', tab: 'all' }));
+    } else if (key === 'without_case') {
+      setFilters((f) => ({ ...f, caseFilter: 'no_case', tab: 'all' }));
+    } else if (key === null) {
+      setFilters((f) => ({ ...f, tab: 'all', priority: undefined, caseFilter: undefined }));
+    }
+  };
+
+  // 5. Sorting Config
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'captured',
+    direction: 'desc',
+  });
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'desc' };
+    });
+  };
+
+  // 6. Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
-  const [assignTargetIds, setAssignTargetIds] = useState<string[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState('Team A (sample)');
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
+  // 7. Multi-Row Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAllPage = (selectAll: boolean, pageIds: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selectAll) {
+        pageIds.forEach((id) => next.add(id));
+      } else {
+        pageIds.forEach((id) => next.delete(id));
+      }
+      return next;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  // 8. Filter Logic
   const filteredEvents = useMemo(() => {
-    return events.filter(e => {
-      if (filterPriority !== 'All' && e.priority !== filterPriority) return false;
-      if (filterState !== 'All' && e.state !== filterState) return false;
-      if (filterCase === 'With case' && !e.caseId) return false;
-      if (filterCase === 'No case' && e.caseId) return false;
-      if (openOnly && e.state === 'Closed') return false;
-      
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (
-          !e.id.toLowerCase().includes(q) &&
-          !e.type.toLowerCase().includes(q) &&
-          !(e.device && e.device.toLowerCase().includes(q)) &&
-          !(e.asset && e.asset.toLowerCase().includes(q)) &&
-          !(e.caseId && e.caseId.toLowerCase().includes(q))
-        ) {
+    return events.filter((e) => {
+      // Tab filter
+      if (filters.tab === 'new' && e.state !== 'New') return false;
+      if (filters.tab === 'acknowledged' && e.state !== 'Acknowledged') return false;
+      if (filters.tab === 'in_case' && e.state !== 'In case') return false;
+      if (filters.tab === 'dismissed' && e.state !== 'Dismissed') return false;
+
+      // Filter chips
+      if (filters.priority && e.priority !== filters.priority) return false;
+      if (filters.status && e.state !== filters.status) return false;
+      if (filters.caseFilter === 'with_case' && !e.caseId) return false;
+      if (filters.caseFilter === 'no_case' && e.caseId) return false;
+      if (filters.device && e.device !== filters.device) return false;
+      if (filters.asset && e.asset !== filters.asset) return false;
+      if (filters.type && e.type !== filters.type) return false;
+      if (filters.source && e.source !== filters.source) return false;
+
+      // Time Range
+      if (filters.timeRange) {
+        const cap = e.captured.toLowerCase();
+        if (filters.timeRange === 'Last 15m' && !cap.includes('m ago') && !cap.includes('just now')) {
+          return false;
+        }
+        if (filters.timeRange === 'Last 1h' && !cap.includes('m ago') && !cap.includes('1h ago') && !cap.includes('just now')) {
           return false;
         }
       }
+
+      // Search query
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const matchId = e.id.toLowerCase().includes(q);
+        const matchType = e.type.toLowerCase().includes(q);
+        const matchDevice = e.device?.toLowerCase().includes(q);
+        const matchAsset = e.asset.toLowerCase().includes(q);
+        const matchRule = e.detection?.toLowerCase().includes(q);
+        if (!matchId && !matchType && !matchDevice && !matchAsset && !matchRule) {
+          return false;
+        }
+      }
+
       return true;
     }).sort((a, b) => {
-      if (!sortConfig) return 0;
-      let valA = (a as any)[sortConfig.key] || '';
-      let valB = (b as any)[sortConfig.key] || '';
-      
+      let valA: any = (a as any)[sortConfig.key] || '';
+      let valB: any = (b as any)[sortConfig.key] || '';
+
       if (sortConfig.key === 'captured') {
-        valA = a.captured;
-        valB = b.captured;
+        valA = new Date(a.captured).getTime();
+        valB = new Date(b.captured).getTime();
       }
+
       if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
       if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [events, filterPriority, filterState, filterCase, openOnly, searchQuery, sortConfig]);
+  }, [events, filters, sortConfig]);
 
-  const totalFiltered = filteredEvents.length;
-  const totalPages = Math.ceil(totalFiltered / rowsPerPage);
-  const paginatedEvents = filteredEvents.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // 9. Dialog States
+  const [createCaseEventId, setCreateCaseEventId] = useState<string | null>(null);
+  const [dismissEventId, setDismissEventId] = useState<string | null>(null);
+  const [assignEventId, setAssignEventId] = useState<string | null>(null);
+  const [bulkDismissOpen, setBulkDismissOpen] = useState(false);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [lightboxEvent, setLightboxEvent] = useState<FalconEvent | null>(null);
 
-  const newInViewCount = filteredEvents.filter(e => e.state === 'New').length;
+  // 10. Keyboard Shortcuts Handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.tagName === 'SELECT';
 
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const SortableHeader = ({ label, sortKey, className = "" }: { label: string, sortKey: string, className?: string }) => {
-    const isActive = sortConfig?.key === sortKey;
-    return (
-      <th 
-        className={`cursor-pointer hover:bg-row-hover transition-colors select-none group ${className}`}
-        onClick={() => handleSort(sortKey)}
-      >
-        <div className="flex items-center gap-1">
-          {label}
-          <div className="flex flex-col opacity-0 group-hover:opacity-50 transition-opacity aria-selected:opacity-100" aria-selected={isActive}>
-            {isActive ? (
-              sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-brand" /> : <ArrowDown className="w-3 h-3 text-brand" />
-            ) : (
-              <ArrowUpDown className="w-3 h-3" />
-            )}
-          </div>
-        </div>
-      </th>
-    );
-  };
-
-  const handleAcknowledge = (id: string) => {
-    setEvents(events.map(e => e.id === id ? { ...e, state: 'Acknowledged' } : e));
-    addToast('success', `${id} acknowledged.`);
-  };
-
-  const handleBulkAcknowledgeAll = () => {
-    let ackCount = 0;
-    setEvents(events.map(e => {
-      if (filteredEvents.some(f => f.id === e.id) && e.state === 'New') {
-        ackCount++;
-        return { ...e, state: 'Acknowledged' };
+      // '?' key opens shortcuts guide
+      if (e.key === '?' && !isInput) {
+        e.preventDefault();
+        setShortcutsOpen((o) => !o);
+        return;
       }
-      return e;
-    }));
-    if (ackCount > 0) addToast('success', `${ackCount} events acknowledged.`);
+
+      // Escape closes peek panel
+      if (e.key === 'Escape') {
+        if (activeEventId) {
+          setActiveEventId(null);
+        }
+        return;
+      }
+
+      if (isInput) return;
+
+      // J: Next event
+      if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (filteredEvents.length === 0) return;
+        if (!activeEventId) {
+          setActiveEventId(filteredEvents[0].id);
+        } else {
+          const idx = filteredEvents.findIndex((ev) => ev.id === activeEventId);
+          if (idx < filteredEvents.length - 1) {
+            setActiveEventId(filteredEvents[idx + 1].id);
+          }
+        }
+        return;
+      }
+
+      // K: Prev event
+      if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (filteredEvents.length === 0) return;
+        if (!activeEventId) {
+          setActiveEventId(filteredEvents[0].id);
+        } else {
+          const idx = filteredEvents.findIndex((ev) => ev.id === activeEventId);
+          if (idx > 0) {
+            setActiveEventId(filteredEvents[idx - 1].id);
+          }
+        }
+        return;
+      }
+
+      // Enter opens full detail page
+      if (e.key === 'Enter') {
+        if (activeEventId) {
+          navigate(`/events/${activeEventId}`);
+        }
+        return;
+      }
+
+      // E: Acknowledge active event
+      if (e.key === 'e' || e.key === 'E') {
+        if (activeEvent && activeEvent.state === 'New') {
+          e.preventDefault();
+          bulkAcknowledge([activeEvent.id]);
+          addToast('success', `Event ${activeEvent.id} acknowledged`);
+        }
+        return;
+      }
+
+      // C: Create case for active event
+      if (e.key === 'c' || e.key === 'C') {
+        if (activeEventId) {
+          e.preventDefault();
+          setCreateCaseEventId(activeEventId);
+        }
+        return;
+      }
+
+      // 1, 2, 3: View mode toggles
+      if (e.key === '1') setViewMode('table');
+      if (e.key === '2') setViewMode('grouped');
+      if (e.key === '3') setViewMode('gallery');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    filteredEvents,
+    activeEventId,
+    activeEvent,
+    bulkAcknowledge,
+    setActiveEventId,
+    navigate,
+    addToast,
+  ]);
+
+  // 11. Bulk Actions
+  const handleBulkAcknowledge = () => {
+    const ids = Array.from(selectedIds);
+    bulkAcknowledge(ids);
+    addToast('success', `Acknowledged ${ids.length} selected events`);
+    setSelectedIds(new Set());
   };
 
-  const handleAssign = () => {
-    if (assignTargetIds.length > 0) {
-      setEvents(events.map(e => assignTargetIds.includes(e.id) ? { ...e, state: 'Assigned' } : e));
-      addToast('success', `${assignTargetIds.length} event(s) assigned to ${selectedTeam}.`);
-      setAssignTargetIds([]);
+  const handleBulkExport = () => {
+    const selectedEvents = events.filter((e) => selectedIds.has(e.id));
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      ['ID,Type,Priority,Status,Device,Asset,Captured,Received,Case']
+        .concat(
+          selectedEvents.map(
+            (e) =>
+              `${e.id},"${e.type}",${e.priority},${e.state},${e.device || ''},${e.asset},"${e.captured}","${e.receivedAt}",${e.caseId || ''}`
+          )
+        )
+        .join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `falcon_events_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast('success', `Exported ${selectedIds.size} events to CSV`);
+  };
+
+  const handleSelectAllResults = () => {
+    setSelectedIds(new Set(filteredEvents.map((e) => e.id)));
+  };
+
+  // Selected event for dialogs
+  const targetCreateCaseEvent = useMemo(
+    () => events.find((e) => e.id === createCaseEventId) || null,
+    [events, createCaseEventId]
+  );
+  const targetDismissEvent = useMemo(
+    () => events.find((e) => e.id === dismissEventId) || null,
+    [events, dismissEventId]
+  );
+  const targetAssignEvent = useMemo(
+    () => events.find((e) => e.id === assignEventId) || null,
+    [events, assignEventId]
+  );
+
+  // Peek panel prev/next calculation
+  const activeEventIndex = useMemo(() => {
+    return filteredEvents.findIndex((e) => e.id === activeEventId);
+  }, [filteredEvents, activeEventId]);
+
+  const hasPrevPeek = activeEventIndex > 0;
+  const hasNextPeek = activeEventIndex >= 0 && activeEventIndex < filteredEvents.length - 1;
+
+  const handlePrevPeek = () => {
+    if (hasPrevPeek) {
+      setActiveEventId(filteredEvents[activeEventIndex - 1].id);
     }
   };
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setFilterPriority('All');
-    setFilterState('All');
-    setFilterCase('All');
-    setDateRange('Last 24h');
-    setOpenOnly(false);
-    setCurrentPage(1);
+  const handleNextPeek = () => {
+    if (hasNextPeek) {
+      setActiveEventId(filteredEvents[activeEventIndex + 1].id);
+    }
   };
-
-  const headerTitle = (
-    <div className="flex items-center gap-2">
-      Event inbox
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger render={
-            <button className="text-tertiary hover:text-primary transition-colors focus:outline-none">
-              <Info className="w-4 h-4" />
-            </button>
-          } />
-          <TooltipContent className="bg-elevated border border-secondary shadow-lg rounded-[8px] p-3 text_sm text-primary max-w-[250px] z-50" sideOffset={4}>
-            Event states, and individual or team acknowledgement
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
-
-  const headerActions = (
-    <Button 
-      className="shadow-sm" 
-      disabled={newInViewCount === 0}
-      onClick={handleBulkAcknowledgeAll}
-    >
-      {newInViewCount === 0 ? "All in view acknowledged" : `Acknowledge ${newInViewCount} new in view`}
-    </Button>
-  );
 
   return (
-    <div className="pb-10">
-      <PageHeader 
-        title={headerTitle} 
-        description="Events raised from accepted observations. Open an event to review its evidence and decide whether it needs a case."
-        openQuestion={reviewMode ? "team acknowledgement rules." : undefined}
-        pageId="FAL_EVT_01"
-        roles="Admin, Operator"
-        actions={headerActions}
+    <div className="flex flex-col min-h-screen bg-background text-foreground antialiased">
+      {/* 1. Page Header */}
+      <InboxHeader
+        filteredEvents={filteredEvents}
+        columns={columns}
+        setColumns={setColumns}
+        density={density}
+        setDensity={setDensity}
       />
 
-      {/* Free-floating Filter Bar */}
-      <div className="mb-4 overflow-x-auto pb-1">
-        <div className="flex items-center gap-4 min-w-max animate-in fade-in duration-200">
-          {/* Global Search */}
-          <div className="relative w-[340px] shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary pointer-events-none" />
-            <input 
-              type="text" 
-              className="w-full h-10 pl-9 pr-3 text_sm bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow focus:outline-none focus:border-primary focus:shadow-[var(--ring\_brand)]" 
-              placeholder="Search by Event ID, Type, Device, or Asset..." 
-              value={searchQuery}
-              onChange={e => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          
-          {/* Filters */}
-          <div className="flex items-center gap-3 shrink-0">
-            <FilterDropdown 
-              icon={Calendar} 
-              value={dateRange} 
-              options={['Last 24h', 'Last 7 days', 'Last 30 days']} 
-              onChange={(v) => { setDateRange(v); setCurrentPage(1); }} 
-            />
-            <FilterDropdown 
-              prefix="Priority: "
-              value={filterPriority} 
-              options={['All', 'High', 'Medium', 'Low']} 
-              onChange={(v) => { setFilterPriority(v); setCurrentPage(1); }} 
-            />
-            <FilterDropdown 
-              prefix="State: "
-              value={filterState} 
-              options={['All', 'New', 'Acknowledged', 'Assigned', 'Closed']} 
-              onChange={(v) => { setFilterState(v); setCurrentPage(1); }} 
-            />
-            <FilterDropdown 
-              prefix="Case: "
-              value={filterCase} 
-              options={['All', 'With case', 'No case']} 
-              onChange={(v) => { setFilterCase(v); setCurrentPage(1); }} 
-            />
-          </div>
-          
-          <label className="choice flex items-center mb-0 mt-0 cursor-pointer pl-1 shrink-0">
-            <input type="checkbox" className="check" checked={openOnly} onChange={e => { setOpenOnly(e.target.checked); setCurrentPage(1); }} />
-            <span className="choice_label text_sm ml-2">Open only</span>
-          </label>
-        </div>
-      </div>
+      {/* 2. Main Body Container (Fluid width, 24px padding, 16px gaps) */}
+      <main className="flex-1 flex flex-col p-4 sm:p-6 gap-4 max-w-[1920px] w-full mx-auto">
+        {/* Summary Strip (Clickable quick filter cells) */}
+        <SummaryStrip
+          activeQuickFilter={activeQuickFilter}
+          onSelectQuickFilter={handleSelectQuickFilter}
+        />
 
-      <div className="app_card p-0 overflow-hidden flex flex-col shadow-sm">
-        {filteredEvents.length > 0 ? (
-          <>
-            <div className="app_table_container flex-1 min-h-[300px]">
-              <table className="app_table">
-                <thead>
-                  <tr className="border-b border-secondary">
-                    <SortableHeader label="EVENT" sortKey="id" className="pl-5" />
-                    <SortableHeader label="CAPTURED" sortKey="captured" />
-                    <SortableHeader label="TYPE" sortKey="type" />
-                    <SortableHeader label="DEVICE" sortKey="device" />
-                    <SortableHeader label="ASSET" sortKey="asset" />
-                    <SortableHeader label="PRIORITY" sortKey="priority" />
-                    <SortableHeader label="STATE" sortKey="state" />
-                    <SortableHeader label="CASE" sortKey="caseId" />
-                    <th className="text-right w-48 pr-5">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedEvents.map(e => (
-                    <tr key={e.id}>
-                      <td className="pl-5">
-                        <Link to="/planned/event" className="font-semibold text-brand hover:underline transition-colors">
-                          {e.id}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap">{e.captured}</td>
-                      <td className="whitespace-nowrap">{e.type}</td>
-                      <td>
-                        {e.device ? (
-                          <Link to={`/assets/inventory/devices/${e.device}`} className="font-semibold text-primary hover:text-brand hover:underline transition-colors">
-                            {e.device}
-                          </Link>
-                        ) : <span className="text-quaternary">-</span>}
-                      </td>
-                      <td>
-                        <Link to={`/planned/asset`} className="font-semibold text-primary hover:text-brand hover:underline transition-colors">
-                          {e.asset}
-                        </Link>
-                      </td>
-                      <td><StatusBadge kind="priority" value={e.priority} /></td>
-                      <td><StatusBadge kind="state" value={e.state} /></td>
-                      <td>
-                        {e.caseId ? (
-                          <Link to={`/planned/case`} className="font-semibold text-primary hover:text-brand hover:underline transition-colors">
-                            {e.caseId}
-                          </Link>
-                        ) : <span className="text-quaternary">-</span>}
-                      </td>
-                      <td className="text-right pr-5 whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          {e.state === 'New' && (
-                            <>
-                              <Button variant="secondary" size="sm" onClick={() => handleAcknowledge(e.id)}>Acknowledge</Button>
-                              <Button variant="outline" size="sm" onClick={() => setAssignTargetIds([e.id])}>Assign</Button>
-                            </>
-                          )}
-                          {e.state === 'Acknowledged' && (
-                            <Button variant="secondary" size="sm" onClick={() => setAssignTargetIds([e.id])}>Assign</Button>
-                          )}
-                          {e.state === 'Assigned' && (
-                            <Link to="/planned/case"><Button variant="ghost" size="sm" className="flex items-center gap-1">
-                              View Case <ExternalLink className="w-3 h-3 opacity-70" />
-                            </Button></Link>
-                          )}
-                          {e.state === 'Closed' && (
-                            <span className="text-quaternary mr-2">-</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Live Incoming Events Notification Banner */}
+        {incomingNewEventsCount > 0 && overview.liveState === 'live' && (
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span className="relative flex size-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full size-2 bg-primary" />
+              </span>
+              <Bell className="size-4" />
+              <span>
+                <strong>{incomingNewEventsCount} new events</strong> captured from edge cameras.
+              </span>
             </div>
-
-            {/* Pagination Footer */}
-            <div className="p-4 border-t border-secondary flex items-center justify-between bg-primary rounded-b-[16px]">
-              <div className="text_sm text-secondary">
-                Showing <span className="font-medium text-primary">{(currentPage - 1) * rowsPerPage + 1}</span> to <span className="font-medium text-primary">{Math.min(currentPage * rowsPerPage, totalFiltered)}</span> of <span className="font-medium text-primary">{totalFiltered}</span> events
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 text_sm text-secondary">
-                  Rows per page
-                  <div className="relative h-8 bg-transparent border-transparent hover:bg-secondary transition-colors cursor-pointer rounded-[8px] flex items-center">
-                    <select 
-                      className="h-full pl-2 pr-8 bg-transparent font-medium text-primary cursor-pointer outline-none appearance-none" 
-                      value={rowsPerPage} 
-                      onChange={e => {
-                        setRowsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </select>
-                    <ChevronDown className="absolute right-1 w-4 h-4 text-secondary pointer-events-none" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <EmptyState 
-            icon={Search} 
-            title="No events found" 
-            description="No events match these filters." 
-            action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>} 
-          />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={mergeNewEvents}
+              className="h-7 px-2.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border-transparent shadow-xs"
+            >
+              Show new events
+            </Button>
+          </div>
         )}
-      </div>
 
-      <Dialog open={assignTargetIds.length > 0} onOpenChange={(open) => !open && setAssignTargetIds([])}>
-        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-elevated p-6 rounded-[16px] shadow-2xl z-50 w-full max-w-md border border-secondary" showCloseButton={false}>
-          <DialogTitle className="h4 mb-2 text-primary">Assign event{assignTargetIds.length > 1 ? 's' : ''}</DialogTitle>
-          <DialogDescription className="text-secondary text_sm mb-6">
-            You are assigning {assignTargetIds.length} event{assignTargetIds.length > 1 ? 's' : ''}.
-          </DialogDescription>
-          <div className="field mb-6">
-            <label className="field_label">Team</label>
-            <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center">
-              <select className="h-full w-full pl-3 pr-8 bg-transparent outline-none appearance-none cursor-pointer" value={selectedTeam} onChange={e => setSelectedTeam(e.target.value)}>
-                <option value="Team A (sample)">Team A (sample)</option>
-                <option value="Team B (sample)">Team B (sample)</option>
-              </select>
-              <ChevronDown className="absolute right-3 w-4 h-4 text-tertiary pointer-events-none" />
+        {/* Toolbar (Quick view tabs, search with '/' shortcut, filter popovers, view mode) */}
+        <InboxToolbar
+          filters={filters}
+          setFilters={setFilters}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          filteredCount={filteredEvents.length}
+        />
+
+        {/* Content Area with Docked Peek Panel */}
+        <div className="flex-1 flex items-start gap-0 relative min-h-[500px]">
+          {/* Main List Area: Shrinks when Peek Panel is Open */}
+          <div className="flex-1 min-w-0 transition-all duration-200">
+            {filteredEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 px-4 rounded-xl border border-dashed border-border bg-card text-center gap-3">
+                <div className="size-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                  <SearchX className="size-6" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-semibold text-base text-foreground">
+                    No matching events found
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    No telemetry alerts match your current filter selection or search query.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFilters({
+                      tab: 'all',
+                      search: '',
+                      timeRange: undefined,
+                      priority: undefined,
+                      status: undefined,
+                      caseFilter: undefined,
+                      device: undefined,
+                      asset: undefined,
+                      type: undefined,
+                      source: undefined,
+                    })
+                  }
+                  className="text-xs border-border mt-2"
+                >
+                  Clear all filters
+                </Button>
+              </div>
+            ) : viewMode === 'table' ? (
+              <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+                <EventTableView
+                  events={filteredEvents}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAllPage={handleSelectAllPage}
+                  activeEventId={activeEventId}
+                  onRowClick={(evt) => setActiveEventId(evt.id)}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  columns={columns}
+                  density={density}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  rowsPerPage={rowsPerPage}
+                  setRowsPerPage={setRowsPerPage}
+                  onOpenAssignDialog={(id) => setAssignEventId(id)}
+                  onOpenDismissDialog={(id) => setDismissEventId(id)}
+                  onOpenCreateCaseDialog={(id) => setCreateCaseEventId(id)}
+                />
+              </div>
+            ) : viewMode === 'grouped' ? (
+              <EventGroupedView
+                events={filteredEvents}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onSelectAllPage={handleSelectAllPage}
+                activeEventId={activeEventId}
+                onRowClick={(evt) => setActiveEventId(evt.id)}
+                columns={columns}
+                density={density}
+                onOpenAssignDialog={(id) => setAssignEventId(id)}
+                onOpenDismissDialog={(id) => setDismissEventId(id)}
+                onOpenCreateCaseDialog={(id) => setCreateCaseEventId(id)}
+              />
+            ) : (
+              <EventGalleryView
+                events={filteredEvents}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                activeEventId={activeEventId}
+                onCardClick={(evt) => setActiveEventId(evt.id)}
+                onOpenAssignDialog={(id) => setAssignEventId(id)}
+                onOpenDismissDialog={(id) => setDismissEventId(id)}
+                onOpenCreateCaseDialog={(id) => setCreateCaseEventId(id)}
+              />
+            )}
+          </div>
+
+          {/* Docked Peek Panel (420px wide on desktop) */}
+          {activeEvent && (
+            <div className="hidden xl:block w-[420px] shrink-0 sticky top-4 max-h-[calc(100vh-140px)] ml-4 rounded-xl overflow-hidden border border-border shadow-lg">
+              <EventPeekPanel
+                event={activeEvent}
+                onClose={() => setActiveEventId(null)}
+                onNext={handleNextPeek}
+                onPrev={handlePrevPeek}
+                hasPrev={hasPrevPeek}
+                hasNext={hasNextPeek}
+                onOpenDetail={(id) => navigate(`/events/${id}`)}
+                onOpenLightbox={(evt) => setLightboxEvent(evt)}
+                onOpenCreateCase={(id) => setCreateCaseEventId(id)}
+                onOpenDismiss={(id) => setDismissEventId(id)}
+                onOpenAssign={(id) => setAssignEventId(id)}
+              />
             </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <DialogClose render={<Button variant="outline">Cancel</Button>} />
-            <Button onClick={handleAssign}>Assign</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </main>
+
+      {/* Floating Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        totalCount={filteredEvents.length}
+        isAllResultsSelected={selectedIds.size === filteredEvents.length && filteredEvents.length > 0}
+        onSelectAllResults={handleSelectAllResults}
+        onAcknowledge={handleBulkAcknowledge}
+        onAssign={() => setBulkAssignOpen(true)}
+        onCreateCase={() => {
+          if (selectedIds.size > 0) {
+            const firstId = Array.from(selectedIds)[0];
+            setCreateCaseEventId(firstId);
+          }
+        }}
+        onDismiss={() => setBulkDismissOpen(true)}
+        onExport={handleBulkExport}
+        onClear={handleClearSelection}
+      />
+
+      {/* Action Dialogs */}
+      <CreateCaseDialog
+        open={!!createCaseEventId}
+        onOpenChange={(open) => !open && setCreateCaseEventId(null)}
+        event={targetCreateCaseEvent}
+      />
+
+      <DismissEventDialog
+        open={!!dismissEventId || bulkDismissOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDismissEventId(null);
+            setBulkDismissOpen(false);
+          }
+        }}
+        event={targetDismissEvent}
+        bulkIds={bulkDismissOpen ? Array.from(selectedIds) : undefined}
+      />
+
+      <AssignEventDialog
+        open={!!assignEventId || bulkAssignOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignEventId(null);
+            setBulkAssignOpen(false);
+          }
+        }}
+        event={targetAssignEvent}
+        bulkIds={bulkAssignOpen ? Array.from(selectedIds) : undefined}
+      />
+
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
+
+      <LightboxModal
+        open={!!lightboxEvent}
+        onOpenChange={(open) => !open && setLightboxEvent(null)}
+        event={lightboxEvent}
+      />
     </div>
   );
 }
