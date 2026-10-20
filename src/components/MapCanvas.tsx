@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Info } from 'lucide-react';
 import { mapMarkers, mapClusters, mapRoutes, mapPoles, mapCameras } from '@/data/map';
 import { devices } from '@/data/devices';
 import { events } from '@/data/events';
