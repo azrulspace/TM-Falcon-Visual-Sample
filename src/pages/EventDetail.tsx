@@ -12,6 +12,14 @@ import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Check, Briefcase, ArrowLeft, SearchX } from 'lucide-react';
+import { OverviewTab } from '@/components/events/detail/OverviewTab';
+import { TimelineTab } from '@/components/events/detail/TimelineTab';
+import { RelatedEventsTab } from '@/components/events/detail/RelatedEventsTab';
+import { RawVendorDataTab } from '@/components/events/detail/RawVendorDataTab';
+import { LocationCard } from '@/components/events/detail/LocationCard';
+import { KeyFactsCard } from '@/components/events/detail/KeyFactsCard';
+import { RelatedSummaryCard } from '@/components/events/detail/RelatedSummaryCard';
+import { CaseCard } from '@/components/events/detail/CaseCard';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -177,29 +185,21 @@ export default function EventDetail() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Tabs Content - Populated fully in Phase 8 */}
+                {/* Tabs Content */}
                 <TabsContent value="overview" className="pt-4">
-                  <div className="p-4 rounded-xl border border-border bg-card text-xs text-muted-foreground">
-                    Overview details rendered here.
-                  </div>
+                  <OverviewTab event={event} />
                 </TabsContent>
 
                 <TabsContent value="timeline" className="pt-4">
-                  <div className="p-4 rounded-xl border border-border bg-card text-xs text-muted-foreground">
-                    Timeline audit trail rendered here.
-                  </div>
+                  <TimelineTab event={event} />
                 </TabsContent>
 
                 <TabsContent value="related" className="pt-4">
-                  <div className="p-4 rounded-xl border border-border bg-card text-xs text-muted-foreground">
-                    Related events rendered here.
-                  </div>
+                  <RelatedEventsTab event={event} />
                 </TabsContent>
 
                 <TabsContent value="vendor" className="pt-4">
-                  <div className="p-4 rounded-xl border border-border bg-card text-xs text-muted-foreground">
-                    Raw vendor data rendered here.
-                  </div>
+                  <RawVendorDataTab event={event} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -207,9 +207,14 @@ export default function EventDetail() {
 
           {/* Side Column (4 of 12) */}
           <div className="xl:col-span-4 flex flex-col gap-6">
-            <div className="p-4 rounded-xl border border-border bg-card text-xs text-muted-foreground">
-              Side column cards rendered here.
-            </div>
+            <LocationCard event={event} />
+            <KeyFactsCard
+              event={event}
+              onOpenCreateCase={() => setCreateCaseOpen(true)}
+              onOpenAssign={() => setAssignOpen(true)}
+            />
+            <RelatedSummaryCard event={event} />
+            <CaseCard event={event} />
           </div>
         </div>
       </main>
