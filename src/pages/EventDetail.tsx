@@ -290,7 +290,7 @@ export default function EventDetail() {
               size="sm"
               disabled={isAcknowledging}
               onClick={handleAcknowledge}
-              className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs"
+              className="flex-1 h-9 text-xs bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-1.5 shadow-xs cursor-pointer"
             >
               {isAcknowledging ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -305,7 +305,7 @@ export default function EventDetail() {
               variant="outline"
               size="sm"
               onClick={() => setCreateCaseOpen(true)}
-              className="flex-1 h-9 text-xs border-border hover:bg-muted font-medium text-foreground gap-1.5"
+              className="flex-1 h-9 text-xs border-border hover:bg-muted font-medium text-foreground gap-1.5 cursor-pointer"
             >
               <Briefcase className="size-4" />
               <span>Create Case</span>
@@ -316,7 +316,7 @@ export default function EventDetail() {
           <Button
             size="sm"
             onClick={() => setCreateCaseOpen(true)}
-            className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs"
+            className="flex-1 h-9 text-xs bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-1.5 shadow-xs cursor-pointer"
           >
             <Briefcase className="size-4" />
             <span>Create Case</span>
