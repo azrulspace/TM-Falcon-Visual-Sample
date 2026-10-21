@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
-import { RelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
+import { RelativeTime } from '@/components/common/RelativeTime';
 import { DeviceChip } from '@/components/common/DeviceChip';
 import { AssetChip } from '@/components/common/AssetChip';
 import type { FalconEvent } from '@/data/events';

@@ -10,7 +10,7 @@ import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { DeviceChip } from '@/components/common/DeviceChip';
 import { AssetChip } from '@/components/common/AssetChip';
-import { RelativeTime } from '@/lib/dateTime';
+import { RelativeTime } from '@/components/common/RelativeTime';
 import { useEvents } from '@/contexts/EventsContext';
 import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';

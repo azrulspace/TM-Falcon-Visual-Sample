@@ -13,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
-import { formatAbsoluteMYT, RelativeTime } from '@/lib/dateTime';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
+import { RelativeTime } from '@/components/common/RelativeTime';
 import type { FalconEvent } from '@/data/events';
 
 export interface TimelineTabProps {

@@ -1,7 +1,8 @@
 import React from 'react';
 import { DeviceChip } from '@/components/common/DeviceChip';
 import { AssetChip } from '@/components/common/AssetChip';
-import { RelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
+import { RelativeTime } from '@/components/common/RelativeTime';
 import { Button } from '@/components/ui/button';
 import { UserCheck, Briefcase, Info } from 'lucide-react';
 import type { FalconEvent } from '@/data/events';

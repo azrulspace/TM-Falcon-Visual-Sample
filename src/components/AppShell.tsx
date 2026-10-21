@@ -256,7 +256,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <Tooltip.Provider delayDuration={150}>
-      <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+      <div className="flex flex-col h-[100dvh] w-full min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-background text-foreground">
         {/* Header matching Figma: 60px brand row */}
         <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between px-6 z-30 shrink-0 select-none gap-4 transition-colors">
           {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
@@ -538,7 +538,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           {/* Desktop Left Sidebar (72px collapsed dock persistent across all pages including Overview) */}
           <aside
             style={{ width: sidebarMinimized ? '72px' : '264px' }}
-            className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 transition-all duration-200 z-30 select-none relative"
+            className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 h-full max-h-full transition-all duration-200 z-30 select-none relative"
             onMouseLeave={handleRailMouseLeave}
           >
             {/* Top expand/collapse toggle container matching Figma node 132:10631 */}
@@ -907,7 +907,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </Sheet>
 
           {/* Main Workspace: Full Bleed for Overview (p-0) */}
-          <main className={`flex-1 flex flex-col min-w-0 ${isOverview ? 'overflow-hidden p-0 relative h-full' : 'overflow-y-auto p-4 lg:p-6'}`}>
+          <main className={`flex-1 flex flex-col min-w-0 h-full max-h-full ${isOverview ? 'overflow-hidden p-0 relative' : 'overflow-y-auto p-4 lg:p-6'}`}>
             {!isOverview && !location.pathname.startsWith('/events') && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 select-none">
                 <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
