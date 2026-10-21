@@ -305,7 +305,9 @@ export default function Events() {
       // Enter opens full detail page
       if (e.key === 'Enter') {
         if (activeEventId) {
-          navigate(`/events/${activeEventId}`);
+          navigate(`/events/${activeEventId}`, {
+            state: { eventIds: filteredEvents.map((ev) => ev.id) },
+          });
         }
         return;
       }
@@ -566,7 +568,11 @@ export default function Events() {
                 onPrev={handlePrevPeek}
                 hasPrev={hasPrevPeek}
                 hasNext={hasNextPeek}
-                onOpenDetail={(id) => navigate(`/events/${id}`)}
+                onOpenDetail={(id) =>
+                  navigate(`/events/${id}`, {
+                    state: { eventIds: filteredEvents.map((ev) => ev.id) },
+                  })
+                }
                 onOpenLightbox={(evt) => setLightboxEvent(evt)}
                 onOpenCreateCase={(id) => setCreateCaseEventId(id)}
                 onOpenDismiss={(id) => setDismissEventId(id)}

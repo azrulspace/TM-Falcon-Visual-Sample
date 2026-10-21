@@ -95,8 +95,8 @@ export const KeyFactsCard: React.FC<KeyFactsCardProps> = ({
         {/* Received Timestamp */}
         <div className="flex items-center justify-between py-2.5">
           <span className="text-muted-foreground">Ingested (MYT)</span>
-          <span className="font-mono text-[11px] text-foreground" title={formatAbsoluteMYT(event.receivedAt)}>
-            {event.receivedAt}
+          <span className="font-mono text-[11px] text-foreground" title={formatAbsoluteMYT((event as any).receivedAt)}>
+            {(event as any).receivedDisplay || formatAbsoluteMYT((event as any).receivedAt)}
           </span>
         </div>
       </div>

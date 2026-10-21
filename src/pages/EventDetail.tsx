@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { EventDetailHeader } from '@/components/events/detail/EventDetailHeader';
 import { EvidenceStudioCard } from '@/components/events/detail/EvidenceStudioCard';
 import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
@@ -9,9 +9,10 @@ import { AssignEventDialog } from '@/components/events/dialogs/AssignEventDialog
 import { KeyboardShortcutsDialog } from '@/components/events/dialogs/KeyboardShortcutsDialog';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useEventDetail } from '@/hooks/useEventDetail';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Check, Briefcase, ArrowLeft, SearchX } from 'lucide-react';
+import { Check, Briefcase, ArrowLeft, SearchX, Loader2 } from 'lucide-react';
 import { OverviewTab } from '@/components/events/detail/OverviewTab';
 import { TimelineTab } from '@/components/events/detail/TimelineTab';
 import { RelatedEventsTab } from '@/components/events/detail/RelatedEventsTab';
@@ -24,37 +25,27 @@ import { CaseCard } from '@/components/events/detail/CaseCard';
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { events, acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
 
-  // Find target event
-  const event = useMemo(() => {
+  // Load canonical ViewModel & neighbors via useEventDetail
+  const {
+    viewModel,
+    neighbors,
+    handleAcknowledge: hookAcknowledge,
+  } = useEventDetail({
+    eventId: id,
+    listContextIds: (location.state as any)?.eventIds,
+  });
+
+  // Fallback to active store event if viewModel is not ready
+  const rawEvent = useMemo(() => {
     if (!id) return null;
     return events.find((e) => e.id.toLowerCase() === id.toLowerCase()) || null;
   }, [events, id]);
 
-  // Position control: "3 of 258"
-  const eventIndex = useMemo(() => {
-    if (!event) return -1;
-    return events.findIndex((e) => e.id === event.id);
-  }, [events, event]);
-
-  const hasPrev = eventIndex > 0;
-  const hasNext = eventIndex >= 0 && eventIndex < events.length - 1;
-
-  const handlePrev = () => {
-    if (hasPrev) {
-      navigate(`/events/${events[eventIndex - 1].id}`);
-    }
-  };
-
-  const handleNext = () => {
-    if (hasNext) {
-      navigate(`/events/${events[eventIndex + 1].id}`);
-    }
-  };
-
-  const positionText = eventIndex >= 0 ? `${eventIndex + 1} of ${events.length}` : '';
+  const event = viewModel || rawEvent;
 
   // Dialog states
   const [createCaseOpen, setCreateCaseOpen] = useState(false);
@@ -63,45 +54,99 @@ export default function EventDetail() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxFrame, setLightboxFrame] = useState(0);
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
+
+  // Position control navigation
+  const handlePrev = useCallback(() => {
+    if (neighbors.hasPrev && neighbors.prevId) {
+      navigate(`/events/${neighbors.prevId}`, { state: location.state });
+    }
+  }, [neighbors.hasPrev, neighbors.prevId, navigate, location.state]);
+
+  const handleNext = useCallback(() => {
+    if (neighbors.hasNext && neighbors.nextId) {
+      navigate(`/events/${neighbors.nextId}`, { state: location.state });
+    }
+  }, [neighbors.hasNext, neighbors.nextId, navigate, location.state]);
+
+  // Optimistic Acknowledge Action
+  const handleAcknowledge = useCallback(async () => {
+    if (!event || isAcknowledging) return;
+    setIsAcknowledging(true);
+    try {
+      if (hookAcknowledge) {
+        await hookAcknowledge();
+      } else {
+        acknowledgeEvent(event.id);
+      }
+      addToast('success', `Event ${event.id} acknowledged`);
+    } catch (err: any) {
+      addToast('error', err?.message || `Failed to acknowledge event ${event.id}`);
+    } finally {
+      setIsAcknowledging(false);
+    }
+  }, [event, isAcknowledging, hookAcknowledge, acknowledgeEvent, addToast]);
 
   // Keyboard navigation: J/K, Enter, Esc, E, C, ?
+  // Shortcuts are active only when focus is outside inputs, selects, textareas, and dialogs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
       const isInput =
         activeEl?.tagName === 'INPUT' ||
         activeEl?.tagName === 'TEXTAREA' ||
-        activeEl?.tagName === 'SELECT';
+        activeEl?.tagName === 'SELECT' ||
+        (activeEl as HTMLElement)?.isContentEditable;
 
-      if (e.key === '?' && !isInput) {
+      const isDialogOpen = Boolean(
+        createCaseOpen ||
+        dismissOpen ||
+        assignOpen ||
+        shortcutsOpen ||
+        lightboxOpen ||
+        document.querySelector('[role="dialog"]') ||
+        activeEl?.closest('[role="dialog"]')
+      );
+
+      // '?' opens shortcuts dialog
+      if (e.key === '?' && !isInput && !isDialogOpen) {
         e.preventDefault();
         setShortcutsOpen((o) => !o);
         return;
       }
 
-      if (isInput) return;
+      // Guard: strictly ignore shortcuts when user is in input or dialog
+      if (isInput || isDialogOpen) return;
 
+      // J / ArrowRight: Next event in list context
       if (e.key === 'j' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleNext();
-        return;
-      }
-
-      if (e.key === 'k' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePrev();
-        return;
-      }
-
-      if (e.key === 'e' || e.key === 'E') {
-        if (event && event.state === 'New') {
+        if (neighbors.hasNext) {
           e.preventDefault();
-          acknowledgeEvent(event.id);
-          addToast('success', `Event ${event.id} acknowledged`);
+          handleNext();
         }
         return;
       }
 
+      // K / ArrowLeft: Previous event in list context
+      if (e.key === 'k' || e.key === 'ArrowLeft') {
+        if (neighbors.hasPrev) {
+          e.preventDefault();
+          handlePrev();
+        }
+        return;
+      }
+
+      // E: Acknowledge event (only when status is New)
+      if (e.key === 'e' || e.key === 'E') {
+        const currentStatus = (event as any)?.status || (event as any)?.state;
+        if (currentStatus === 'New') {
+          e.preventDefault();
+          handleAcknowledge();
+        }
+        return;
+      }
+
+      // C: Create operational case
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         setCreateCaseOpen(true);
@@ -111,7 +156,19 @@ export default function EventDetail() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [event, hasPrev, hasNext, eventIndex, events, acknowledgeEvent, addToast]);
+  }, [
+    event,
+    neighbors.hasNext,
+    neighbors.hasPrev,
+    createCaseOpen,
+    dismissOpen,
+    assignOpen,
+    shortcutsOpen,
+    lightboxOpen,
+    handleNext,
+    handlePrev,
+    handleAcknowledge,
+  ]);
 
   if (!event) {
     return (
@@ -138,17 +195,22 @@ export default function EventDetail() {
     );
   }
 
+  const isUnack = (event as any).status === 'New' || (event as any).state === 'New';
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground antialiased pb-20 sm:pb-8">
       <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-[1920px] w-full mx-auto">
-        {/* 1. Header (Breadcrumb, Title, Stepper, SLA, Quick Actions) */}
+        {/* 1. Header (Breadcrumb, Title, Stepper, Dynamic SLA, Action Hierarchy) */}
         <EventDetailHeader
-          event={event}
-          positionText={positionText}
+          event={event as any}
+          positionText={neighbors.positionText}
+          hasContext={neighbors.hasContext}
           onPrev={handlePrev}
           onNext={handleNext}
-          hasPrev={hasPrev}
-          hasNext={hasNext}
+          hasPrev={neighbors.hasPrev}
+          hasNext={neighbors.hasNext}
+          isAcknowledging={isAcknowledging}
+          onAcknowledge={handleAcknowledge}
           onOpenCreateCase={() => setCreateCaseOpen(true)}
           onOpenDismiss={() => setDismissOpen(true)}
           onOpenAssign={() => setAssignOpen(true)}
@@ -160,7 +222,7 @@ export default function EventDetail() {
           <div className="xl:col-span-8 flex flex-col gap-6">
             {/* Evidence Card */}
             <EvidenceStudioCard
-              event={event}
+              event={event as any}
               onOpenLightbox={(frameIndex) => {
                 setLightboxFrame(frameIndex);
                 setLightboxOpen(true);
@@ -175,7 +237,7 @@ export default function EventDetail() {
                     Overview
                   </TabsTrigger>
                   <TabsTrigger value="timeline" className="text-xs font-medium">
-                    Timeline ({event.timeline?.length || 1})
+                    Timeline ({(event as any).timeline?.length || 1})
                   </TabsTrigger>
                   <TabsTrigger value="related" className="text-xs font-medium">
                     Related Events
@@ -187,19 +249,19 @@ export default function EventDetail() {
 
                 {/* Tabs Content */}
                 <TabsContent value="overview" className="pt-4">
-                  <OverviewTab event={event} />
+                  <OverviewTab event={event as any} />
                 </TabsContent>
 
                 <TabsContent value="timeline" className="pt-4">
-                  <TimelineTab event={event} />
+                  <TimelineTab event={event as any} />
                 </TabsContent>
 
                 <TabsContent value="related" className="pt-4">
-                  <RelatedEventsTab event={event} />
+                  <RelatedEventsTab event={event as any} />
                 </TabsContent>
 
                 <TabsContent value="vendor" className="pt-4">
-                  <RawVendorDataTab event={event} />
+                  <RawVendorDataTab event={event as any} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -207,62 +269,78 @@ export default function EventDetail() {
 
           {/* Side Column (4 of 12) */}
           <div className="xl:col-span-4 flex flex-col gap-6">
-            <LocationCard event={event} />
+            <LocationCard event={event as any} />
             <KeyFactsCard
-              event={event}
+              event={event as any}
               onOpenCreateCase={() => setCreateCaseOpen(true)}
               onOpenAssign={() => setAssignOpen(true)}
             />
-            <RelatedSummaryCard event={event} />
-            <CaseCard event={event} />
+            <RelatedSummaryCard event={event as any} />
+            <CaseCard event={event as any} />
           </div>
         </div>
       </main>
 
-      {/* Sticky Bottom Action Bar (<768px mobile) */}
+      {/* Sticky Bottom Action Bar (<768px mobile) with Action Hierarchy */}
       <div className="fixed bottom-0 inset-x-0 z-30 md:hidden p-3 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-between gap-2">
-        {event.state === 'New' && (
+        {isUnack ? (
+          <>
+            {/* Primary Action when New: Acknowledge */}
+            <Button
+              size="sm"
+              disabled={isAcknowledging}
+              onClick={handleAcknowledge}
+              className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs"
+            >
+              {isAcknowledging ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              <span>{isAcknowledging ? 'Acknowledging...' : 'Acknowledge'}</span>
+            </Button>
+
+            {/* Secondary Action when New: Create Case */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateCaseOpen(true)}
+              className="flex-1 h-9 text-xs border-border hover:bg-muted font-medium text-foreground gap-1.5"
+            >
+              <Briefcase className="size-4" />
+              <span>Create Case</span>
+            </Button>
+          </>
+        ) : (
+          /* Primary Action when Acknowledged: Create Case */
           <Button
-            variant="outline"
             size="sm"
-            onClick={() => {
-              acknowledgeEvent(event.id);
-              addToast('success', `Event ${event.id} acknowledged`);
-            }}
-            className="flex-1 h-9 text-xs border-border text-emerald-600 dark:text-emerald-400 gap-1.5"
+            onClick={() => setCreateCaseOpen(true)}
+            className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs"
           >
-            <Check className="size-4" />
-            <span>Acknowledge</span>
+            <Briefcase className="size-4" />
+            <span>Create Case</span>
           </Button>
         )}
-
-        <Button
-          size="sm"
-          onClick={() => setCreateCaseOpen(true)}
-          className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5"
-        >
-          <Briefcase className="size-4" />
-          <span>Create Case</span>
-        </Button>
       </div>
 
       {/* Action Dialogs */}
       <CreateCaseDialog
         open={createCaseOpen}
         onOpenChange={setCreateCaseOpen}
-        event={event}
+        event={event as any}
       />
 
       <DismissEventDialog
         open={dismissOpen}
         onOpenChange={setDismissOpen}
-        event={event}
+        event={event as any}
       />
 
       <AssignEventDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
-        event={event}
+        event={event as any}
       />
 
       <KeyboardShortcutsDialog
@@ -273,7 +351,7 @@ export default function EventDetail() {
       <LightboxModal
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}
-        event={event}
+        event={event as any}
         initialFrameIndex={lightboxFrame}
       />
     </div>

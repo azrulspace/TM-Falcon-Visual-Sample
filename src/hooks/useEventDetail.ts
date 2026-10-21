@@ -44,12 +44,23 @@ export function useEventDetail({ eventId, listContextIds }: UseEventDetailOption
     if (!eventId) return null;
     const cleanId = eventId.toLowerCase().trim();
 
-    if (cleanId === 'evt-0258') {
-      // EVT-0258 uses canonical staging fixture for absolute truth
-      return EVT_0258_FIXTURE;
-    }
-
     const found = events.find((e) => e.id.toLowerCase() === cleanId);
+
+    if (cleanId === 'evt-0258') {
+      // EVT-0258 uses canonical staging fixture for absolute truth, merging runtime mutations from context
+      return {
+        ...EVT_0258_FIXTURE,
+        ...(found
+          ? {
+              state: found.state,
+              status: found.state,
+              caseId: found.caseId,
+              assignee: found.assignee,
+              timeline: found.timeline || EVT_0258_FIXTURE.timeline,
+            }
+          : {}),
+      };
+    }
     if (!found) return null;
 
     return {

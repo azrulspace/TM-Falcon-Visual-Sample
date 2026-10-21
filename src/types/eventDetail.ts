@@ -90,6 +90,11 @@ export interface EventDetailViewModel {
   status: 'New' | 'Acknowledged' | 'In case' | 'Assigned' | 'Dismissed' | 'Resolved' | 'Closed';
   caseId: string | null;
   assignee: string | null;
+
+  // Compatibility fields for subcomponents
+  captured?: string;
+  device?: string | null;
+  asset?: string | null;
   
   // Truthful timestamps
   capturedAt: Date | null;

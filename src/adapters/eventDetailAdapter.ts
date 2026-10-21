@@ -29,10 +29,12 @@ export function adaptEventDetailDtoToViewModel(
   const lat = dto.location?.lat ?? (deviceRecord ? parseFloat(deviceRecord.location.split(',')[0].trim()) : null);
   const lng = dto.location?.lng ?? (deviceRecord ? parseFloat(deviceRecord.location.split(',')[1].trim()) : null);
 
+  const status = dto.status || dto.state || 'New';
+
   // SLA Calculation
   const sla = computeEventSla({
     priority: dto.priority,
-    state: dto.state || dto.status,
+    state: status,
     capturedAt: dto.captured,
     acknowledgedAt: dto.acknowledgedAt,
     now,
@@ -74,7 +76,6 @@ export function adaptEventDetailDtoToViewModel(
     rawJson: raw,
   };
 
-  const status = dto.status || dto.state || 'New';
   const hasMultipleFrames = snapshots.length > 1;
   const hasDetectionBox = Boolean(dto.detectionBox && dto.detectionBox.width > 0);
   const hasCoordinates = Boolean(lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng));
@@ -88,6 +89,9 @@ export function adaptEventDetailDtoToViewModel(
     status,
     caseId: dto.caseId || null,
     assignee: dto.assignee || null,
+    captured: dto.captured,
+    device: dto.device,
+    asset: dto.asset,
 
     capturedAt,
     capturedDisplay: formatEventDate(dto.captured),

@@ -60,3 +60,24 @@ test('Event Detail Adapter: EVT-0258 fixture matches LIVE_STAGING contract', () 
   assert.equal(vm.capabilities.canCreateCase, true);
   assert.equal(vm.capabilities.canExport, false, 'Export disabled until backend endpoint exists');
 });
+
+test('Event Detail Phase 4: Stepper and Action hierarchy transition when event is acknowledged', () => {
+  const acknowledgedDto = {
+    ...EVT_0258_FIXTURE,
+    status: 'Acknowledged' as const,
+    state: 'Acknowledged' as const,
+    acknowledgedAt: '2026-10-20T16:40:00+08:00', // 12m after captured
+  };
+
+  const vm = adaptEventDetailDtoToViewModel(acknowledgedDto, {
+    now: '2026-10-21T08:37:00+08:00',
+  });
+
+  assert.equal(vm.status, 'Acknowledged');
+  assert.equal(vm.capabilities.canAcknowledge, false, 'Acknowledge must not be available once acknowledged');
+  assert.equal(vm.capabilities.canCreateCase, true);
+  assert.ok(vm.sla !== null);
+  assert.equal(vm.sla.status, 'acknowledged');
+  assert.equal(vm.sla.elapsedMinutes, 12);
+  assert.equal(vm.sla.text, 'Acknowledged in 12m');
+});
