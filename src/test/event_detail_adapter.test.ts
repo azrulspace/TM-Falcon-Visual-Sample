@@ -112,3 +112,19 @@ test('Event Detail Phase 5: Key facts and Raw Vendor Data field parity', () => {
   assert.equal(vm.vendorData.channelType, 'camera');
 });
 
+test('Event Detail Phase 6: Location and Alert history coordinates and relations', () => {
+  const vm = adaptEventDetailDtoToViewModel(EVT_0258_FIXTURE, {
+    now: '2026-10-21T08:37:00+08:00',
+  });
+
+  // Truthful GPS coordinates for DEV-004
+  assert.equal(vm.sourceDevice?.lat, 2.90870);
+  assert.equal(vm.sourceDevice?.lng, 101.47260);
+  assert.equal(vm.capabilities.hasCoordinates, true);
+
+  // Asset connection
+  assert.equal(vm.affectedAsset?.id, 'CBL-005');
+  assert.deepEqual(vm.affectedAsset?.connectingAssets, ['AST_006', 'AST_007']);
+});
+
+
