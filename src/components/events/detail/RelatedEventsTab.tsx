@@ -14,9 +14,10 @@ import { RelativeTime } from '@/components/common/RelativeTime';
 import { useEvents } from '@/contexts/EventsContext';
 import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
+import type { EventDetailViewModel } from '@/types/eventDetail';
 
 export interface RelatedEventsTabProps {
-  event: FalconEvent;
+  event: FalconEvent | EventDetailViewModel;
 }
 
 export const RelatedEventsTab: React.FC<RelatedEventsTabProps> = ({ event }) => {
@@ -24,37 +25,40 @@ export const RelatedEventsTab: React.FC<RelatedEventsTabProps> = ({ event }) => 
   const { events } = useEvents();
   const [filterMode, setFilterMode] = useState<'all' | 'same_device' | 'same_asset'>('all');
 
+  const deviceId = (event as any).device || (event as any).sourceDevice?.id || null;
+  const assetId = (event as any).asset || (event as any).affectedAsset?.id || null;
+
   // Filter other events on same asset or device
   const relatedList = useMemo(() => {
     return events.filter((e) => {
       if (e.id === event.id) return false;
       if (filterMode === 'same_device') {
-        return e.device && e.device === event.device;
+        return deviceId && e.device === deviceId;
       }
       if (filterMode === 'same_asset') {
-        return e.asset === event.asset;
+        return assetId && e.asset === assetId;
       }
-      return (e.device && e.device === event.device) || e.asset === event.asset;
+      return (deviceId && e.device === deviceId) || (assetId && e.asset === assetId);
     });
-  }, [events, event, filterMode]);
+  }, [events, event.id, deviceId, assetId, filterMode]);
 
   // Deep link to inbox with filter query
   const inboxFilterQuery = useMemo(() => {
-    if (filterMode === 'same_device' && event.device) {
-      return `/events?device=${event.device}`;
+    if (filterMode === 'same_device' && deviceId) {
+      return `/events?device=${deviceId}`;
     }
-    if (filterMode === 'same_asset') {
-      return `/events?asset=${event.asset}`;
+    if (filterMode === 'same_asset' && assetId) {
+      return `/events?asset=${assetId}`;
     }
-    if (event.device) {
-      return `/events?device=${event.device}&asset=${event.asset}`;
+    if (deviceId && assetId) {
+      return `/events?device=${deviceId}&asset=${assetId}`;
     }
-    return `/events?asset=${event.asset}`;
-  }, [filterMode, event]);
+    return assetId ? `/events?asset=${assetId}` : '/events';
+  }, [filterMode, deviceId, assetId]);
 
   return (
     <div className="flex flex-col gap-4 p-5 rounded-xl border border-border bg-card shadow-xs">
-      {/* 1. Header with 7-Day Sparkline */}
+      {/* 1. Header with Factual Alert Counts */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-border">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
@@ -64,17 +68,17 @@ export const RelatedEventsTab: React.FC<RelatedEventsTabProps> = ({ event }) => 
             </span>
           </div>
           <span className="text-xs text-muted-foreground mt-0.5">
-            Historical and concurrent alerts on device <strong className="text-foreground">{event.device || 'N/A'}</strong> or span <strong className="text-foreground">{event.asset}</strong>.
+            Concurrent and historical alerts on device <strong className="text-foreground">{deviceId || 'N/A'}</strong> or span <strong className="text-foreground">{assetId || 'N/A'}</strong>.
           </span>
         </div>
 
-        {/* 7-day sparkline trend widget */}
+        {/* 7-day sparkline trend widget with factual data */}
         <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40 border border-border">
           <div className="flex flex-col">
-            <span className="text-[10px] text-muted-foreground uppercase font-semibold">7-Day Alert Trend</span>
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold">Span Activity</span>
             <span className="text-xs font-bold text-foreground flex items-center gap-1">
               <TrendingUp className="size-3 text-amber-500" />
-              <span>+18% this week</span>
+              <span>{relatedList.length} related records</span>
             </span>
           </div>
 
@@ -106,10 +110,10 @@ export const RelatedEventsTab: React.FC<RelatedEventsTabProps> = ({ event }) => 
                 : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
             )}
           >
-            All Related ({events.filter((e) => e.id !== event.id && (e.device === event.device || e.asset === event.asset)).length})
+            All Related ({events.filter((e) => e.id !== event.id && (e.device === deviceId || e.asset === assetId)).length})
           </button>
 
-          {event.device && (
+          {deviceId && (
             <button
               type="button"
               onClick={() => setFilterMode('same_device')}
@@ -120,22 +124,24 @@ export const RelatedEventsTab: React.FC<RelatedEventsTabProps> = ({ event }) => 
                   : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
               )}
             >
-              Same Device ({event.device})
+              Same Device ({deviceId})
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setFilterMode('same_asset')}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer',
-              filterMode === 'same_asset'
-                ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
-            )}
-          >
-            Same Asset ({event.asset})
-          </button>
+          {assetId && (
+            <button
+              type="button"
+              onClick={() => setFilterMode('same_asset')}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer',
+                filterMode === 'same_asset'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                  : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
+              )}
+            >
+              Same Asset ({assetId})
+            </button>
+          )}
         </div>
 
         <Link

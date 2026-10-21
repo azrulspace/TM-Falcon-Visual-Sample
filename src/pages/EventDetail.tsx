@@ -229,27 +229,31 @@ export default function EventDetail() {
               }}
             />
 
-            {/* Main Tabs (Overview, Timeline, Related Events, Raw Vendor Data) */}
+            {/* Main Tabs (Detection, Raw Vendor Data, Timeline, Related Events) */}
             <div id="detail-tabs-section">
-              <Tabs defaultValue="overview" className="w-full">
+              <Tabs defaultValue="detection" className="w-full">
                 <TabsList className="bg-muted/60 p-1 border border-border rounded-xl">
-                  <TabsTrigger value="overview" className="text-xs font-medium">
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="timeline" className="text-xs font-medium">
-                    Timeline ({(event as any).timeline?.length || 1})
-                  </TabsTrigger>
-                  <TabsTrigger value="related" className="text-xs font-medium">
-                    Related Events
+                  <TabsTrigger value="detection" className="text-xs font-medium">
+                    Detection
                   </TabsTrigger>
                   <TabsTrigger value="vendor" className="text-xs font-medium">
                     Raw Vendor Data
                   </TabsTrigger>
+                  <TabsTrigger value="timeline" className="text-xs font-medium">
+                    Timeline ({(event as any).timeline?.length || 2})
+                  </TabsTrigger>
+                  <TabsTrigger value="related" className="text-xs font-medium">
+                    Related Events
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Tabs Content */}
-                <TabsContent value="overview" className="pt-4">
+                <TabsContent value="detection" className="pt-4">
                   <OverviewTab event={event as any} />
+                </TabsContent>
+
+                <TabsContent value="vendor" className="pt-4">
+                  <RawVendorDataTab event={event as any} />
                 </TabsContent>
 
                 <TabsContent value="timeline" className="pt-4">
@@ -258,10 +262,6 @@ export default function EventDetail() {
 
                 <TabsContent value="related" className="pt-4">
                   <RelatedEventsTab event={event as any} />
-                </TabsContent>
-
-                <TabsContent value="vendor" className="pt-4">
-                  <RawVendorDataTab event={event as any} />
                 </TabsContent>
               </Tabs>
             </div>

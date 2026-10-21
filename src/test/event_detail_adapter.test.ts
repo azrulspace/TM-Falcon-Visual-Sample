@@ -81,3 +81,34 @@ test('Event Detail Phase 4: Stepper and Action hierarchy transition when event i
   assert.equal(vm.sla.elapsedMinutes, 12);
   assert.equal(vm.sla.text, 'Acknowledged in 12m');
 });
+
+test('Event Detail Phase 5: Key facts and Raw Vendor Data field parity', () => {
+  const vm = adaptEventDetailDtoToViewModel(EVT_0258_FIXTURE, {
+    now: '2026-10-21T08:37:00+08:00',
+  });
+
+  // Key Facts poles verification
+  assert.deepEqual(vm.affectedAsset?.connectingAssets, ['AST_006', 'AST_007']);
+  assert.equal(vm.sourceDevice?.id, 'DEV-004');
+  assert.equal(vm.caseId, null);
+  assert.equal(vm.assignee, null);
+
+  // Detection Tab data
+  assert.equal(vm.detectionRule, 'CCTV-01-Motion Detection');
+  assert.equal(vm.policyNote, 'A detection is not proof of damage.');
+  assert.equal(vm.observed, 'Not supplied');
+
+  // Raw Vendor telemetry table fields
+  assert.equal(vm.vendorData.vendorCode, '10002');
+  assert.equal(vm.vendorData.rule, 'CCTV-01-Motion Detection');
+  assert.equal(vm.vendorData.ruleId, '2111032826769051648');
+  assert.equal(vm.vendorData.category, 'alarmCategoryVideo');
+  assert.equal(vm.vendorData.subCategory, 'alarmSubCategoryCamera');
+  assert.equal(vm.vendorData.vendorPriority, '1');
+  assert.equal(vm.vendorData.vendorPriorityColor, '#F40B0B');
+  assert.equal(vm.vendorData.state, '1');
+  assert.equal(vm.vendorData.channel, 'CCTV-01');
+  assert.equal(vm.vendorData.channelId, '#ff75f3ca638e4075b45951f65cdd31dc');
+  assert.equal(vm.vendorData.channelType, 'camera');
+});
+

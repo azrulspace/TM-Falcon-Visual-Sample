@@ -16,9 +16,10 @@ import { useToast } from '@/contexts/ToastContext';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { RelativeTime } from '@/components/common/RelativeTime';
 import type { FalconEvent } from '@/data/events';
+import type { EventDetailViewModel } from '@/types/eventDetail';
 
 export interface TimelineTabProps {
-  event: FalconEvent;
+  event: FalconEvent | EventDetailViewModel;
 }
 
 export const TimelineTab: React.FC<TimelineTabProps> = ({ event }) => {
@@ -26,7 +27,7 @@ export const TimelineTab: React.FC<TimelineTabProps> = ({ event }) => {
   const { addToast } = useToast();
   const [noteText, setNoteText] = useState('');
 
-  const timelineEntries = event.timeline || [];
+  const timelineEntries = (event as any).timeline || [];
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,34 +68,40 @@ export const TimelineTab: React.FC<TimelineTabProps> = ({ event }) => {
       </div>
 
       {/* Vertical Timeline */}
-      <div className="relative pl-6 flex flex-col gap-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
-        {timelineEntries.map((entry, idx) => (
-          <div key={entry.id || idx} className="relative flex flex-col gap-1 text-xs group">
-            {/* Dot marker */}
-            <div className="absolute -left-6 top-0.5 size-5 rounded-full bg-card border-2 border-border group-hover:border-primary flex items-center justify-center transition-colors">
-              {getActionIcon(entry.icon, entry.text)}
-            </div>
-
-            {/* Entry Header */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{entry.text}</span>
-                <span className="text-muted-foreground">by</span>
-                <span className="px-1.5 py-0.2 rounded bg-muted text-[11px] font-medium text-foreground">
-                  {entry.actor}
-                </span>
+      {timelineEntries.length > 0 ? (
+        <div className="relative pl-6 flex flex-col gap-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
+          {timelineEntries.map((entry: any, idx: number) => (
+            <div key={entry.id || idx} className="relative flex flex-col gap-1 text-xs group">
+              {/* Dot marker */}
+              <div className="absolute -left-6 top-0.5 size-5 rounded-full bg-card border-2 border-border group-hover:border-primary flex items-center justify-center transition-colors">
+                {getActionIcon(entry.icon, entry.text)}
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
-                <RelativeTime date={entry.time} />
-                <span title={formatAbsoluteMYT(entry.time)}>
-                  <Clock className="size-3 inline ml-0.5 opacity-60" />
-                </span>
+              {/* Entry Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">{entry.text}</span>
+                  <span className="text-muted-foreground">by</span>
+                  <span className="px-1.5 py-0.2 rounded bg-muted text-[11px] font-medium text-foreground">
+                    {entry.actor}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground tabular-nums">
+                  <RelativeTime date={entry.time} />
+                  <span title={formatAbsoluteMYT(entry.time)}>
+                    <Clock className="size-3 inline ml-0.5 opacity-60" />
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="py-8 text-center text-muted-foreground text-xs">
+          No audit entries recorded yet for this event.
+        </div>
+      )}
 
       {/* Add Note Input */}
       <form onSubmit={handleAddNote} className="pt-4 border-t border-border flex items-center gap-2">
