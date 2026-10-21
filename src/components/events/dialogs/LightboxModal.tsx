@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   ZoomIn,
@@ -16,11 +16,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
+import type { EventDetailViewModel } from '@/types/eventDetail';
 
 export interface LightboxModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  event: FalconEvent | null;
+  event: FalconEvent | EventDetailViewModel | null;
   initialFrameIndex?: number;
 }
 
@@ -32,11 +33,45 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
 }) => {
   const [frameIndex, setFrameIndex] = useState(initialFrameIndex);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setFrameIndex(initialFrameIndex);
+    setZoomLevel(1);
+    setPan({ x: 0, y: 0 });
+  }, [open, initialFrameIndex]);
+
+  // Keyboard navigation (+, -, 0, Esc, Left, Right)
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onOpenChange(false);
+      } else if (e.key === '=' || e.key === '+') {
+        setZoomLevel((z) => Math.min(z + 0.25, 4));
+      } else if (e.key === '-' || e.key === '_') {
+        setZoomLevel((z) => {
+          const next = Math.max(z - 0.25, 1);
+          if (next === 1) setPan({ x: 0, y: 0 });
+          return next;
+        });
+      } else if (e.key === '0') {
+        setZoomLevel(1);
+        setPan({ x: 0, y: 0 });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onOpenChange]);
 
   if (!event) return null;
 
-  const frames = event.snapshots && event.snapshots.length > 0 ? event.snapshots : [];
-  const currentFrame = frames[frameIndex] || frames[0];
+  const frames = getFrames(event);
+  const currentFrame = frames[frameIndex] || frames[0] || '/monkey-fiber.jpg';
 
   const handleNextFrame = () => {
     setFrameIndex((prev) => (prev + 1) % frames.length);
@@ -46,23 +81,65 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
     setFrameIndex((prev) => (prev - 1 + frames.length) % frames.length);
   };
 
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 3));
-  const handleZoomOut = () => setZoomLevel((z) => Math.max(z - 0.25, 0.75));
-  const handleResetZoom = () => setZoomLevel(1);
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 4));
+  const handleZoomOut = () => setZoomLevel((z) => {
+    const next = Math.max(z - 0.25, 1);
+    if (next === 1) setPan({ x: 0, y: 0 });
+    return next;
+  });
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomLevel((z) => Math.min(z + 0.2, 4));
+    } else {
+      setZoomLevel((z) => {
+        const next = Math.max(z - 0.2, 1);
+        if (next === 1) setPan({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const handleDownload = () => {
     if (!currentFrame) return;
     const a = document.createElement('a');
     a.href = currentFrame;
-    a.download = `${event.id}_frame_${frameIndex + 1}.svg`;
+    a.download = `${formatId(event.id)}_snapshot.jpg`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-[1200px] h-[85vh] p-0 bg-slate-950 text-white border-slate-800 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-[95vw] w-[1300px] h-[88vh] p-0 bg-slate-950 text-white border-slate-800 flex flex-col overflow-hidden shadow-2xl">
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 bg-slate-900/90 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Camera className="size-4 text-primary" />
@@ -70,12 +147,16 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
                 {formatId(event.id)}
               </span>
             </div>
-            <span className="text-xs text-slate-400">·</span>
+            <span className="text-xs text-slate-500">·</span>
             <span className="text-xs text-slate-300 font-medium">{event.type}</span>
-            <span className="text-xs text-slate-400">·</span>
-            <span className="text-xs font-mono text-slate-400">
-              Frame {frameIndex + 1} of {frames.length || 1}
-            </span>
+            {frames.length > 1 && (
+              <>
+                <span className="text-xs text-slate-500">·</span>
+                <span className="text-xs font-mono text-slate-400">
+                  Frame {frameIndex + 1} of {frames.length}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -83,22 +164,22 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleZoomOut}
-              disabled={zoomLevel <= 0.75}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800"
-              title="Zoom out"
+              disabled={zoomLevel <= 1}
+              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              title="Zoom out (-)"
             >
               <ZoomOut className="size-4" />
             </Button>
-            <span className="text-xs font-mono text-slate-400 w-12 text-center">
+            <span className="text-xs font-mono text-slate-400 w-12 text-center tabular-nums">
               {Math.round(zoomLevel * 100)}%
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleZoomIn}
-              disabled={zoomLevel >= 3}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800"
-              title="Zoom in"
+              disabled={zoomLevel >= 4}
+              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              title="Zoom in (+)"
             >
               <ZoomIn className="size-4" />
             </Button>
@@ -106,8 +187,9 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleResetZoom}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800"
-              title="Reset fit"
+              disabled={zoomLevel === 1 && pan.x === 0 && pan.y === 0}
+              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              title="Fit to window (0)"
             >
               <Maximize2 className="size-4" />
             </Button>
@@ -116,8 +198,8 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleDownload}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800"
-              title="Download snapshot SVG"
+              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              title="Download snapshot"
             >
               <Download className="size-4" />
             </Button>
@@ -125,7 +207,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 ml-2"
+              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 ml-2 cursor-pointer"
               title="Close (Esc)"
             >
               <X className="size-4" />
@@ -134,30 +216,41 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
         </div>
 
         {/* Viewport */}
-        <div className="relative flex-1 bg-black flex items-center justify-center overflow-auto p-4 select-none">
+        <div
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          className={`relative flex-1 bg-black flex items-center justify-center overflow-hidden p-4 select-none ${
+            zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
+          }`}
+        >
           {currentFrame ? (
             <div
-              className="transition-transform duration-150 ease-out flex items-center justify-center max-w-full max-h-full"
-              style={{ transform: `scale(${zoomLevel})` }}
+              className="flex items-center justify-center max-w-full max-h-full transition-transform duration-75 ease-out"
+              style={{
+                transform: `scale(${zoomLevel}) translate(${pan.x / zoomLevel}px, ${pan.y / zoomLevel}px)`,
+              }}
             >
               <img
                 src={currentFrame}
-                alt={`${event.type} frame ${frameIndex + 1}`}
-                className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-2xl pointer-events-none"
+                alt={`${event.type} full view`}
+                className="max-w-full max-h-[75vh] object-contain rounded shadow-2xl pointer-events-none"
               />
             </div>
           ) : (
             <span className="text-slate-500 font-mono text-sm">No evidence frame loaded</span>
           )}
 
-          {/* Navigation Arrows */}
+          {/* Navigation Arrows (Only if multiple frames) */}
           {frames.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={handlePrevFrame}
                 className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
-                title="Previous frame (Left arrow)"
+                title="Previous frame"
               >
                 <ChevronLeft className="size-6" />
               </button>
@@ -165,7 +258,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
                 type="button"
                 onClick={handleNextFrame}
                 className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
-                title="Next frame (Right arrow)"
+                title="Next frame"
               >
                 <ChevronRight className="size-6" />
               </button>
@@ -173,7 +266,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
           )}
         </div>
 
-        {/* Filmstrip Footer */}
+        {/* Filmstrip Footer (Only if multiple frames) */}
         {frames.length > 1 && (
           <div className="flex items-center justify-center gap-3 px-4 py-2.5 bg-slate-900 border-t border-slate-800 shrink-0">
             {frames.map((f, i) => (
@@ -199,3 +292,13 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
     </Dialog>
   );
 };
+
+function getFrames(event: FalconEvent | EventDetailViewModel): string[] {
+  if ('evidence' in event && event.evidence?.snapshots) {
+    return event.evidence.snapshots;
+  }
+  if ('snapshots' in event && Array.isArray((event as any).snapshots) && (event as any).snapshots.length > 0) {
+    return (event as any).snapshots;
+  }
+  return ['/monkey-fiber.jpg'];
+}

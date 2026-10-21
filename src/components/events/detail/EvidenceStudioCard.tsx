@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -7,14 +7,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Camera,
-  ShieldAlert,
+  ScanEye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
+import type { EventDetailViewModel } from '@/types/eventDetail';
 
 export interface EvidenceStudioCardProps {
-  event: FalconEvent;
+  event: FalconEvent | EventDetailViewModel;
   onOpenLightbox: (frameIndex: number) => void;
 }
 
@@ -24,9 +26,24 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
 }) => {
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showDetectionBox, setShowDetectionBox] = useState(false);
 
-  const frames = event.snapshots && event.snapshots.length > 0 ? event.snapshots : [];
-  const currentFrame = frames[currentFrameIndex] || frames[0];
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Normalize snapshots: real snapshot from API
+  const frames = useMemoFrames(event);
+  const currentFrame = frames[currentFrameIndex] || frames[0] || '/monkey-fiber.jpg';
+
+  // Detection box normalized coordinates (only present if backend supplies it)
+  const detectionRegion = (event as any).evidence?.detectionRegion || null;
+  const detectionConfidence = (event as any).evidence?.confidence || null;
+  const hasDetectionRegion = Boolean(detectionRegion && detectionRegion.width > 0);
+
+  // Download filename: e.g. EVT-0258_20261020_1628.jpg
+  const downloadFilename = (event as any).evidence?.downloadFilename || `${formatId(event.id)}_snapshot.jpg`;
 
   const handleNext = () => {
     setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
@@ -36,44 +53,135 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
     setCurrentFrameIndex((prev) => (prev - 1 + frames.length) % frames.length);
   };
 
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 2.5));
-  const handleZoomOut = () => setZoomLevel((z) => Math.max(z - 0.25, 0.75));
-  const handleResetZoom = () => setZoomLevel(1);
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 3));
+  const handleZoomOut = () => setZoomLevel((z) => {
+    const next = Math.max(z - 0.25, 1);
+    if (next === 1) setPan({ x: 0, y: 0 });
+    return next;
+  });
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomLevel((z) => Math.min(z + 0.15, 3));
+    } else {
+      setZoomLevel((z) => {
+        const next = Math.max(z - 0.15, 1);
+        if (next === 1) setPan({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  };
+
+  // Drag to pan
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const handleDownload = () => {
     if (!currentFrame) return;
     const a = document.createElement('a');
     a.href = currentFrame;
-    a.download = `${event.id}_frame_${currentFrameIndex + 1}.svg`;
+    a.download = downloadFilename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
+
+  // Keyboard zoom controls inside evidence card
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+      if (isInput) return;
+
+      if (e.key === '=' || e.key === '+') {
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        handleZoomOut();
+      } else if (e.key === '0') {
+        handleResetZoom();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const channelLabel = (event as any).vendorData?.channel || 'CCTV-01';
+  const ruleLabel = (event as any).detectionRule || (event as any).detection || 'CCTV-01-Motion Detection';
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-      {/* 1. Header Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-2">
+      {/* 1. Header Toolbar (Title, Chips, Controls outside the image) */}
+      <div className="flex flex-wrap items-center justify-between px-4 py-3 border-b border-border bg-muted/30 gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Camera className="size-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Evidence Studio</h2>
-          <span className="text-xs text-muted-foreground font-mono">
-            Frame {currentFrameIndex + 1} of {frames.length || 1}
+          <h2 className="text-sm font-semibold text-foreground">Evidence</h2>
+          
+          {/* Camera Info Chips outside image (D2) */}
+          <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-muted text-muted-foreground border border-border">
+            {channelLabel}
           </span>
+          <span className="px-2 py-0.5 rounded text-[11px] font-mono text-muted-foreground border border-border hidden sm:inline-block">
+            {ruleLabel}
+          </span>
+
+          {frames.length > 1 && (
+            <span className="text-xs text-muted-foreground font-mono ml-1">
+              Frame {currentFrameIndex + 1} of {frames.length}
+            </span>
+          )}
         </div>
 
-        {/* Studio Controls */}
+        {/* Toolbar Controls */}
         <div className="flex items-center gap-1">
+          {/* Optional Detection Box Toggle (only if region exists) */}
+          {hasDetectionRegion && (
+            <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border">
+              <ScanEye className="size-3.5 text-muted-foreground" />
+              <span className="text-[11px] text-muted-foreground select-none">Detection box</span>
+              <Switch
+                checked={showDetectionBox}
+                onCheckedChange={setShowDetectionBox}
+                aria-label="Toggle detection box"
+              />
+            </div>
+          )}
+
           <Button
             variant="ghost"
             size="sm"
             onClick={handleZoomOut}
-            disabled={zoomLevel <= 0.75}
+            disabled={zoomLevel <= 1}
             className="size-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Zoom out"
+            title="Zoom out (-)"
           >
             <ZoomOut className="size-3.5" />
           </Button>
 
-          <span className="text-xs font-mono text-muted-foreground w-11 text-center select-none">
+          <span className="text-xs font-mono text-muted-foreground w-11 text-center select-none tabular-nums">
             {Math.round(zoomLevel * 100)}%
           </span>
 
@@ -81,9 +189,9 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleZoomIn}
-            disabled={zoomLevel >= 2.5}
+            disabled={zoomLevel >= 3}
             className="size-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Zoom in"
+            title="Zoom in (+)"
           >
             <ZoomIn className="size-3.5" />
           </Button>
@@ -92,8 +200,9 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleResetZoom}
+            disabled={zoomLevel === 1 && pan.x === 0 && pan.y === 0}
             className="size-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Reset zoom"
+            title="Fit to width (0)"
           >
             <Maximize2 className="size-3.5" />
           </Button>
@@ -105,7 +214,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             size="sm"
             onClick={handleDownload}
             className="size-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Download frame SVG"
+            title={`Download snapshot (${downloadFilename})`}
           >
             <Download className="size-3.5" />
           </Button>
@@ -123,30 +232,53 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
         </div>
       </div>
 
-      {/* 2. Main Viewport */}
-      <div className="relative aspect-video w-full bg-slate-950 overflow-hidden flex items-center justify-center select-none">
-        {currentFrame ? (
-          <div
-            className="w-full h-full flex items-center justify-center transition-transform duration-150 ease-out"
-            style={{ transform: `scale(${zoomLevel})` }}
-          >
-            <img
-              src={currentFrame}
-              alt={`${event.type} frame`}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="text-slate-500 font-mono text-xs">No Snapshot Frame Available</div>
+      {/* 2. Main Viewport: Capped at ~56vh with object-fit contain on card surface (D2) */}
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        className={cn(
+          'relative w-full max-h-[56vh] min-h-[320px] bg-black overflow-hidden flex items-center justify-center select-none',
+          zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
         )}
+      >
+        <div
+          className="relative max-w-full max-h-full flex items-center justify-center transition-transform duration-75 ease-out"
+          style={{
+            transform: `scale(${zoomLevel}) translate(${pan.x / zoomLevel}px, ${pan.y / zoomLevel}px)`,
+          }}
+        >
+          {/* Truthful Real CCTV Snapshot */}
+          <img
+            src={currentFrame}
+            alt={event.type}
+            className="max-w-full max-h-[56vh] object-contain block mx-auto pointer-events-none select-none"
+          />
 
-        {/* Camera tag on top left */}
-        <div className="absolute top-3 left-3 px-2 py-1 rounded bg-black/70 backdrop-blur-xs text-white text-[11px] font-mono flex items-center gap-1.5 shadow-md">
-          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{event.detection}</span>
+          {/* Real Detection Box (Only rendered if supplied by API and toggled on) */}
+          {showDetectionBox && hasDetectionRegion && (
+            <div
+              className="absolute border-2 border-red-500 bg-red-500/10 pointer-events-none transition-all"
+              style={{
+                left: `${detectionRegion.x * 100}%`,
+                top: `${detectionRegion.y * 100}%`,
+                width: `${detectionRegion.width * 100}%`,
+                height: `${detectionRegion.height * 100}%`,
+              }}
+            >
+              {detectionConfidence !== null && (
+                <span className="absolute -top-5 left-0 px-1 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500 text-white">
+                  {(detectionConfidence * 100).toFixed(1)}%
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Frame Nav Arrows */}
+        {/* Frame Nav Arrows (Only if multiple frames exist) */}
         {frames.length > 1 && (
           <>
             <button
@@ -169,16 +301,26 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
         )}
       </div>
 
-      {/* 3. Filmstrip of Frames (3 frames per event) */}
+      {/* 3. Snapshot Caption Footer (Matches LIVE_STAGING: "Snapshot") */}
+      <div className="px-4 py-2 bg-muted/20 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">Snapshot</span>
+        {frames.length > 1 && (
+          <span className="text-[11px] font-mono text-muted-foreground">
+            {currentFrameIndex + 1} of {frames.length} frames
+          </span>
+        )}
+      </div>
+
+      {/* 4. Filmstrip of Frames (Only rendered when API returns > 1 snapshot) */}
       {frames.length > 1 && (
-        <div className="flex items-center gap-3 p-3 bg-muted/20 border-t border-border overflow-x-auto">
+        <div className="flex items-center gap-3 p-3 bg-muted/30 border-t border-border overflow-x-auto">
           {frames.map((frame, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => setCurrentFrameIndex(idx)}
               className={cn(
-                'relative aspect-video w-28 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer',
+                'relative aspect-video w-24 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer',
                 currentFrameIndex === idx
                   ? 'border-primary ring-2 ring-primary/40'
                   : 'border-border opacity-70 hover:opacity-100'
@@ -192,15 +334,18 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
           ))}
         </div>
       )}
-
-      {/* 4. Original Callout Notice */}
-      <div className="p-3 bg-muted/40 border-t border-border flex items-start gap-2.5 text-xs text-muted-foreground">
-        <ShieldAlert className="size-4 shrink-0 text-amber-500 mt-0.5" />
-        <div className="flex flex-col gap-0.5">
-          <span className="font-semibold text-foreground">Operational Safety Policy</span>
-          <span>A detection is not proof of damage.</span>
-        </div>
-      </div>
     </div>
   );
 };
+
+export const EvidenceCard = EvidenceStudioCard;
+
+function useMemoFrames(event: FalconEvent | EventDetailViewModel): string[] {
+  if ('evidence' in event && event.evidence?.snapshots) {
+    return event.evidence.snapshots;
+  }
+  if ('snapshots' in event && Array.isArray((event as any).snapshots) && (event as any).snapshots.length > 0) {
+    return (event as any).snapshots;
+  }
+  return ['/monkey-fiber.jpg'];
+}
