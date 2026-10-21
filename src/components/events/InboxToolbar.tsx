@@ -141,8 +141,8 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
                 className={cn(
                   'flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer',
                   isActive
-                    ? 'bg-background text-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                    ? 'bg-card text-foreground font-semibold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 )}
               >
                 <span>{tab.label}</span>
@@ -264,7 +264,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               onClick={() => setViewMode('table')}
               className={cn(
                 'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
-                viewMode === 'table' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                viewMode === 'table' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               title="Table view"
               aria-label="Table view"
@@ -275,7 +275,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               onClick={() => setViewMode('grouped')}
               className={cn(
                 'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
-                viewMode === 'grouped' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                viewMode === 'grouped' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               title="Grouped view"
               aria-label="Grouped view"
@@ -286,7 +286,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               onClick={() => setViewMode('gallery')}
               className={cn(
                 'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
-                viewMode === 'gallery' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                viewMode === 'gallery' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               title="Gallery view"
               aria-label="Gallery view"

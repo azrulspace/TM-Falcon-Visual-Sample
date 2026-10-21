@@ -25,9 +25,9 @@
   --color_neutral_500:#667085;
   --color_neutral_600:#475467;
   --color_neutral_700:#344054;
-  --color_neutral_800:#1D2939;
-  --color_neutral_900:#101828;
-  --color_neutral_950:#0C111D;
+  --color_neutral_800:#18202B;
+  --color_neutral_900:#141B23;
+  --color_neutral_950:#0B101B;
   --color_success_25:#F6FEF9;
   --color_success_50:#ECFDF3;
   --color_success_100:#D1FADF;
@@ -284,15 +284,15 @@
   --bg_row_hover:rgba(255,255,255,0.04);
   --bg_segment:var(--color_neutral_900);
   --bg_segment_active:var(--color_neutral_700);
-  --bg_sidebar:var(--color_brand_950);
-  --bg_sidebar_hover:var(--color_brand_900);
-  --bg_sidebar_active:var(--color_brand_700);
+  --bg_sidebar:#151A22;
+  --bg_sidebar_hover:#1E2632;
+  --bg_sidebar_active:#1E2632;
 
   /* Border */
-  --border_primary:var(--color_neutral_600);
-  --border_secondary:var(--color_neutral_700);
-  --border_tertiary:var(--color_neutral_800);
-  --border_control:var(--color_neutral_500);
+  --border_primary:#26303D;
+  --border_secondary:#222B38;
+  --border_tertiary:#1E2632;
+  --border_control:#2A323D;
   --border_control_hover:var(--color_neutral_400);
   --border_hover:var(--color_neutral_500);
   --border_disabled:var(--color_neutral_800);

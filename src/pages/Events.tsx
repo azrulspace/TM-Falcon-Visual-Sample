@@ -436,22 +436,22 @@ export default function Events() {
 
         {/* Live Incoming Events Notification Banner */}
         {incomingNewEventsCount > 0 && overview.liveState === 'live' && (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2 text-xs font-medium">
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-card border border-border text-foreground shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2.5 text-xs font-medium">
               <span className="relative flex size-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex rounded-full size-2 bg-primary" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
+                <span className="relative inline-flex rounded-full size-2 bg-[#10b981]" />
               </span>
-              <Bell className="size-4" />
+              <Bell className="size-4 text-primary" />
               <span>
-                <strong>{incomingNewEventsCount} new events</strong> captured from edge cameras.
+                <strong className="text-foreground">{incomingNewEventsCount} new events</strong>{' '}
+                <span className="text-muted-foreground">captured from edge cameras.</span>
               </span>
             </div>
             <Button
-              variant="outline"
               size="sm"
               onClick={mergeNewEvents}
-              className="h-7 px-2.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 border-transparent shadow-xs"
+              className="h-7 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs cursor-pointer"
             >
               Show new events
             </Button>

@@ -111,35 +111,35 @@
   :root.theme_dark {
     color-scheme: dark;
 
-    /* Core palette */
-    --background: #0A101C;
-    --foreground: #E6EBF5;
-    --card: #0F1729;
-    --card-foreground: #E6EBF5;
-    --popover: #121C33;
-    --popover-foreground: #E6EBF5;
-    --border: #1F2A44;
-    --input: #1F2A44;
-    --muted: #162036;
-    --muted-foreground: #8A97B2;
+    /* Core palette matching Overview page */
+    --background: #0B101B;
+    --foreground: #E2E7EF;
+    --card: #141B23;
+    --card-foreground: #E2E7EF;
+    --popover: #151A22;
+    --popover-foreground: #E2E7EF;
+    --border: #26303D;
+    --input: #2A323D;
+    --muted: #18202B;
+    --muted-foreground: #A3ADBD;
     --primary: #2F6FED;
     --primary-foreground: #FFFFFF;
-    --secondary: #162036;
-    --secondary-foreground: #E6EBF5;
-    --accent: #162036;
-    --accent-foreground: #E6EBF5;
+    --secondary: #18202B;
+    --secondary-foreground: #E2E7EF;
+    --accent: #1E2632;
+    --accent-foreground: #E2E7EF;
     --destructive: #EF4444;
     --destructive-foreground: #FFFFFF;
     --ring: #4C86F5;
 
-    /* Sidebar */
-    --sidebar: #070C16;
-    --sidebar-foreground: #E6EBF5;
+    /* Sidebar matching AppShell */
+    --sidebar: #151A22;
+    --sidebar-foreground: #E2E7EF;
     --sidebar-primary: #2F6FED;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #162036;
-    --sidebar-accent-foreground: #E6EBF5;
-    --sidebar-border: #1A2540;
+    --sidebar-accent: #1E2632;
+    --sidebar-accent-foreground: #E2E7EF;
+    --sidebar-border: #2A323D;
     --sidebar-ring: #4C86F5;
 
     /* Semantic Status Tokens */
@@ -179,13 +179,13 @@
     --row-height-default: 36px;
     --row-height-compact: 28px;
 
-    /* Glass Overlay Tokens (H3) */
-    --overlay-bg: rgba(15, 23, 41, 0.78);
+    /* Glass Overlay Tokens matching Overview */
+    --overlay-bg: rgba(20, 27, 35, 0.88);
     --overlay-border: rgba(255, 255, 255, 0.08);
     --overlay-blur: 16px;
-    --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
-    --scrim-top: linear-gradient(to bottom, rgba(10, 16, 28, 0.80) 0%, rgba(10, 16, 28, 0) 100%);
-    --scrim-bottom: linear-gradient(to top, rgba(10, 16, 28, 0.85) 0%, rgba(10, 16, 28, 0) 100%);
+    --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --scrim-top: linear-gradient(to bottom, rgba(11, 16, 27, 0.85) 0%, rgba(11, 16, 27, 0) 100%);
+    --scrim-bottom: linear-gradient(to top, rgba(11, 16, 27, 0.90) 0%, rgba(11, 16, 27, 0) 100%);
   }
 
   * {
