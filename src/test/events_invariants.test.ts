@@ -49,9 +49,13 @@ test('Event state invariants: All events have standard lifecycle state', () => {
   }
 });
 
-test('Snapshot integrity: every event has procedural SVG frames', () => {
+test('Snapshot integrity: every event has snapshot frames (real photo for EVT-0258, SVG frames for procedural)', () => {
   for (const evt of events) {
     assert.ok(Array.isArray(evt.snapshots) && evt.snapshots.length >= 1, `Event ${evt.id} must have snapshot frames`);
-    assert.ok(evt.snapshots[0].startsWith('data:image/svg+xml'), `Event ${evt.id} snapshot must be valid SVG data URI`);
+    if (evt.id === 'EVT-0258') {
+      assert.equal(evt.snapshots[0], '/monkey-fiber.jpg', 'EVT-0258 must use real photo /monkey-fiber.jpg');
+    } else {
+      assert.ok(evt.snapshots[0].startsWith('data:image/svg+xml'), `Event ${evt.id} snapshot must be valid SVG data URI`);
+    }
   }
 });

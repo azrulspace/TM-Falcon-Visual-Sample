@@ -80,27 +80,31 @@ function generateEvents(): FalconEvent[] {
       state = 'Dismissed';
     }
 
-    const priority: FalconEvent['priority'] = i % 5 === 0 ? 'Critical' : i % 3 === 0 ? 'Medium' : 'High';
+    const priority: FalconEvent['priority'] = i === 0 ? 'High' : i % 5 === 0 ? 'Critical' : i % 3 === 0 ? 'Medium' : 'High';
     const overSla = state === 'New' && minutesAgo > 30;
 
     const timestampStr = `2026-10-20 ${16 - Math.floor(minutesAgo / 60)}:${(60 - (minutesAgo % 60)).toString().padStart(2, '0')}:14`;
 
-    const snapshots = [
-      generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 1),
-      generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 2),
-      generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 3),
-    ];
+    const snapshots = i === 0
+      ? ['/monkey-fiber.jpg']
+      : [
+          generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 1),
+          generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 2),
+          generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 3),
+        ];
+
+    const capturedTime = i === 0 ? '2026-10-20T16:28:00+08:00' : captured;
 
     result.push({
       id,
-      captured,
-      receivedAt: captured,
+      captured: capturedTime,
+      receivedAt: capturedTime,
       type: 'Monkey near cable',
       device: 'DEV-004',
       deviceStatus: 'offline',
       asset: 'CBL-005',
       assetType: 'Cable span',
-      poles: ['AST-POL-012', 'AST-POL-013'],
+      poles: ['AST_006', 'AST_007'],
       priority,
       state,
       status: state,
@@ -115,13 +119,34 @@ function generateEvents(): FalconEvent[] {
       unacknowledgedDuration: captured,
       overSla,
       snapshots,
-      rawJson: {
+      rawJson: i === 0 ? {
+        vendorCode: '10002',
+        rule: 'CCTV-01-Motion Detection',
+        ruleId: '2111032826769051648',
+        category: 'alarmCategoryVideo',
+        subCategory: 'alarmSubCategoryCamera',
+        vendorPriority: '1',
+        vendorPriorityColor: '#F40B0B',
+        state: 1,
+        channel: 'CCTV-01',
+        channelId: '#ff75f3ca638e4075b45951f65cdd31dc',
+        channelType: 'camera',
+      } : {
         vendorCode: '10002',
         rule: 'CCTV-01-Motion Detection',
         confidence: 0.942,
         sensorPayload: { fps: 60, res: '1080p', node: 'Edge-DEV-004' },
       },
-      timeline: [
+      timeline: i === 0 ? [
+        { id: `t1-${id}`, icon: 'received', text: 'Telemetry packet received from Edge-DEV-004', actor: 'Edge service', time: '2026-10-20T16:28:00+08:00' },
+        { id: `t2-${id}`, icon: 'classified', text: 'Rule CCTV-01-Motion Detection matched on channel CCTV-01', actor: 'Edge service', time: '2026-10-20T16:28:00+08:00' },
+        ...(state === 'Acknowledged' || state === 'In case'
+          ? [{ id: `t3-${id}`, icon: 'acknowledged' as const, text: 'Event acknowledged by operator', actor: 'Ahmad Syukri', time: '2026-10-20T16:40:00+08:00' }]
+          : []),
+        ...(state === 'In case'
+          ? [{ id: `t4-${id}`, icon: 'case' as const, text: 'Assigned to field ticket CAS-0001 (Field Team Alpha)', actor: 'Ahmad Syukri', time: '2026-10-20T16:42:00+08:00' }]
+          : []),
+      ] : [
         { id: `t1-${id}`, icon: 'received', text: 'Telemetry packet received at Gateway DEV-004', actor: 'Edge service', time: '12m ago' },
         { id: `t2-${id}`, icon: 'classified', text: 'AI Model v2.4 classified event as Monkey near cable (confidence 94.2%)', actor: 'Inference Engine', time: '11m ago' },
         ...(state === 'Acknowledged' || state === 'In case'
