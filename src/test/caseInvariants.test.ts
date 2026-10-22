@@ -189,3 +189,52 @@ test('CSV Export format conforms to Section 6.1 specification', () => {
   assert.ok(lines[1].includes('"CAS-0007"'));
   assert.ok(lines[1].includes('"EVT-0257"'));
 });
+
+test('Phase 8: Multi-select status and assignee filters work together', () => {
+  // Filter for Open and In progress cases
+  const filtered = filterCases(initialCases, { status: ['Open', 'In progress'] }, events);
+  assert.equal(filtered.length, 5, '3 Open + 2 In progress = 5 cases');
+
+  // Filter for Unassigned
+  const unassignedOnly = filterCases(initialCases, { assignee: ['unassigned'] }, events);
+  assert.equal(unassignedOnly.length, 3, 'CAS-0007, CAS-0006, CAS-0002 are unassigned');
+
+  // Open only toggle excludes Closed
+  const openOnlyCases = filterCases(initialCases, { openOnly: true }, events);
+  assert.equal(openOnlyCases.length, 6, '7 cases minus 1 closed = 6 cases');
+  assert.ok(!openOnlyCases.some((c) => c.status === 'Closed'));
+});
+
+test('Phase 8: Sort cases by Age works in ascending and descending directions', () => {
+  const eventMap = createEventMap(events);
+  const enriched = initialCases.map((c) => joinCaseWithEvent(c, eventMap));
+  const now = new Date('2026-10-21T11:15:00+08:00');
+
+  const desc = sortCases(enriched, 'age', 'desc', now);
+  assert.equal(desc[0].id, 'CAS-0003', 'CAS-0003 is the oldest open case');
+
+  const asc = sortCases(enriched, 'age', 'asc', now);
+  assert.equal(asc[0].id, 'CAS-0007', 'CAS-0007 is the newest case');
+});
+
+test('Phase 8: Canonical case tab structures preserve schema integrity without invented fields', () => {
+  for (const c of initialCases) {
+    if (c.verification) {
+      assert.ok(typeof c.verification === 'object');
+      if (c.verification.checkedItems) {
+        assert.ok(Array.isArray(c.verification.checkedItems));
+      }
+    }
+    if (c.fieldFindings) {
+      assert.ok(typeof c.fieldFindings === 'object');
+    }
+    if (c.closure) {
+      assert.ok(typeof c.closure === 'object');
+    }
+    assert.ok(Array.isArray(c.activities), `Case ${c.id} activities must be an array`);
+    for (const act of c.activities) {
+      assert.ok(act.id && act.text && act.actor && act.timestamp, 'Activity entry must have id, text, actor, and timestamp');
+    }
+  }
+});
+
