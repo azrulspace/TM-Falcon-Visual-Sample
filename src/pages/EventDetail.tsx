@@ -13,16 +13,11 @@ import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Check, Briefcase, ArrowLeft, SearchX, Loader2 } from 'lucide-react';
-import { OverviewTab } from '@/components/events/detail/OverviewTab';
-import { TimelineTab } from '@/components/events/detail/TimelineTab';
-import { RelatedEventsTab } from '@/components/events/detail/RelatedEventsTab';
-import { RawVendorDataTab } from '@/components/events/detail/RawVendorDataTab';
 import { LocationCard } from '@/components/events/detail/LocationCard';
 import { KeyFactsCard } from '@/components/events/detail/KeyFactsCard';
-import { RelatedSummaryCard } from '@/components/events/detail/RelatedSummaryCard';
-import { CaseCard } from '@/components/events/detail/CaseCard';
+import { DetectionSpecificationCard } from '@/components/events/detail/DetectionSpecificationCard';
+import { AlertHistoryCard } from '@/components/events/detail/AlertHistoryCard';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -215,9 +210,9 @@ export default function EventDetail() {
           onOpenVendorData={() => setVendorDataOpen(true)}
         />
 
-        {/* 2. Responsive 2-Column Grid (Main 8 of 12, Side 4 of 12) */}
+        {/* 2. Responsive 2-Column Grid (Main 8 of 12, Side 4 of 12) (DETAIL_FINAL) */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          {/* Main Column (8 of 12) */}
+          {/* Main Column (8 of 12): Evidence Card + Detection Specification */}
           <div className="xl:col-span-8 flex flex-col gap-6">
             {/* Evidence Card */}
             <EvidenceStudioCard
@@ -228,45 +223,11 @@ export default function EventDetail() {
               }}
             />
 
-            {/* Main Tabs (Detection, Raw Vendor Data, Timeline, Related Events) */}
-            <div id="detail-tabs-section">
-              <Tabs defaultValue="detection" className="w-full">
-                <TabsList className="bg-muted/60 p-1 border border-border rounded-xl">
-                  <TabsTrigger value="detection" className="text-xs font-medium">
-                    Detection
-                  </TabsTrigger>
-                  <TabsTrigger value="vendor" className="text-xs font-medium">
-                    Raw Vendor Data
-                  </TabsTrigger>
-                  <TabsTrigger value="timeline" className="text-xs font-medium">
-                    Timeline ({(event as any).timeline?.length || 2})
-                  </TabsTrigger>
-                  <TabsTrigger value="related" className="text-xs font-medium">
-                    Related Events
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Tabs Content */}
-                <TabsContent value="detection" className="pt-4">
-                  <OverviewTab event={event as any} />
-                </TabsContent>
-
-                <TabsContent value="vendor" className="pt-4">
-                  <RawVendorDataTab event={event as any} />
-                </TabsContent>
-
-                <TabsContent value="timeline" className="pt-4">
-                  <TimelineTab event={event as any} />
-                </TabsContent>
-
-                <TabsContent value="related" className="pt-4">
-                  <RelatedEventsTab event={event as any} />
-                </TabsContent>
-              </Tabs>
-            </div>
+            {/* Detection Specification Card (The ONLY card below Evidence) (Section 4.5) */}
+            <DetectionSpecificationCard event={event as any} />
           </div>
 
-          {/* Side Column (4 of 12) */}
+          {/* Side Column (4 of 12): Location + Key Facts + Alert History */}
           <div className="xl:col-span-4 flex flex-col gap-6">
             <LocationCard event={event as any} />
             <KeyFactsCard
@@ -274,8 +235,7 @@ export default function EventDetail() {
               onOpenCreateCase={() => setCreateCaseOpen(true)}
               onOpenAssign={() => setAssignOpen(true)}
             />
-            <RelatedSummaryCard event={event as any} />
-            <CaseCard event={event as any} />
+            <AlertHistoryCard event={event as any} />
           </div>
         </div>
       </main>

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/contexts/ToastContext';
 import { MapCanvas } from '@/components/MapCanvas';
 import { devices } from '@/data/devices';
+import { formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
 
@@ -107,11 +108,11 @@ export const LocationCard: React.FC<LocationCardProps> = ({ event }) => {
           className="w-full h-full"
         />
 
-        {/* Map Overlay Badge: CBL-005 (Span AST_006 → AST_007) */}
-        <div className="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-xs text-white text-[11px] font-mono flex items-center gap-1.5 shadow-md border border-white/10">
+        {/* Map Overlay Badge: CBL-005 (AST-006 to AST-007) (Section 4.3) */}
+        <div className="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-xs text-white text-[11px] font-mono flex items-center gap-1.5 shadow-md border border-white/10 select-none">
           <Layers className="size-3 text-primary" />
           <span>
-            {assetId || 'Asset'} ({poles && poles.length >= 2 ? `${poles[0]} → ${poles[1]}` : 'Span'})
+            {formatId(assetId || 'CBL-005')} ({poles && poles.length >= 2 ? `${formatId(poles[0])} to ${formatId(poles[1])}` : 'Span'})
           </span>
         </div>
 
