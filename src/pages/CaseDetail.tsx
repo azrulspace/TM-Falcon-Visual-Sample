@@ -4,6 +4,11 @@ import { useCases } from '@/contexts/CasesContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { CaseWorkspaceHeader } from '@/components/cases/detail/CaseWorkspaceHeader';
 import { CaseWorkflowTracker } from '@/components/cases/detail/CaseWorkflowTracker';
+import { CaseSourceEventCard } from '@/components/cases/detail/CaseSourceEventCard';
+import { CaseEvidenceCard } from '@/components/cases/detail/CaseEvidenceCard';
+import { CaseRecentActivityCard } from '@/components/cases/detail/CaseRecentActivityCard';
+import { CaseDetailsCard } from '@/components/cases/detail/CaseDetailsCard';
+import { CaseLocationCard } from '@/components/cases/detail/CaseLocationCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -122,19 +127,38 @@ export default function CaseDetail() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Main Column (8 of 12) */}
           <div className="xl:col-span-8 space-y-6">
-            {/* Interim Tab Content Placeholder for Phase 5 */}
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <span className="text-xs text-muted-foreground">
-                Active tab: <strong className="text-foreground capitalize">{activeTab.replace('_', ' ')}</strong>
-              </span>
-            </div>
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                {/* Source event card */}
+                <CaseSourceEventCard caseData={caseData} />
+
+                {/* Evidence card */}
+                <CaseEvidenceCard caseData={caseData} />
+
+                {/* Recent activity card */}
+                <CaseRecentActivityCard
+                  activities={caseData.activities}
+                  onOpenAllActivity={() => handleTabChange('activity')}
+                />
+              </div>
+            )}
+
+            {activeTab !== 'overview' && (
+              <div className="p-6 rounded-xl border border-border bg-card">
+                <span className="text-xs text-muted-foreground">
+                  Tab content for <strong className="text-foreground capitalize">{activeTab.replace('_', ' ')}</strong> (Phase 7)
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Side Column (4 of 12) */}
           <div className="xl:col-span-4 space-y-6">
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <span className="text-xs text-muted-foreground">Side column</span>
-            </div>
+            {/* Case Details Card */}
+            <CaseDetailsCard caseData={caseData} />
+
+            {/* Location Card */}
+            <CaseLocationCard caseData={caseData} />
           </div>
         </div>
       </div>
