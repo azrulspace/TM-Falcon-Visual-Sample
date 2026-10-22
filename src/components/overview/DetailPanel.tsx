@@ -50,6 +50,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const att = attention.find((a) => a.id === selectedId || a.marker === selectedId);
   const evt = events.find((e) => e.id === selectedId || e.device === selectedId);
   const cas = cases.find((c) => c.id === selectedId);
+  const casEvt = cas ? events.find((e) => e.id === cas.sourceEventId) : null;
 
   const isEvent = selectedId.startsWith('EVT_') || att?.kind === 'EVENT';
   const isCase = selectedId.startsWith('CAS_') || att?.kind === 'CASE';
@@ -58,7 +59,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const entityId = isEvent ? (evt?.id || att?.id || selectedId) : isCase ? (cas?.id || selectedId) : (dev?.id || selectedId);
   const title = isEvent ? (evt?.type || att?.title || 'Telemetry Incident') : isCase ? (cas?.title || 'Field Work Case') : (dev?.name || 'Infrastructure Device');
   const site = dev?.site || 'Kuching Pilot Sector';
-  const pole = dev?.asset || evt?.asset || cas?.asset || 'AST_002';
+  const pole = dev?.asset || evt?.asset || casEvt?.asset || 'AST_002';
   const cableRoute = 'C-KCH-01 (Kuching Ring North)';
   const deviceType = dev?.type || 'Camera (Outdoor HD-PTZ)';
   const serial = dev?.serial || 'SN_TM_' + entityId;

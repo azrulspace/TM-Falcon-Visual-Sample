@@ -564,8 +564,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                   {sec.items.map((item) => {
                     const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
-                    const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute;
-                    const isLeafActive = location.pathname === item.route || isEventsRoute;
+                    const isCasesRoute = (location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases';
+                    const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute;
+                    const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute;
                     const hasChildren = item.children && item.children.length > 0;
                     const isExpanded = openGroups[item.id] !== false; // default open
 
@@ -838,7 +839,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-2">
                       {sec.label}
                     </div>
-                    {sec.items.map((item) => (
+                    {sec.items.map((item) => {
+                      const isItemActive =
+                        location.pathname.startsWith(item.route) ||
+                        (location.pathname.startsWith('/events') && item.id === 'event-inbox') ||
+                        ((location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases');
+                      return (
                       <div key={item.id} className="space-y-1">
                         <div
                           onClick={() => {
@@ -846,7 +852,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             setMobileNavOpen(false);
                           }}
                           className={`flex items-center justify-between h-11 px-3 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                            location.pathname.startsWith(item.route)
+                            isItemActive
                               ? 'bg-primary/10 text-primary font-semibold'
                               : 'text-foreground/80 hover:bg-muted/50'
                           }`}
@@ -888,7 +894,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                           </div>
                         )}
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 ))}
               </div>

@@ -28,7 +28,7 @@ export function isEventToday(event: FalconEvent): boolean {
     const hours = parseInt(cap.split('h')[0], 10);
     return !isNaN(hours) && hours < 24;
   }
-  if (event.captured.startsWith('2026-10-20T16:28')) return true; // EVT-0258 operational today
+  if (event.captured.startsWith('2026-10-20')) return true; // EVT-0258 & EVT-0257 operational today
   return false;
 }
 

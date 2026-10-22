@@ -161,18 +161,18 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
           {cases.map((c) => (
             <CommandItem
               key={c.id}
-              value={`${c.id} ${c.title} ${c.type} ${c.team}`}
-              onSelect={() => handleSelect('case', c.id, '/planned/cases')}
+              value={`${c.id} ${c.title} ${c.status} ${c.assignee || 'Unassigned'}`}
+              onSelect={() => handleSelect('case', c.id, `/cases/${c.id}`)}
               className="flex items-center gap-2 cursor-pointer"
             >
-              <Briefcase className="size-4 text-success" />
+              <Briefcase className="size-4 text-primary" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-semibold text-primary">{c.id}</span>
                   <span className="text-xs text-foreground">{c.title}</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">
-                  Type: {c.type} • Next: {c.next} • Team: {c.team}
+                  Status: {c.status} • Assignee: {c.assignee || 'Unassigned'}
                 </span>
               </div>
             </CommandItem>

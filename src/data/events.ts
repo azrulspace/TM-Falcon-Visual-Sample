@@ -65,13 +65,22 @@ function generateEvents(): FalconEvent[] {
     }
 
     // State distribution Group A: 42 New, 45 Acknowledged, 20 In case, 10 Resolved (sum = 117)
+    // Invariant (Section 9): EVT-0257 (i === 1) is associated with open case CAS-0007, so its state is 'In case'
     let state: FalconEvent['state'] = 'New';
     let caseId: string | null = null;
     let assignee: string | null = null;
-    if (i >= 42 && i < 87) {
+    if (i === 1) {
+      state = 'In case';
+      caseId = 'CAS-0007';
+      assignee = null;
+    } else if (i === 87) {
+      state = 'New';
+      caseId = null;
+      assignee = null;
+    } else if (i >= 42 && i < 87) {
       state = 'Acknowledged';
       assignee = 'Ahmad Syukri (TM)';
-    } else if (i >= 87 && i < 107) {
+    } else if (i > 87 && i < 107) {
       state = 'In case';
       caseId = 'CAS-0001';
       assignee = 'Field Team Alpha';
@@ -81,7 +90,7 @@ function generateEvents(): FalconEvent[] {
     }
 
     // Priorities in Group A: 23 Critical, 63 High, 31 Medium (sum = 117, High+Critical = 86)
-    const priority: FalconEvent['priority'] = i === 0 ? 'High' : i % 5 === 0 ? 'Critical' : i % 3 === 0 ? 'Medium' : 'High';
+    const priority: FalconEvent['priority'] = i === 0 ? 'High' : i === 1 ? 'High' : i % 5 === 0 ? 'Critical' : i % 3 === 0 ? 'Medium' : 'High';
     const overSla = state === 'New' && minutesAgo > 30;
 
     const timestampStr = `2026-10-20 ${16 - Math.floor(minutesAgo / 60)}:${(60 - (minutesAgo % 60)).toString().padStart(2, '0')}:14`;
@@ -90,11 +99,15 @@ function generateEvents(): FalconEvent[] {
       ? ['/monkey-fiber.jpg']
       : [
           generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 1),
-          generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 2),
+          i === 1 ? '/case-evidence-0007.png' : generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 2),
           generateSnapshotSvg(id, 'Monkey near cable', 'DEV-004', timestampStr, 3),
         ];
 
-    const capturedTime = i === 0 ? '2026-10-20T16:28:00+08:00' : captured;
+    const capturedTime = i === 0
+      ? '2026-10-20T16:28:00+08:00'
+      : i === 1
+      ? '2026-10-20T15:06:00+08:00'
+      : captured;
 
     result.push({
       id,

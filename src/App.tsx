@@ -15,6 +15,10 @@ import CreateDevice from './pages/CreateDevice';
 import DeviceDetail from './pages/DeviceDetail';
 import PlannedPage from './pages/PlannedPage';
 
+import { CasesProvider } from './contexts/CasesContext';
+import Cases from './pages/Cases';
+import CaseDetail from './pages/CaseDetail';
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel } = useAppContext();
   const location = useLocation();
@@ -32,24 +36,29 @@ export default function App() {
     <AppProvider>
       <OverviewProvider>
         <EventsProvider>
-          <TooltipProvider>
-          <Routes>
-            <Route path="/" element={<DefaultRedirect />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            
-            <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-            <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-            <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
-            <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-            <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-            <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
-            <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-            
-            <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
-          </Routes>
-        </TooltipProvider>
+          <CasesProvider>
+            <TooltipProvider>
+              <Routes>
+                <Route path="/" element={<DefaultRedirect />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                
+                <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
+                <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+                <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+                <Route path="/cases" element={<ProtectedRoute><Cases /></ProtectedRoute>} />
+                <Route path="/cases/:id" element={<ProtectedRoute><CaseDetail /></ProtectedRoute>} />
+                <Route path="/planned/cases" element={<Navigate to="/cases" replace />} />
+                <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
+                <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
+                <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                
+                <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
+              </Routes>
+            </TooltipProvider>
+          </CasesProvider>
         </EventsProvider>
       </OverviewProvider>
     </AppProvider>
