@@ -26,7 +26,7 @@ export const KpiRibbon: React.FC<KpiRibbonProps> = ({
   // Real data calculations
   const newEventsCount = events.filter((e) => e.state === 'New').length;
   const unackEventsCount = events.filter((e) => e.state === 'New').length;
-  const openEventsCount = events.filter((e) => e.state !== 'Closed').length;
+  const openEventsCount = events.filter((e) => e.state !== 'Resolved').length;
 
   const openCasesCount = cases.length;
 
@@ -34,7 +34,7 @@ export const KpiRibbon: React.FC<KpiRibbonProps> = ({
   const staleDevices = devices.filter((d) => d.status === 'stale').length;
   const devicesNeedingAttention = offlineDevices + staleDevices;
 
-  const criticalEventsCount = events.filter((e) => e.priority === 'High' && e.state !== 'Closed').length;
+  const criticalEventsCount = events.filter((e) => (e.priority === 'Critical' || e.priority === 'High') && e.state !== 'Resolved').length;
 
   if (error) {
     return (

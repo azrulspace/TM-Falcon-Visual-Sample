@@ -24,7 +24,7 @@ export const KpiStrip: React.FC<KpiStripProps> = ({
   const attentionDevices = offlineDevices + staleDevices; // 4
 
   const newEventsCount = events.filter((e) => e.state === 'New').length; // 3
-  const criticalCount = events.filter((e) => e.priority === 'High' && e.state !== 'Closed').length; // 2
+  const criticalCount = events.filter((e) => (e.priority === 'Critical' || e.priority === 'High') && e.state !== 'Resolved').length;
   const openCasesCount = cases.length; // 1
 
   return (

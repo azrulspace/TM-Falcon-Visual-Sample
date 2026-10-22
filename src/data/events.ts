@@ -19,8 +19,8 @@ export interface FalconEvent {
   assetType?: string;
   poles?: [string, string];
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
-  state: 'New' | 'Acknowledged' | 'In case' | 'Assigned' | 'Dismissed' | 'Resolved' | 'Closed';
-  status: 'New' | 'Acknowledged' | 'In case' | 'Assigned' | 'Dismissed' | 'Resolved' | 'Closed';
+  state: 'New' | 'Acknowledged' | 'In case' | 'Resolved';
+  status: 'New' | 'Acknowledged' | 'In case' | 'Resolved';
   caseId: string | null;
   source: 'Edge service' | 'Manual' | 'Partner feed';
   ruleCode: string;
@@ -41,7 +41,7 @@ export interface FalconEvent {
   };
 }
 
-// Generate the full 258 enterprise mock events
+// Generate the full 258 enterprise mock events with strict mathematical invariants
 function generateEvents(): FalconEvent[] {
   const result: FalconEvent[] = [];
 
@@ -50,13 +50,12 @@ function generateEvents(): FalconEvent[] {
     const num = 258 - i;
     const id = `EVT-${num.toString().padStart(4, '0')}`;
     
-    // Minutes ago distribution: latest is 12m ago, spreading back 3 days
+    // Minutes ago distribution: all 117 events occurred within Today (< 24h)
     let minutesAgo = 12;
-    if (i > 0 && i < 10) minutesAgo = 12 + i * 4; // 12m to 48m
-    else if (i >= 10 && i < 30) minutesAgo = 60 + (i - 10) * 15; // 1h to 5h
-    else if (i >= 30 && i < 60) minutesAgo = 300 + (i - 30) * 30; // 5h to 20h
-    else if (i >= 60 && i < 90) minutesAgo = 1440 + (i - 60) * 45; // 1d to 2d
-    else minutesAgo = 2880 + (i - 90) * 60; // 2d to 3d
+    if (i > 0 && i < 15) minutesAgo = 12 + i * 4; // 12m to 68m
+    else if (i >= 15 && i < 45) minutesAgo = 70 + (i - 15) * 8; // 1h 10m to 5h
+    else if (i >= 45 && i < 80) minutesAgo = 310 + (i - 45) * 12; // 5h to 12h
+    else minutesAgo = 730 + (i - 80) * 15; // 12h to 21h (all < 24h)
 
     let captured = `${minutesAgo}m ago`;
     if (minutesAgo >= 60 && minutesAgo < 1440) {
@@ -65,7 +64,7 @@ function generateEvents(): FalconEvent[] {
       captured = `${Math.floor(minutesAgo / 1440)}d ago`;
     }
 
-    // State distribution: first 42 are New, 45 Acknowledged, 20 In case, 10 Dismissed
+    // State distribution Group A: 42 New, 45 Acknowledged, 20 In case, 10 Resolved (sum = 117)
     let state: FalconEvent['state'] = 'New';
     let caseId: string | null = null;
     let assignee: string | null = null;
@@ -77,9 +76,11 @@ function generateEvents(): FalconEvent[] {
       caseId = 'CAS-0001';
       assignee = 'Field Team Alpha';
     } else if (i >= 107) {
-      state = 'Dismissed';
+      state = 'Resolved';
+      assignee = 'Field Team Alpha';
     }
 
+    // Priorities in Group A: 23 Critical, 63 High, 31 Medium (sum = 117, High+Critical = 86)
     const priority: FalconEvent['priority'] = i === 0 ? 'High' : i % 5 === 0 ? 'Critical' : i % 3 === 0 ? 'Medium' : 'High';
     const overSla = state === 'New' && minutesAgo > 30;
 
@@ -148,7 +149,7 @@ function generateEvents(): FalconEvent[] {
           : []),
       ] : [
         { id: `t1-${id}`, icon: 'received', text: 'Telemetry packet received at Gateway DEV-004', actor: 'Edge service', time: '12m ago' },
-        { id: `t2-${id}`, icon: 'classified', text: 'AI Model v2.4 classified event as Monkey near cable (confidence 94.2%)', actor: 'Inference Engine', time: '11m ago' },
+        { id: `t2-${id}`, icon: 'classified', text: 'Rule CCTV-01-Motion Detection matched', actor: 'Edge service', time: '11m ago' },
         ...(state === 'Acknowledged' || state === 'In case'
           ? [{ id: `t3-${id}`, icon: 'acknowledged' as const, text: 'Event acknowledged by operator', actor: 'Ahmad Syukri', time: '5m ago' }]
           : []),
@@ -164,7 +165,7 @@ function generateEvents(): FalconEvent[] {
     });
   }
 
-  // 2. The remaining 141 events with diverse types, devices, and assets
+  // 2. Group B: Remaining 141 events with diverse types, devices, and assets
   const eventTypes = [
     { type: 'Vegetation encroachment', defaultPriority: 'High', rule: 'LIDAR-TREE-SPAN-04', vendor: '20041' },
     { type: 'Cable sag', defaultPriority: 'Medium', rule: 'OPT-SAG-METRIC-02', vendor: '20015' },
@@ -194,7 +195,6 @@ function generateEvents(): FalconEvent[] {
 
   const cableAssets = ['CBL-001', 'CBL-002', 'CBL-003', 'CBL-004', 'CBL-005'];
   const sources: FalconEvent['source'][] = ['Edge service', 'Edge service', 'Edge service', 'Manual', 'Partner feed'];
-  const statuses: FalconEvent['state'][] = ['New', 'New', 'Acknowledged', 'Acknowledged', 'In case', 'Dismissed', 'Resolved'];
 
   const remainingCount = 258 - result.length; // exactly 141
   for (let j = 0; j < remainingCount; j++) {
@@ -204,17 +204,45 @@ function generateEvents(): FalconEvent[] {
     const devObj = devicesList[j % devicesList.length];
     const asset = j % 2 === 0 ? cableAssets[j % cableAssets.length] : devObj.asset;
     const source = sources[j % sources.length];
-    const state = statuses[j % statuses.length];
     
-    // Vary priority slightly around default
-    let priority: FalconEvent['priority'] = typeObj.defaultPriority as any;
-    if (j % 7 === 0) priority = 'Critical';
-    else if (j % 6 === 0) priority = 'Low';
+    // Exact state partition for remaining 141:
+    // 41 New (Total New = 42 + 41 = 83)
+    // 40 Acknowledged (Total Acknowledged = 45 + 40 = 85)
+    // 20 In case (Total In case = 20 + 20 = 40)
+    // 40 Resolved (Total Resolved = 10 + 40 = 50)
+    // Total = 83 + 85 + 40 + 50 = 258!
+    let state: FalconEvent['state'] = 'New';
+    let caseId: string | null = null;
+    let assignee: string | null = null;
 
-    const caseId = state === 'In case' ? `CAS-${((j % 4) + 1).toString().padStart(4, '0')}` : null;
-    const assignee = state === 'In case' ? 'Field Team Beta' : state === 'Acknowledged' ? 'Zulhilmi (Field)' : null;
+    if (j < 41) {
+      state = 'New';
+    } else if (j < 41 + 40) {
+      state = 'Acknowledged';
+      assignee = 'Zulhilmi (Field)';
+    } else if (j < 41 + 40 + 20) {
+      state = 'In case';
+      caseId = `CAS-${((j % 4) + 1).toString().padStart(4, '0')}`;
+      assignee = 'Field Team Beta';
+    } else {
+      state = 'Resolved';
+      assignee = 'Field Team Beta';
+    }
 
-    const minutesAgo = 18 + j * 23;
+    // Exact priority partition for remaining 141:
+    // Critical: 62 (Total Critical = 23 + 62 = 85)
+    // High: 24 (Total High = 63 + 24 = 87) -> Total High & Critical = 172!
+    // Medium: 25 (Total Medium = 31 + 25 = 56)
+    // Low: 30 (Total Low = 0 + 30 = 30)
+    let priority: FalconEvent['priority'] = 'Medium';
+    if (j < 62) priority = 'Critical';
+    else if (j < 62 + 24) priority = 'High';
+    else if (j < 62 + 24 + 25) priority = 'Medium';
+    else priority = 'Low';
+
+    const isToday = 117 + j < 122; // First 122 events are Today
+    const minutesAgo = isToday ? 20 + j * 45 : 1440 + (j - 5) * 60; // < 24h for first 122
+
     let captured = `${minutesAgo}m ago`;
     if (minutesAgo >= 60 && minutesAgo < 1440) {
       captured = `${Math.floor(minutesAgo / 60)}h ${minutesAgo % 60}m ago`;
@@ -240,7 +268,7 @@ function generateEvents(): FalconEvent[] {
       deviceStatus: devObj.status as any,
       asset,
       assetType: asset.startsWith('CBL') ? 'Cable span' : 'Utility pole',
-      poles: ['AST-POL-003', 'AST-POL-004'],
+      poles: ['AST_006', 'AST_007'],
       priority,
       state,
       status: state,

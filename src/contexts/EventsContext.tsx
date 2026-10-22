@@ -241,58 +241,58 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return caseId;
   }, [addToast, pushUndo]);
 
-  // Dismiss Event
+  // Dismiss / Resolve Event
   const dismissEvent = useCallback((id: string, reason = 'False positive detection') => {
     setEvents((prev) => {
-      pushUndo(`Dismissed ${id}`, prev);
+      pushUndo(`Resolved ${id}`, prev);
       return prev.map((e) => {
         if (e.id === id) {
           const newEntry: EventTimelineEntry = {
             id: `t-dsm-${Date.now()}`,
-            icon: 'dismissed',
-            text: `Dismissed: ${reason}`,
+            icon: 'resolved',
+            text: `Resolved: ${reason}`,
             actor: 'Ahmad Syukri',
             time: 'Just now',
           };
           return {
             ...e,
-            state: 'Dismissed',
-            status: 'Dismissed',
+            state: 'Resolved',
+            status: 'Resolved',
             timeline: [newEntry, ...(e.timeline || [])],
           };
         }
         return e;
       });
     });
-    addToast('info', `${id} dismissed.`);
+    addToast('info', `${id} resolved.`);
   }, [addToast, pushUndo]);
 
-  // Bulk Dismiss
-  const bulkDismiss = useCallback((ids: string[], reason = 'Batch dismissed as false positive') => {
+  // Bulk Dismiss / Resolve
+  const bulkDismiss = useCallback((ids: string[], reason = 'Batch resolved as false positive') => {
     if (ids.length === 0) return;
     setEvents((prev) => {
-      pushUndo(`Dismissed ${ids.length} events`, prev);
+      pushUndo(`Resolved ${ids.length} events`, prev);
       const set = new Set(ids);
       return prev.map((e) => {
         if (set.has(e.id)) {
           const newEntry: EventTimelineEntry = {
             id: `t-dsm-b-${Date.now()}-${e.id}`,
-            icon: 'dismissed',
-            text: `Dismissed: ${reason}`,
+            icon: 'resolved',
+            text: `Resolved: ${reason}`,
             actor: 'Ahmad Syukri',
             time: 'Just now',
           };
           return {
             ...e,
-            state: 'Dismissed',
-            status: 'Dismissed',
+            state: 'Resolved',
+            status: 'Resolved',
             timeline: [newEntry, ...(e.timeline || [])],
           };
         }
         return e;
       });
     });
-    addToast('info', `${ids.length} events dismissed.`);
+    addToast('info', `${ids.length} events resolved.`);
   }, [addToast, pushUndo]);
 
   // Assign Event

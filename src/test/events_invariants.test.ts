@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { events } from '../data/events.ts';
+import { devices } from '../data/devices.ts';
 import { formatId } from '../lib/utils.ts';
+import { getStatusCounts, getKpiCounts } from '../data/eventSelectors.ts';
 
 test('Event dataset integrity: exactly 258 enterprise events', () => {
   assert.equal(events.length, 258, 'Total event dataset must contain exactly 258 events');
@@ -27,29 +29,49 @@ test('Recurring event cluster invariant: exactly 117 Monkey near cable events on
   const newCount = monkeyGroup.filter((e) => e.state === 'New').length;
   const ackCount = monkeyGroup.filter((e) => e.state === 'Acknowledged').length;
   const inCaseCount = monkeyGroup.filter((e) => e.state === 'In case').length;
-  const dismissedCount = monkeyGroup.filter((e) => e.state === 'Dismissed').length;
+  const resolvedCount = monkeyGroup.filter((e) => e.state === 'Resolved').length;
 
   assert.ok(newCount > 0, 'Cluster must contain unacknowledged New events');
   assert.ok(ackCount > 0, 'Cluster must contain Acknowledged events');
   assert.ok(inCaseCount > 0, 'Cluster must contain In case events');
-  assert.equal(newCount + ackCount + inCaseCount + dismissedCount, 117, 'Status partition must sum to 117');
+  assert.equal(newCount + ackCount + inCaseCount + resolvedCount, 117, 'Status partition must sum to 117');
 });
 
-test('Event severity invariants: No event priority is ever green or undefined', () => {
-  const validPriorities = new Set(['Critical', 'High', 'Medium', 'Low']);
-  for (const evt of events) {
-    assert.ok(validPriorities.has(evt.priority), `Event ${evt.id} has invalid priority ${evt.priority}`);
-  }
+test('Event state sum invariant: All equals the sum of New, Acknowledged, Case Created, and Resolved', () => {
+  const counts = getStatusCounts(events, {});
+
+  assert.equal(counts.new, 83, 'New status tab must have 83 events matching INBOX_FINAL');
+  assert.equal(counts.acknowledged, 85, 'Acknowledged status tab must have 85 events matching INBOX_FINAL');
+  assert.equal(counts.in_case, 40, 'Case created status tab must have 40 events');
+  assert.equal(counts.resolved, 50, 'Resolved status tab must have 50 events');
+  
+  // Mathematical Invariant: All = Sum(Tabs)
+  const tabSum = counts.new + counts.acknowledged + counts.in_case + counts.resolved;
+  assert.equal(counts.all, 258, 'All status tab must equal 258');
+  assert.equal(tabSum, counts.all, 'Sum of all status tabs must equal All count (258)');
 });
 
-test('Event state invariants: All events have standard lifecycle state', () => {
-  const validStates = new Set(['New', 'Acknowledged', 'In case', 'Dismissed', 'Resolved']);
-  for (const evt of events) {
-    assert.ok(validStates.has(evt.state), `Event ${evt.id} has invalid state ${evt.state}`);
-  }
+test('KPI Strip Invariants matching INBOX_FINAL design numbers', () => {
+  const kpis = getKpiCounts(events);
+
+  assert.equal(kpis.newUnack, 83, 'KPI 1 (New unacknowledged) must equal 83');
+  assert.equal(kpis.highAndCritical, 172, 'KPI 2 (High & Critical priority) must equal 172');
+  assert.equal(kpis.withoutCase, 218, 'KPI 3 (Without case) must equal 218');
+  assert.equal(kpis.todayEvents, 122, 'KPI 4 (Today Events) must equal 122');
 });
 
-test('Snapshot integrity: every event has snapshot frames (real photo for EVT-0258, SVG frames for procedural)', () => {
+test('Single Source of Truth: DEV-004 status is offline across registries', () => {
+  const dev = devices.find((d) => d.id === 'DEV-004' || d.id === 'DEV_004');
+  assert.ok(dev, 'DEV-004 must exist in devices registry');
+  assert.equal(dev.status, 'offline', 'DEV-004 status in devices registry must be offline');
+
+  const evt258 = events.find((e) => e.id === 'EVT-0258');
+  assert.ok(evt258);
+  assert.equal(evt258.device, 'DEV-004');
+  assert.equal(evt258.priority, 'High', 'EVT-0258 product priority must be High, never derived from vendor data');
+});
+
+test('Snapshot integrity: every event has snapshot frames', () => {
   for (const evt of events) {
     assert.ok(Array.isArray(evt.snapshots) && evt.snapshots.length >= 1, `Event ${evt.id} must have snapshot frames`);
     if (evt.id === 'EVT-0258') {

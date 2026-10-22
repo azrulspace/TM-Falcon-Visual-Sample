@@ -24,7 +24,7 @@ import { useEvents } from '@/contexts/EventsContext';
 import { cn } from '@/lib/utils';
 
 export interface InboxFilters {
-  tab: 'all' | 'new' | 'acknowledged' | 'in_case' | 'dismissed';
+  tab: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
   search: string;
   timeRange?: string;
   priority?: string;
@@ -63,7 +63,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
       new: events.filter((e) => e.state === 'New').length,
       acknowledged: events.filter((e) => e.state === 'Acknowledged').length,
       in_case: events.filter((e) => e.state === 'In case').length,
-      dismissed: events.filter((e) => e.state === 'Dismissed').length,
+      resolved: events.filter((e) => e.state === 'Resolved').length,
     };
   }, [events]);
 
@@ -130,8 +130,8 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             { id: 'all' as const, label: 'All', count: tabCounts.all },
             { id: 'new' as const, label: 'New', count: tabCounts.new },
             { id: 'acknowledged' as const, label: 'Acknowledged', count: tabCounts.acknowledged },
-            { id: 'in_case' as const, label: 'In case', count: tabCounts.in_case },
-            { id: 'dismissed' as const, label: 'Dismissed', count: tabCounts.dismissed },
+            { id: 'in_case' as const, label: 'Case Created', count: tabCounts.in_case },
+            { id: 'resolved' as const, label: 'Resolved', count: tabCounts.resolved },
           ].map((tab) => {
             const isActive = filters.tab === tab.id;
             return (

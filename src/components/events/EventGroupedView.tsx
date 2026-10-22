@@ -36,7 +36,7 @@ export interface EventGroup {
     newCount: number;
     ackCount: number;
     inCaseCount: number;
-    dismissedCount: number;
+    resolvedCount: number;
   };
 }
 
@@ -111,7 +111,7 @@ export const EventGroupedView: React.FC<EventGroupedViewProps> = ({
         newCount: sortedEvents.filter((e) => e.state === 'New').length,
         ackCount: sortedEvents.filter((e) => e.state === 'Acknowledged').length,
         inCaseCount: sortedEvents.filter((e) => e.state === 'In case').length,
-        dismissedCount: sortedEvents.filter((e) => e.state === 'Dismissed').length,
+        resolvedCount: sortedEvents.filter((e) => e.state === 'Resolved').length,
       };
 
       res.push({

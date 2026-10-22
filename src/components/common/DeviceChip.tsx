@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { formatId, cn } from '@/lib/utils';
+import { devices } from '@/data/devices';
 
 export interface DeviceChipProps {
   deviceId: string | null | undefined;
@@ -11,18 +12,24 @@ export interface DeviceChipProps {
 
 export const DeviceChip: React.FC<DeviceChipProps> = ({
   deviceId,
-  status = 'online',
+  status,
   className,
   showDot = true,
 }) => {
   if (!deviceId) return <span className="text-muted-foreground font-mono text-xs">—</span>;
 
   const formatted = formatId(deviceId);
-  const normStatus = (status || 'online').toLowerCase();
+  
+  // Single source of truth: if status not explicitly passed, query the shared devices registry
+  const matchedDevice = devices.find(
+    (d) => d.id === deviceId || d.id === deviceId.replace('-', '_') || formatId(d.id) === formatted
+  );
+  const resolvedStatus = status || matchedDevice?.status || 'offline';
+  const normStatus = resolvedStatus.toLowerCase();
 
-  let dotColor = 'bg-[#10b981]'; // online
-  if (normStatus === 'offline') dotColor = 'bg-[#ef4444]';
-  else if (normStatus === 'stale') dotColor = 'bg-[#94a3b8]';
+  let dotColor = 'bg-[#10b981]'; // online: green
+  if (normStatus === 'offline') dotColor = 'bg-[#ef4444]'; // offline: red
+  else if (normStatus === 'stale') dotColor = 'bg-[#94a3b8]'; // stale: gray/slate
 
   return (
     <Link

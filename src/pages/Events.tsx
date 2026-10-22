@@ -185,7 +185,7 @@ export default function Events() {
       if (filters.tab === 'new' && e.state !== 'New') return false;
       if (filters.tab === 'acknowledged' && e.state !== 'Acknowledged') return false;
       if (filters.tab === 'in_case' && e.state !== 'In case') return false;
-      if (filters.tab === 'dismissed' && e.state !== 'Dismissed') return false;
+      if (filters.tab === 'resolved' && e.state !== 'Resolved') return false;
 
       // Filter chips
       if (filters.priority && e.priority !== filters.priority) return false;
