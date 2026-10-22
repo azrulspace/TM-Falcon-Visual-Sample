@@ -2,8 +2,6 @@ import React from 'react';
 import {
   CheckCheck,
   Briefcase,
-  UserCheck,
-  XCircle,
   Download,
   X,
   RotateCcw,
@@ -18,9 +16,9 @@ export interface BulkActionBarProps {
   isAllResultsSelected: boolean;
   onSelectAllResults: () => void;
   onAcknowledge: () => void;
-  onAssign: () => void;
+  onAssign?: () => void;
   onCreateCase: () => void;
-  onDismiss: () => void;
+  onDismiss?: () => void;
   onExport: () => void;
   onClear: () => void;
 }
@@ -31,9 +29,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
   isAllResultsSelected,
   onSelectAllResults,
   onAcknowledge,
-  onAssign,
   onCreateCase,
-  onDismiss,
   onExport,
   onClear,
 }) => {
@@ -80,54 +76,33 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
             variant="outline"
             size="sm"
             onClick={onAcknowledge}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
+            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
             title="Acknowledge selected events"
           >
             <CheckCheck className="size-3.5 text-emerald-500" />
-            <span className="hidden sm:inline">Acknowledge</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAssign}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-primary/10 hover:text-primary"
-            title="Assign selected events to analyst"
-          >
-            <UserCheck className="size-3.5 text-primary" />
-            <span className="hidden sm:inline">Assign</span>
+            <span>Acknowledge</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={onCreateCase}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
-            title="Bundle selected events into a case"
+            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer"
+            title="Create case for selected events"
           >
             <Briefcase className="size-3.5 text-amber-500" />
-            <span className="hidden sm:inline">Create case</span>
+            <span>Create case</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            onClick={onDismiss}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-red-500/10 hover:text-red-500"
-            title="Dismiss selected as false positive"
-          >
-            <XCircle className="size-3.5 text-red-500" />
-            <span className="hidden sm:inline">Dismiss</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={onExport}
-            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 px-2.5 text-xs gap-1.5 border-border text-foreground hover:bg-muted cursor-pointer"
             title="Export selected as CSV"
           >
-            <Download className="size-3.5" />
+            <Download className="size-3.5 text-muted-foreground" />
+            <span>Export selected</span>
           </Button>
 
           {canUndo && (

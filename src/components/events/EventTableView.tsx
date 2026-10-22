@@ -14,8 +14,8 @@ import {
   Camera,
   Activity,
   Copy,
-  UserCheck,
-  XCircle,
+  Radio,
+  MapPin,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,7 @@ export interface EventTableViewProps {
   onOpenAssignDialog: (id: string) => void;
   onOpenDismissDialog: (id: string) => void;
   onOpenCreateCaseDialog: (id: string) => void;
+  onOpenLightbox?: (event: FalconEvent) => void;
 }
 
 
@@ -138,9 +139,10 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
   setCurrentPage,
   rowsPerPage,
   setRowsPerPage,
-  onOpenAssignDialog,
-  onOpenDismissDialog,
+  onOpenAssignDialog: _onOpenAssignDialog,
+  onOpenDismissDialog: _onOpenDismissDialog,
   onOpenCreateCaseDialog,
+  onOpenLightbox,
 }) => {
   const navigate = useNavigate();
   const { acknowledgeEvent } = useEvents();
@@ -302,8 +304,15 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                   {columns.event && (
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-3">
-                        {/* 56 by 40 snapshot thumbnail with radius 6 */}
-                        <div className="w-14 h-10 rounded-[6px] overflow-hidden bg-slate-900 border border-border/80 shrink-0 relative shadow-2xs group-hover:border-primary/50 transition-colors">
+                        {/* 56 by 40 snapshot thumbnail with radius 6 (click opens lightbox preview) */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenLightbox?.(event);
+                          }}
+                          className="w-14 h-10 rounded-[6px] overflow-hidden bg-slate-900 border border-border/80 shrink-0 relative shadow-2xs group-hover:border-primary/50 transition-colors cursor-zoom-in"
+                          title="Click snapshot to preview in lightbox"
+                        >
                           <img
                             src={event.snapshots[0]}
                             alt={event.id}
@@ -437,10 +446,11 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                           </Button>
                         )}
 
-                        {/* Overflow Menu */}
+                        {/* Overflow Menu (Section 3.6: Open event, Acknowledge, Create case, Copy link, Open device, Open asset) */}
                         <DropdownMenu>
                           <DropdownMenuTrigger render={
                             <button
+                              type="button"
                               className="size-7 rounded hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none"
                               aria-label="More actions"
                             >
@@ -453,39 +463,39 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                               className="cursor-pointer gap-2"
                             >
                               <ExternalLink className="size-3.5 text-primary" />
-                              <span>Open dossier</span>
+                              <span>Open event</span>
                             </DropdownMenuItem>
-                            {event.state === 'New' && (
-                              <DropdownMenuItem
-                                onClick={() => acknowledgeEvent(event.id)}
-                                className="cursor-pointer gap-2"
-                              >
-                                <Check className="size-3.5 text-emerald-500" />
-                                <span>Acknowledge</span>
-                              </DropdownMenuItem>
-                            )}
+
                             <DropdownMenuItem
-                              onClick={() => onOpenCreateCaseDialog(event.id)}
-                              className="cursor-pointer gap-2"
+                              disabled={event.state !== 'New'}
+                              onClick={() => {
+                                if (event.state === 'New') acknowledgeEvent(event.id);
+                              }}
+                              className={cn(
+                                'gap-2',
+                                event.state === 'New' ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                              )}
+                              title={event.state !== 'New' ? 'Event already acknowledged' : 'Acknowledge event'}
+                            >
+                              <Check className="size-3.5 text-emerald-500" />
+                              <span>Acknowledge</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              disabled={!!event.caseId}
+                              onClick={() => {
+                                if (!event.caseId) onOpenCreateCaseDialog(event.id);
+                              }}
+                              className={cn(
+                                'gap-2',
+                                !event.caseId ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                              )}
+                              title={event.caseId ? `Case ${event.caseId} already created` : 'Create operational case'}
                             >
                               <Briefcase className="size-3.5 text-amber-500" />
                               <span>Create case</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onOpenAssignDialog(event.id)}
-                              className="cursor-pointer gap-2"
-                            >
-                              <UserCheck className="size-3.5 text-blue-500" />
-                              <span>Assign team</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => onOpenDismissDialog(event.id)}
-                              className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                            >
-                              <XCircle className="size-3.5" />
-                              <span>Dismiss as false positive</span>
-                            </DropdownMenuItem>
+
                             <DropdownMenuItem
                               onClick={() => handleCopyLink(event.id)}
                               className="cursor-pointer gap-2"
@@ -493,6 +503,38 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                               <Copy className="size-3.5 text-muted-foreground" />
                               <span>Copy link</span>
                             </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            {event.device ? (
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/assets/inventory/devices/${formatId(event.device)}`)}
+                                className="cursor-pointer gap-2"
+                              >
+                                <Radio className="size-3.5 text-blue-500" />
+                                <span>Open device</span>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed gap-2" title="No device associated">
+                                <Radio className="size-3.5 text-muted-foreground" />
+                                <span>Open device</span>
+                              </DropdownMenuItem>
+                            )}
+
+                            {event.asset ? (
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/overview?asset=${event.asset}`)}
+                                className="cursor-pointer gap-2"
+                              >
+                                <MapPin className="size-3.5 text-violet-500" />
+                                <span>Open asset</span>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed gap-2" title="No asset associated">
+                                <MapPin className="size-3.5 text-muted-foreground" />
+                                <span>Open asset</span>
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

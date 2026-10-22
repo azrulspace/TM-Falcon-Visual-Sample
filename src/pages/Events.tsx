@@ -334,6 +334,7 @@ export default function Events() {
                 onOpenAssignDialog={(id) => setAssignEventId(id)}
                 onOpenDismissDialog={(id) => setDismissEventId(id)}
                 onOpenCreateCaseDialog={(id) => setCreateCaseEventId(id)}
+                onOpenLightbox={(evt) => setLightboxEvent(evt)}
               />
             </div>
           ) : (
