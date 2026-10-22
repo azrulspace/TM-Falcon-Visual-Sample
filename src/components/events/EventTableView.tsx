@@ -170,8 +170,8 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden select-none">
-      {/* Scrollable Table Container with Sticky Header */}
-      <div className="overflow-x-auto min-h-[340px] max-h-[calc(100vh-320px)] overflow-y-auto">
+      {/* Scrollable Table Container with Sticky Header (Desktop >= 1024px) */}
+      <div className="hidden lg:block overflow-x-auto min-h-[340px] max-h-[calc(100vh-320px)] overflow-y-auto">
         <table className="w-full border-collapse text-left text-xs">
           {/* Sticky Header */}
           <thead className="sticky top-0 bg-card/95 backdrop-blur-md border-b border-border z-20 shadow-xs">
@@ -208,12 +208,12 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                 />
               )}
 
-              {/* Type / Activity (200px) */}
+              {/* Type / Activity (200px) - hidden on screens below 1280px (Section 8) */}
               {columns.type && (
                 <SortHeader
                   label="Type / Activity"
                   sortKey="type"
-                  className="w-[200px]"
+                  className="w-[200px] hidden xl:table-cell"
                   sortConfig={sortConfig}
                   onSort={onSort}
                 />
@@ -221,14 +221,14 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
 
               {/* Device (120px) */}
               {columns.device && (
-                <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">
+                <th scope="col" className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">
                   Device
                 </th>
               )}
 
-              {/* Asset (120px) */}
+              {/* Asset (120px) - hidden on screens below 1440px (Section 8) */}
               {columns.asset && (
-                <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px]">
+                <th scope="col" className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 w-[120px] hidden 2xl:table-cell">
                   Asset
                 </th>
               )}
@@ -338,6 +338,15 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                             <Camera className="size-3 text-muted-foreground shrink-0 opacity-70" />
                           </div>
                           <span className="text-[11px] text-muted-foreground truncate">{event.detection}</span>
+
+                          {/* Merged Type when screen is 1024 to 1279px (Section 8) */}
+                          <div className="xl:hidden block mt-0.5">
+                            <span className="text-[11px] font-medium text-foreground truncate block">{event.type}</span>
+                            <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1">
+                              <Activity className="size-2.5" />
+                              <span>{event.source}</span>
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -350,9 +359,9 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                     </td>
                   )}
 
-                  {/* Type / Activity with muted source underneath (200px) */}
+                  {/* Type / Activity with muted source underneath (200px) - hidden on screens below 1280px (Section 8) */}
                   {columns.type && (
-                    <td className="py-2 px-3">
+                    <td className="py-2 px-3 hidden xl:table-cell">
                       <div className="flex flex-col leading-tight">
                         <span className="font-medium text-foreground truncate">{event.type}</span>
                         <span className="text-[11px] text-muted-foreground/80 flex items-center gap-1 mt-0.5">
@@ -363,16 +372,21 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                     </td>
                   )}
 
-                  {/* Device (120px) */}
+                  {/* Device (120px) - with merged Asset chip below 1440px (Section 8) */}
                   {columns.device && (
                     <td className="py-2 px-3">
-                      <DeviceChip deviceId={event.device} status={event.deviceStatus} />
+                      <div className="flex flex-col gap-1">
+                        <DeviceChip deviceId={event.device} status={event.deviceStatus} />
+                        <div className="2xl:hidden block">
+                          <AssetChip assetId={event.asset} type={event.assetType} />
+                        </div>
+                      </div>
                     </td>
                   )}
 
-                  {/* Asset (120px) */}
+                  {/* Asset (120px) - hidden on screens below 1440px (Section 8) */}
                   {columns.asset && (
-                    <td className="py-2 px-3">
+                    <td className="py-2 px-3 hidden 2xl:table-cell">
                       <AssetChip assetId={event.asset} type={event.assetType} />
                     </td>
                   )}
@@ -545,6 +559,87 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Compact Card List for screens below 1024px (Mobile & Tablet Portrait) (Section 8) */}
+      <div className="lg:hidden flex flex-col divide-y divide-border min-h-[300px]">
+        {paginatedEvents.map((event) => {
+          const isSelected = selectedIds.has(event.id);
+          const isActive = activeEventId === event.id;
+
+          return (
+            <div
+              key={event.id}
+              onClick={() => onRowClick(event)}
+              className={cn(
+                'p-3 flex items-start gap-3 transition-colors cursor-pointer relative',
+                isSelected ? 'bg-primary/10 hover:bg-primary/15' : isActive ? 'bg-muted/80' : 'hover:bg-muted/40'
+              )}
+            >
+              {/* 2px accent bar for selected item */}
+              {isSelected && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
+
+              {/* Checkbox */}
+              <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => onToggleSelect(event.id)}
+                  aria-label={`Select ${event.id}`}
+                  className="size-4"
+                />
+              </div>
+
+              {/* Snapshot thumbnail */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenLightbox?.(event);
+                }}
+                className="w-14 h-10 rounded-[6px] overflow-hidden bg-slate-900 border border-border/80 shrink-0 relative cursor-zoom-in mt-0.5"
+                title="Click snapshot to preview in lightbox"
+              >
+                <img
+                  src={event.snapshots[0]}
+                  alt={event.id}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Details */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/events/${event.id}`);
+                      }}
+                      className="font-mono text-xs font-semibold text-blue-600 dark:text-[#60a5fa] hover:underline"
+                    >
+                      {formatId(event.id)}
+                    </span>
+                    <Camera className="size-3 text-muted-foreground shrink-0 opacity-70" />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                    <RelativeTime date={event.captured} />
+                  </span>
+                </div>
+
+                <div className="text-xs font-medium text-foreground truncate mt-0.5">
+                  {event.type}
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                  <PriorityBadge priority={event.priority} size="sm" />
+                  <StatusBadge status={event.state} size="sm" />
+                  <DeviceChip deviceId={event.device} status={event.deviceStatus} />
+                  <AssetChip assetId={event.asset} type={event.assetType} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Sticky Table Footer: Showing X to Y of Z, Rows per page, Page Navigation */}

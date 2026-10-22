@@ -8,12 +8,13 @@ import {
   RotateCcw,
   ExternalLink,
   Layers,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/contexts/ToastContext';
 import { MapCanvas } from '@/components/MapCanvas';
 import { devices } from '@/data/devices';
-import { formatId } from '@/lib/utils';
+import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
 
@@ -26,6 +27,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({ event }) => {
   const { addToast } = useToast();
 
   const [zoomSignal, setZoomSignal] = useState(0);
+  const [mobileMapOpen, setMobileMapOpen] = useState(false);
 
   const deviceId = (event as any).device || (event as any).sourceDevice?.id || null;
   const assetId = (event as any).asset || (event as any).affectedAsset?.id || null;
@@ -77,20 +79,34 @@ export const LocationCard: React.FC<LocationCardProps> = ({ event }) => {
           <h3 className="text-sm font-semibold text-foreground">Infrastructure Location</h3>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleOpenOnOverview}
-          className="h-7 px-2 text-xs gap-1 border-border text-primary hover:bg-primary/10"
-          title="Open selected asset on global Overview map"
-        >
-          <ExternalLink className="size-3" />
-          <span>Overview Map</span>
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {/* Mobile Accordion Toggle (< 768px) (Section 8) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setMobileMapOpen((prev) => !prev)}
+            className="md:hidden h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Toggle map view"
+          >
+            <span>{mobileMapOpen ? 'Hide Map' : 'Show Map'}</span>
+            <ChevronDown className={cn('size-3.5 transition-transform duration-200', mobileMapOpen && 'rotate-180')} />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenOnOverview}
+            className="h-7 px-2 text-xs gap-1 border-border text-primary hover:bg-primary/10 cursor-pointer"
+            title="Open selected asset on global Overview map"
+          >
+            <ExternalLink className="size-3" />
+            <span>Overview Map</span>
+          </Button>
+        </div>
       </div>
 
-      {/* 2. Mini Satellite Map Canvas Viewport */}
-      <div className="relative h-64 w-full bg-slate-950 overflow-hidden">
+      {/* 2. Mini Satellite Map Canvas Viewport (collapsible accordion below 768px) (Section 8) */}
+      <div className={cn("relative w-full bg-slate-950 overflow-hidden transition-all duration-300", mobileMapOpen ? "h-64" : "hidden md:block md:h-64")}>
         <MapCanvas
           selectedId={deviceId ? deviceId.replace('-', '_') : null}
           onMarkerClick={() => {}}

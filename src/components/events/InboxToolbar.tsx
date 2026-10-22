@@ -23,6 +23,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet';
 import { useEvents, type SavedView } from '@/contexts/EventsContext';
 import { cn, formatId } from '@/lib/utils';
 import { getStatusCounts } from '@/data/eventSelectors';
@@ -67,6 +75,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
   const [saveViewOpen, setSaveViewOpen] = useState(false);
   const [editingViewId, setEditingViewId] = useState<string | null>(null);
   const [editingViewName, setEditingViewName] = useState('');
+  const [mobileFilterSheetOpen, setMobileFilterSheetOpen] = useState(false);
 
   // Local search state with 250ms debouncing (Section 3.4)
   const [localSearch, setLocalSearch] = useState(filters.search);
@@ -496,8 +505,8 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
         </div>
       </div>
 
-      {/* Lower Filter Chips Strip (Section 3.5) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      {/* Lower Filter Chips Strip (Desktop & Tablet >= 768px) (Section 3.5) */}
+      <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
         <span className="text-muted-foreground flex items-center gap-1 shrink-0 font-medium mr-1">
           <Filter className="size-3" />
           <span>Filter:</span>
@@ -829,6 +838,214 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
           </button>
         )}
       </div>
+
+      {/* Mobile Filter Trigger Strip (< 768px) (Section 8) */}
+      <div className="flex md:hidden items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setMobileFilterSheetOpen(true)}
+          className={cn(
+            'h-7 px-2.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 cursor-pointer',
+            activePills.length > 0
+              ? 'border-primary text-primary bg-primary/10'
+              : 'border-border text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Filter className="size-3" />
+          <span>Filters{activePills.length > 0 ? ` (${activePills.length})` : ''}</span>
+          <ChevronDown className="size-3 opacity-60" />
+        </Button>
+
+        {/* Scrollable active pills preview */}
+        {activePills.map((pill) => (
+          <span
+            key={pill.key}
+            className="h-7 pl-2.5 pr-1.5 rounded-full bg-primary/10 border border-primary/40 text-primary text-xs font-medium flex items-center gap-1 shrink-0"
+          >
+            <span>{pill.label}: <strong>{pill.value}</strong></span>
+            <button
+              type="button"
+              onClick={() => removeFilter(pill.key)}
+              className="size-4 rounded-full hover:bg-primary/20 flex items-center justify-center cursor-pointer"
+              title={`Remove ${pill.label} filter`}
+            >
+              <X className="size-3" />
+            </button>
+          </span>
+        ))}
+
+        {activePills.length > 0 && (
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="text-xs text-muted-foreground hover:text-foreground underline shrink-0 cursor-pointer ml-1"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      {/* Mobile Bottom Filter Sheet (< 768px) (Section 8) */}
+      <Sheet open={mobileFilterSheetOpen} onOpenChange={setMobileFilterSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl p-0">
+          <SheetHeader className="p-4 border-b border-border flex flex-row items-center justify-between">
+            <div>
+              <SheetTitle className="text-base font-semibold">Filter Events</SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground">
+                Showing {filteredCount} matching events
+              </SheetDescription>
+            </div>
+            {activePills.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-xs text-primary font-medium hover:underline mr-6 cursor-pointer"
+              >
+                Clear all
+              </button>
+            )}
+          </SheetHeader>
+
+          <div className="p-4 space-y-4 text-xs">
+            {/* Priority Section */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-2">Priority</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {['Critical', 'High', 'Medium', 'Low'].map((p) => {
+                  const isChecked = (filters.priority ? filters.priority.split(',') : []).includes(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => handleTogglePriority(p)}
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-lg border text-left transition-colors cursor-pointer',
+                        isChecked ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                      )}
+                    >
+                      <Checkbox checked={isChecked} className="size-3.5 pointer-events-none" />
+                      <span>{p}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Status Section */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-2">Status</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'New', label: 'New' },
+                  { id: 'Acknowledged', label: 'Acknowledged' },
+                  { id: 'Case Created', label: 'Case Created' },
+                  { id: 'Resolved', label: 'Resolved' },
+                ].map((s) => {
+                  const isChecked = (filters.status ? filters.status.split(',') : []).includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleToggleStatus(s.id)}
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-lg border text-left transition-colors cursor-pointer',
+                        isChecked ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                      )}
+                    >
+                      <Checkbox checked={isChecked} className="size-3.5 pointer-events-none" />
+                      <span>{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Case Section */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-2">Operational Case</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: undefined, label: 'Any' },
+                  { id: 'with_case', label: 'With case' },
+                  { id: 'without_case', label: 'Without case' },
+                ].map((c) => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => updateFilter('caseFilter', c.id)}
+                    className={cn(
+                      'p-2 rounded-lg border text-center transition-colors cursor-pointer',
+                      filters.caseFilter === c.id ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                    )}
+                  >
+                    <span>{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Section */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-2">Time (MYT)</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: undefined, label: 'All time' },
+                  { id: 'today', label: 'Today' },
+                  { id: '24h', label: 'Last 24 hours' },
+                  { id: '7d', label: 'Last 7 days' },
+                  { id: '30d', label: 'Last 30 days' },
+                ].map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => updateFilter('timeRange', t.id)}
+                    className={cn(
+                      'p-2 rounded-lg border text-center transition-colors cursor-pointer',
+                      filters.timeRange === t.id ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                    )}
+                  >
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Source Section */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-2">Source</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {['Edge service', 'Manual', 'Partner feed'].map((src) => {
+                  const isChecked = (filters.source ? filters.source.split(',') : []).includes(src);
+                  return (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => handleToggleSource(src)}
+                      className={cn(
+                        'flex items-center gap-1.5 p-2 rounded-lg border text-left transition-colors cursor-pointer',
+                        isChecked ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                      )}
+                    >
+                      <Checkbox checked={isChecked} className="size-3 pointer-events-none" />
+                      <span className="truncate">{src}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <SheetFooter className="p-4 border-t border-border">
+            <Button
+              className="w-full h-9 bg-primary text-primary-foreground font-semibold cursor-pointer"
+              onClick={() => setMobileFilterSheetOpen(false)}
+            >
+              Apply Filters ({filteredCount} results)
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

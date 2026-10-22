@@ -64,7 +64,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
   ];
 
   return (
-    <div className="h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-x divide-border overflow-hidden mb-4 select-none">
+    <div className="h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-4 divide-x divide-border mb-4 select-none shrink-0">
       {cells.map((cell) => {
         const isActive = activeQuickFilter === cell.key;
         return (
@@ -73,7 +73,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
             type="button"
             onClick={() => onSelectQuickFilter(isActive ? null : cell.key)}
             className={cn(
-              'flex flex-col justify-center px-4 h-full text-left transition-all cursor-pointer group',
+              'flex flex-col justify-center px-4 h-full text-left transition-all cursor-pointer group shrink-0 min-w-[190px] lg:min-w-0 lg:shrink',
               isActive ? cell.activeClass : 'hover:bg-muted/40'
             )}
             title={`Filter by ${cell.label}`}
