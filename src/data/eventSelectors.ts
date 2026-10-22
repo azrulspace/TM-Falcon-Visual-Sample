@@ -4,13 +4,13 @@ import { formatAbsoluteMYT } from '../lib/dateTime.ts';
 export interface EventFilterState {
   tab?: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
   search?: string;
-  priority?: string[]; // array for multi-select
-  status?: string[];   // array for multi-select
+  priority?: string[] | string; // array or comma-separated string for multi-select
+  status?: string[] | string;   // array or comma-separated string for multi-select
   caseFilter?: 'all' | 'with_case' | 'without_case' | string;
   timeRange?: 'today' | '24h' | '7d' | '30d' | 'custom' | string;
   customTimeStart?: string;
   customTimeEnd?: string;
-  source?: string[];
+  source?: string[] | string;
   device?: string;
   asset?: string;
   capturedBefore?: string; // for Alert history scoped view
@@ -67,11 +67,15 @@ export function matchEvent(
   if (filters.asset && e.asset !== filters.asset) return false;
   if (filters.device && e.device !== filters.device) return false;
   if (filters.capturedBefore) {
-    // Only return events captured BEFORE the reference event ID
-    // Since IDs are descending (EVT-0258 is newest), "before" means ID < capturedBefore
-    const targetNum = parseInt(filters.capturedBefore.replace(/\D/g, ''), 10);
-    const currNum = parseInt(e.id.replace(/\D/g, ''), 10);
-    if (!isNaN(targetNum) && !isNaN(currNum) && currNum >= targetNum) return false;
+    if (filters.capturedBefore.startsWith('EVT-')) {
+      const targetNum = parseInt(filters.capturedBefore.replace(/\D/g, ''), 10);
+      const currNum = parseInt(e.id.replace(/\D/g, ''), 10);
+      if (!isNaN(targetNum) && !isNaN(currNum) && currNum >= targetNum) return false;
+    } else {
+      const targetTime = new Date(filters.capturedBefore).getTime();
+      const currTime = new Date(e.captured).getTime();
+      if (!isNaN(targetTime) && !isNaN(currTime) && currTime >= targetTime) return false;
+    }
   }
 
   // 2. Status / Tab filter (only if not ignored for faceted status counts)
@@ -84,14 +88,17 @@ export function matchEvent(
     }
 
     if (filters.status && filters.status.length > 0) {
-      const normStatuses = filters.status.map((s) => (s === 'Case Created' ? 'In case' : s));
+      const raw: string[] = Array.isArray(filters.status) ? filters.status : (filters.status as string).split(',');
+      const normStatuses = raw.map((s: string) => (s.trim() === 'Case Created' ? 'In case' : s.trim()));
       if (!normStatuses.includes(e.state)) return false;
     }
   }
 
   // 3. Priority filter (multi-select)
   if (filters.priority && filters.priority.length > 0) {
-    if (!filters.priority.includes(e.priority)) return false;
+    const raw: string[] = Array.isArray(filters.priority) ? filters.priority : (filters.priority as string).split(',');
+    const norm = raw.map((p: string) => p.trim());
+    if (!norm.includes(e.priority)) return false;
   }
 
   // 4. Case filter
@@ -126,7 +133,9 @@ export function matchEvent(
 
   // 6. Source filter
   if (filters.source && filters.source.length > 0) {
-    if (!filters.source.includes(e.source)) return false;
+    const raw: string[] = Array.isArray(filters.source) ? filters.source : (filters.source as string).split(',');
+    const norm = raw.map((s: string) => s.trim());
+    if (!norm.includes(e.source)) return false;
   }
 
   // 7. Search query

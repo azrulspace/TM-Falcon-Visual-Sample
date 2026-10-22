@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { events } from '../data/events.ts';
 import { devices } from '../data/devices.ts';
 import { formatId } from '../lib/utils.ts';
-import { getStatusCounts, getKpiCounts } from '../data/eventSelectors.ts';
+import { getStatusCounts, getKpiCounts, filterEvents } from '../data/eventSelectors.ts';
 
 test('Event dataset integrity: exactly 258 enterprise events', () => {
   assert.equal(events.length, 258, 'Total event dataset must contain exactly 258 events');
@@ -101,4 +101,41 @@ test('Phase 2 Invariant: Search matches event ID, type, device ID, asset ID, and
 
   const byRule = getStatusCounts(events, { search: 'Motion Detection' });
   assert.ok(byRule.all >= 117, 'Search by rule matches motion detection');
+});
+
+test('Phase 3 Invariant: Multi-select Priority and Status filters', () => {
+  // Multi-select Priority: Critical,High
+  const critHigh = filterEvents(events, { priority: 'Critical,High' });
+  assert.equal(critHigh.length, 172, 'Priority Critical,High must return exactly 172 events');
+
+  // Multi-select Status: New,Acknowledged
+  const newAck = filterEvents(events, { status: 'New,Acknowledged' });
+  assert.equal(newAck.length, 168, 'Status New,Acknowledged must return exactly 83 + 85 = 168 events');
+
+  // Case filters
+  const withoutCase = filterEvents(events, { caseFilter: 'without_case' });
+  assert.equal(withoutCase.length, 218, 'Without case must return 218 events');
+
+  const withCase = filterEvents(events, { caseFilter: 'with_case' });
+  assert.equal(withCase.length, 40, 'With case must return 40 events');
+
+  // Time filter: today
+  const todayEvts = filterEvents(events, { timeRange: 'today' });
+  assert.equal(todayEvts.length, 122, 'Today time filter must return 122 events');
+});
+
+test('Phase 3 Invariant: Alert history context filter (asset + capturedBefore)', () => {
+  const scoped = filterEvents(events, {
+    asset: 'CBL-005',
+    capturedBefore: 'EVT-0258',
+  });
+
+  // In DETAIL_FINAL, Alert history card on CBL-005 records exactly 130 older events before EVT-0258.
+  // The query count and the card count must agree.
+  assert.equal(scoped.length, 130, 'Must return exactly 130 older events captured on CBL-005 before EVT-0258');
+  for (const e of scoped) {
+    assert.equal(e.asset, 'CBL-005');
+    const currNum = parseInt(e.id.replace(/\D/g, ''), 10);
+    assert.ok(currNum < 258, `Event ${e.id} must be before EVT-0258`);
+  }
 });

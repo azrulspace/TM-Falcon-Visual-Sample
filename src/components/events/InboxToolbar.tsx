@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Search,
   Filter,
@@ -9,6 +9,9 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Trash2,
+  Edit2,
+  Star,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,7 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useEvents } from '@/contexts/EventsContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useEvents, type SavedView } from '@/contexts/EventsContext';
 import { cn } from '@/lib/utils';
 import { getStatusCounts } from '@/data/eventSelectors';
 
@@ -27,6 +31,8 @@ export interface InboxFilters {
   tab: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
   search: string;
   timeRange?: string;
+  customTimeStart?: string;
+  customTimeEnd?: string;
   priority?: string;
   status?: string;
   caseFilter?: string;
@@ -34,6 +40,8 @@ export interface InboxFilters {
   asset?: string;
   type?: string;
   source?: string;
+  capturedBefore?: string;
+  fromEventId?: string;
 }
 
 export interface InboxToolbarProps {
@@ -51,27 +59,17 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
   setViewMode,
   filteredCount,
 }) => {
-  const { events, savedViews, saveView, deleteSavedView } = useEvents();
+  const { events, savedViews, saveView, renameSavedView, deleteSavedView, setDefaultView } = useEvents();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [saveViewName, setSaveViewName] = React.useState('');
-  const [saveViewOpen, setSaveViewOpen] = React.useState(false);
 
-  // Faceted tab counts respecting all active filters except status
-  const tabCounts = React.useMemo(() => {
-    return getStatusCounts(events, {
-      search: filters.search,
-      priority: filters.priority ? filters.priority.split(',') : undefined,
-      status: filters.status ? filters.status.split(',') : undefined,
-      caseFilter: filters.caseFilter,
-      timeRange: filters.timeRange,
-      device: filters.device,
-      asset: filters.asset,
-      source: filters.source ? filters.source.split(',') : undefined,
-    });
-  }, [events, filters]);
+  // Saved Views state
+  const [saveViewName, setSaveViewName] = useState('');
+  const [saveViewOpen, setSaveViewOpen] = useState(false);
+  const [editingViewId, setEditingViewId] = useState<string | null>(null);
+  const [editingViewName, setEditingViewName] = useState('');
 
   // Local search state with 250ms debouncing (Section 3.4)
-  const [localSearch, setLocalSearch] = React.useState(filters.search);
+  const [localSearch, setLocalSearch] = useState(filters.search);
 
   useEffect(() => {
     setLocalSearch(filters.search);
@@ -89,7 +87,11 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
   // Keyboard shortcut '/' to focus search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -97,6 +99,22 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Faceted tab counts respecting all active filters except status
+  const tabCounts = React.useMemo(() => {
+    return getStatusCounts(events, {
+      search: filters.search,
+      priority: filters.priority ? filters.priority.split(',') : undefined,
+      status: filters.status ? filters.status.split(',') : undefined,
+      caseFilter: filters.caseFilter,
+      timeRange: filters.timeRange,
+      device: filters.device,
+      asset: filters.asset,
+      source: filters.source ? filters.source.split(',') : undefined,
+      capturedBefore: filters.capturedBefore,
+      fromEventId: filters.fromEventId,
+    });
+  }, [events, filters]);
 
   // Filter modifiers
   const updateFilter = (key: keyof InboxFilters, val: any) => {
@@ -118,32 +136,95 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
     });
   };
 
-  // Active filter pills list
+  // Multi-select Priority Handler
+  const handleTogglePriority = (p: string) => {
+    const current = filters.priority ? filters.priority.split(',') : [];
+    let updated: string[];
+    if (current.includes(p)) {
+      updated = current.filter((x) => x !== p);
+    } else {
+      updated = [...current, p];
+    }
+    updateFilter('priority', updated.length > 0 ? updated.join(',') : undefined);
+  };
+
+  // Multi-select Status Handler (Selecting several statuses sets tab to 'all')
+  const handleToggleStatus = (s: string) => {
+    const current = filters.status ? filters.status.split(',') : [];
+    let updated: string[];
+    if (current.includes(s)) {
+      updated = current.filter((x) => x !== s);
+    } else {
+      updated = [...current, s];
+    }
+    setFilters((prev) => ({
+      ...prev,
+      tab: 'all',
+      status: updated.length > 0 ? updated.join(',') : undefined,
+    }));
+  };
+
+  // Multi-select Source Handler
+  const handleToggleSource = (src: string) => {
+    const current = filters.source ? filters.source.split(',') : [];
+    let updated: string[];
+    if (current.includes(src)) {
+      updated = current.filter((x) => x !== src);
+    } else {
+      updated = [...current, src];
+    }
+    updateFilter('source', updated.length > 0 ? updated.join(',') : undefined);
+  };
+
+  // Case search local state
+  const [caseSearchInput, setCaseSearchInput] = useState('');
+
+  // Active filter pills list (Section 3.5)
   const activePills = React.useMemo(() => {
     const pills: { key: keyof InboxFilters; label: string; value: string }[] = [];
-    if (filters.priority) pills.push({ key: 'priority', label: 'Priority', value: filters.priority });
-    if (filters.status) pills.push({ key: 'status', label: 'Status', value: filters.status });
-    if (filters.caseFilter) pills.push({ key: 'caseFilter', label: 'Case', value: filters.caseFilter === 'with_case' ? 'With case' : 'No case' });
+    if (filters.priority) pills.push({ key: 'priority', label: 'Priority', value: filters.priority.replace(/,/g, ', ') });
+    if (filters.status) pills.push({ key: 'status', label: 'Status', value: filters.status.replace(/,/g, ', ') });
+    if (filters.caseFilter) {
+      const valLabel =
+        filters.caseFilter === 'with_case'
+          ? 'With case'
+          : filters.caseFilter === 'without_case'
+          ? 'Without case'
+          : filters.caseFilter;
+      pills.push({ key: 'caseFilter', label: 'Case', value: valLabel });
+    }
     if (filters.timeRange) pills.push({ key: 'timeRange', label: 'Time', value: filters.timeRange });
+    if (filters.source) pills.push({ key: 'source', label: 'Source', value: filters.source.replace(/,/g, ', ') });
     if (filters.device) pills.push({ key: 'device', label: 'Device', value: filters.device });
     if (filters.asset) pills.push({ key: 'asset', label: 'Asset', value: filters.asset });
-    if (filters.type) pills.push({ key: 'type', label: 'Type', value: filters.type });
-    if (filters.source) pills.push({ key: 'source', label: 'Source', value: filters.source });
+    if (filters.capturedBefore) pills.push({ key: 'capturedBefore', label: 'Captured before', value: filters.capturedBefore });
     return pills;
   }, [filters]);
 
-  const handleApplySavedView = (view: typeof savedViews[0]) => {
+  // Saved View Apply
+  const handleApplySavedView = (view: SavedView) => {
     setFilters((prev) => ({
       ...prev,
-      ...view.filters,
+      tab: view.filters.tab || 'all',
+      search: view.filters.search || '',
+      priority: view.filters.priority,
+      status: view.filters.status,
+      caseFilter: view.filters.caseFilter,
+      timeRange: view.filters.timeRange,
+      device: view.filters.device,
+      asset: view.filters.asset,
+      source: view.filters.source,
     }));
+    if (view.filters.viewMode) {
+      setViewMode(view.filters.viewMode);
+    }
   };
 
   return (
     <div className="flex flex-col gap-2.5 mb-3 select-none">
-      {/* Upper Toolbar: Tabs, Search, View Mode, Saved Views */}
+      {/* Upper Toolbar: Status Tabs, Search, Views, View Mode Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Quick View Tabs matching Section 6.3 */}
+        {/* Quick View Tabs matching Section 3.3 & INBOX_FINAL */}
         <div className="flex items-center gap-1 p-0.5 rounded-lg border border-border bg-muted/40 shrink-0 overflow-x-auto">
           {[
             { id: 'all' as const, label: 'All', count: tabCounts.all },
@@ -152,11 +233,18 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             { id: 'in_case' as const, label: 'Case Created', count: tabCounts.in_case },
             { id: 'resolved' as const, label: 'Resolved', count: tabCounts.resolved },
           ].map((tab) => {
-            const isActive = filters.tab === tab.id;
+            const isActive = filters.tab === tab.id && !filters.status;
             return (
               <button
                 key={tab.id}
-                onClick={() => updateFilter('tab', tab.id)}
+                type="button"
+                onClick={() => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    tab: tab.id,
+                    status: undefined, // Quick tab sets single status focus
+                  }));
+                }}
                 className={cn(
                   'flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer',
                   isActive
@@ -178,9 +266,9 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
           })}
         </div>
 
-        {/* Right side: Search, Saved Views, View Mode Switcher */}
+        {/* Right side: Search, Saved Views, View Mode Switcher, Result Count */}
         <div className="flex items-center gap-2">
-          {/* Search Input with / badge */}
+          {/* Search Input with / badge (Section 3.4) */}
           <div className="relative w-64 lg:w-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
@@ -193,6 +281,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             />
             {localSearch ? (
               <button
+                type="button"
                 onClick={() => {
                   setLocalSearch('');
                   updateFilter('search', '');
@@ -210,54 +299,120 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             )}
           </div>
 
-          {/* Saved Views Dropdown */}
+          {/* Saved Views Dropdown (Section 3.4) */}
           <DropdownMenu>
             <DropdownMenuTrigger render={
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-2.5 text-xs gap-1.5 border-border hover:bg-muted"
-                title="Saved views"
+                className="h-9 px-2.5 text-xs gap-1.5 border-border hover:bg-muted font-medium"
+                title="Views dropdown"
               >
                 <Bookmark className="size-3.5 text-muted-foreground" />
-                <span className="hidden sm:inline">Views</span>
+                <span>Views</span>
               </Button>
             } />
-            <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
-              <DropdownMenuLabel className="text-xs font-semibold">Saved Views</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-64 bg-popover border border-border text-xs z-50">
+              <DropdownMenuLabel className="text-xs font-semibold px-2 py-1">Saved Views</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {savedViews.map((sv) => (
-                <div key={sv.id} className="flex items-center justify-between px-2 py-1.5 hover:bg-muted/60 rounded cursor-pointer group">
-                  <div className="flex items-center gap-1.5 truncate flex-1" onClick={() => handleApplySavedView(sv)}>
-                    <Bookmark className="size-3 text-primary shrink-0" />
-                    <span className="truncate">{sv.name}</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteSavedView(sv.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive text-muted-foreground"
-                    title="Delete saved view"
+
+              {/* Default Views list */}
+              <div className="flex flex-col gap-0.5 p-1">
+                {savedViews.map((sv) => (
+                  <div
+                    key={sv.id}
+                    className="flex items-center justify-between px-2 py-1.5 hover:bg-muted/60 rounded cursor-pointer group"
                   >
-                    <Trash2 className="size-3" />
-                  </button>
-                </div>
-              ))}
+                    {editingViewId === sv.id ? (
+                      <div className="flex items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          value={editingViewName}
+                          onChange={(e) => setEditingViewName(e.target.value)}
+                          className="h-6 px-1.5 text-xs border border-border rounded bg-card flex-1"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => {
+                            renameSavedView(sv.id, editingViewName);
+                            setEditingViewId(null);
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className="flex items-center gap-1.5 truncate flex-1"
+                          onClick={() => handleApplySavedView(sv)}
+                        >
+                          <Bookmark className={cn('size-3 shrink-0', sv.isDefault ? 'text-amber-500 fill-amber-500' : 'text-primary')} />
+                          <span className="truncate">{sv.name}</span>
+                          {sv.isDefault && (
+                            <span className="text-[9px] px-1 rounded bg-amber-500/10 text-amber-500 font-semibold">Default</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDefaultView(sv.id);
+                            }}
+                            className="p-1 hover:text-amber-500 text-muted-foreground"
+                            title="Set as default"
+                          >
+                            <Star className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingViewId(sv.id);
+                              setEditingViewName(sv.name);
+                            }}
+                            className="p-1 hover:text-primary text-muted-foreground"
+                            title="Rename view"
+                          >
+                            <Edit2 className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSavedView(sv.id);
+                            }}
+                            className="p-1 hover:text-destructive text-muted-foreground"
+                            title="Delete view"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
               <DropdownMenuSeparator />
+
+              {/* Save current filters */}
               <div className="p-2">
                 <Popover open={saveViewOpen} onOpenChange={setSaveViewOpen}>
                   <PopoverTrigger render={
                     <Button variant="ghost" size="sm" className="w-full h-7 text-xs justify-start gap-1.5 text-primary">
                       <Plus className="size-3" />
-                      <span>Save current filters</span>
+                      <span>Save current view</span>
                     </Button>
                   } />
                   <PopoverContent align="end" className="w-64 p-3 bg-popover border border-border shadow-xl z-50 text-xs">
                     <div className="font-semibold text-foreground mb-2">Save current view</div>
                     <input
                       type="text"
-                      placeholder="e.g. Critical Camera Faults"
+                      placeholder="e.g. Critical Camera Alerts"
                       value={saveViewName}
                       onChange={(e) => setSaveViewName(e.target.value)}
                       className="w-full h-8 px-2 text-xs border border-border rounded mb-3 bg-card"
@@ -268,7 +423,18 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
                         size="sm"
                         disabled={!saveViewName.trim()}
                         onClick={() => {
-                          saveView(saveViewName.trim(), filters);
+                          saveView(saveViewName.trim(), {
+                            tab: filters.tab,
+                            search: filters.search,
+                            priority: filters.priority,
+                            status: filters.status,
+                            caseFilter: filters.caseFilter,
+                            timeRange: filters.timeRange,
+                            device: filters.device,
+                            asset: filters.asset,
+                            source: filters.source,
+                            viewMode,
+                          });
                           setSaveViewName('');
                           setSaveViewOpen(false);
                         }}
@@ -282,9 +448,10 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* View Mode Toggle: Table and Gallery ONLY */}
+          {/* View Mode Toggle: Table and Gallery ONLY (Section 3.4) */}
           <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40">
             <button
+              type="button"
               onClick={() => setViewMode('table')}
               className={cn(
                 'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
@@ -296,6 +463,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               <TableIcon className="size-4" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('gallery')}
               className={cn(
                 'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
@@ -307,140 +475,319 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               <LayoutGrid className="size-4" />
             </button>
           </div>
+
+          {/* Result Count Indicator matching INBOX_FINAL */}
+          <span className="text-xs text-muted-foreground ml-2 shrink-0 font-medium tabular-nums hidden sm:inline">
+            {filteredCount} events
+          </span>
         </div>
       </div>
 
-      {/* Lower Filter Chips Strip */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+      {/* Lower Filter Chips Strip (Section 3.5) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
         <span className="text-muted-foreground flex items-center gap-1 shrink-0 font-medium mr-1">
           <Filter className="size-3" />
           <span>Filter:</span>
         </span>
 
-        {/* Priority Filter */}
+        {/* 1. Priority Popover (Multiple Select) */}
         <Popover>
           <PopoverTrigger render={
-            <button className={cn(
-              'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
-              filters.priority ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            )}>
-              <span>Priority{filters.priority ? `: ${filters.priority}` : ''}</span>
+            <button
+              type="button"
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                filters.priority ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <span>Priority{filters.priority ? `: ${filters.priority.replace(/,/g, ', ')}` : ''}</span>
+              <ChevronDown className="size-3 opacity-60" />
             </button>
           } />
-          <PopoverContent className="w-40 p-1.5 bg-popover border border-border shadow-lg z-50 text-xs">
-            {['Critical', 'High', 'Medium', 'Low'].map((p) => (
-              <button
-                key={p}
-                onClick={() => updateFilter('priority', filters.priority === p ? undefined : p)}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
-              >
-                <span>{p}</span>
-                {filters.priority === p && <Check className="size-3 text-primary" />}
-              </button>
-            ))}
+          <PopoverContent className="w-48 p-2 bg-popover border border-border shadow-lg z-50 text-xs">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border font-semibold">
+              <span>Filter Priority</span>
+              {filters.priority && (
+                <button
+                  type="button"
+                  onClick={() => updateFilter('priority', undefined)}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              {['Critical', 'High', 'Medium', 'Low'].map((p) => {
+                const isChecked = (filters.priority ? filters.priority.split(',') : []).includes(p);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handleTogglePriority(p)}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isChecked} className="size-3.5 pointer-events-none" />
+                      <span>{p}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </PopoverContent>
         </Popover>
 
-        {/* Status Filter */}
+        {/* 2. Status Popover (Multiple Select) */}
         <Popover>
           <PopoverTrigger render={
-            <button className={cn(
-              'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
-              filters.status ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            )}>
-              <span>Status{filters.status ? `: ${filters.status}` : ''}</span>
+            <button
+              type="button"
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                filters.status ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <span>Status{filters.status ? `: ${filters.status.replace(/,/g, ', ')}` : ''}</span>
+              <ChevronDown className="size-3 opacity-60" />
             </button>
           } />
-          <PopoverContent className="w-44 p-1.5 bg-popover border border-border shadow-lg z-50 text-xs">
-            {['New', 'Acknowledged', 'In case', 'Dismissed', 'Resolved'].map((s) => (
-              <button
-                key={s}
-                onClick={() => updateFilter('status', filters.status === s ? undefined : s)}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
-              >
-                <span>{s}</span>
-                {filters.status === s && <Check className="size-3 text-primary" />}
-              </button>
-            ))}
+          <PopoverContent className="w-52 p-2 bg-popover border border-border shadow-lg z-50 text-xs">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border font-semibold">
+              <span>Filter Status</span>
+              {filters.status && (
+                <button
+                  type="button"
+                  onClick={() => updateFilter('status', undefined)}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              {['New', 'Acknowledged', 'Case Created', 'Resolved'].map((s) => {
+                const isChecked = (filters.status ? filters.status.split(',') : []).includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleToggleStatus(s)}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isChecked} className="size-3.5 pointer-events-none" />
+                      <span>{s}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </PopoverContent>
         </Popover>
 
-        {/* Case Filter */}
+        {/* 3. Case Popover (Any, With case, Without case, Case ID search) */}
         <Popover>
           <PopoverTrigger render={
-            <button className={cn(
-              'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
-              filters.caseFilter ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            )}>
-              <span>Case{filters.caseFilter ? `: ${filters.caseFilter === 'with_case' ? 'With case' : 'No case'}` : ''}</span>
+            <button
+              type="button"
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                filters.caseFilter ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <span>
+                Case
+                {filters.caseFilter
+                  ? `: ${
+                      filters.caseFilter === 'with_case'
+                        ? 'With case'
+                        : filters.caseFilter === 'without_case'
+                        ? 'Without case'
+                        : filters.caseFilter
+                    }`
+                  : ''}
+              </span>
+              <ChevronDown className="size-3 opacity-60" />
             </button>
           } />
-          <PopoverContent className="w-36 p-1.5 bg-popover border border-border shadow-lg z-50 text-xs">
-            {[
-              { id: 'with_case', label: 'With case' },
-              { id: 'without_case', label: 'No case' },
-            ].map((c) => (
-              <button
-                key={c.id}
-                onClick={() => updateFilter('caseFilter', filters.caseFilter === c.id ? undefined : c.id)}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
-              >
-                <span>{c.label}</span>
-                {filters.caseFilter === c.id && <Check className="size-3 text-primary" />}
-              </button>
-            ))}
+          <PopoverContent className="w-56 p-2 bg-popover border border-border shadow-lg z-50 text-xs">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border font-semibold">
+              <span>Filter Case</span>
+              {filters.caseFilter && (
+                <button
+                  type="button"
+                  onClick={() => updateFilter('caseFilter', undefined)}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              {[
+                { id: undefined, label: 'Any' },
+                { id: 'with_case', label: 'With case' },
+                { id: 'without_case', label: 'Without case' },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => updateFilter('caseFilter', opt.id)}
+                  className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
+                >
+                  <span>{opt.label}</span>
+                  {filters.caseFilter === opt.id && <Check className="size-3.5 text-primary" />}
+                </button>
+              ))}
+              <div className="pt-2 border-t border-border mt-1">
+                <span className="text-[10px] text-muted-foreground block mb-1">Search Case ID</span>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    placeholder="e.g. CAS-0001"
+                    value={caseSearchInput}
+                    onChange={(e) => setCaseSearchInput(e.target.value)}
+                    className="h-7 px-2 text-xs border border-border rounded bg-card flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    disabled={!caseSearchInput.trim()}
+                    onClick={() => {
+                      updateFilter('caseFilter', caseSearchInput.trim().toUpperCase());
+                      setCaseSearchInput('');
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
 
-        {/* Time Range Filter */}
+        {/* 4. Time Popover (Today, 24h, 7d, 30d, Custom range) */}
         <Popover>
           <PopoverTrigger render={
-            <button className={cn(
-              'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
-              filters.timeRange ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            )}>
-              <span>Time{filters.timeRange ? `: ${filters.timeRange}` : ''}</span>
+            <button
+              type="button"
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                filters.timeRange ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <span>
+                Time
+                {filters.timeRange
+                  ? `: ${
+                      filters.timeRange === 'today'
+                        ? 'Today'
+                        : filters.timeRange === '24h'
+                        ? 'Last 24 hours'
+                        : filters.timeRange === '7d'
+                        ? 'Last 7 days'
+                        : filters.timeRange === '30d'
+                        ? 'Last 30 days'
+                        : filters.timeRange
+                    }`
+                  : ''}
+              </span>
+              <ChevronDown className="size-3 opacity-60" />
             </button>
           } />
-          <PopoverContent className="w-40 p-1.5 bg-popover border border-border shadow-lg z-50 text-xs">
-            {['Last 1 hour', 'Last 24 hours', 'Last 7 days', 'Last 30 days'].map((t) => (
-              <button
-                key={t}
-                onClick={() => updateFilter('timeRange', filters.timeRange === t ? undefined : t)}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
-              >
-                <span>{t}</span>
-                {filters.timeRange === t && <Check className="size-3 text-primary" />}
-              </button>
-            ))}
+          <PopoverContent className="w-56 p-2 bg-popover border border-border shadow-lg z-50 text-xs">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border font-semibold">
+              <span>Filter Time (MYT)</span>
+              {filters.timeRange && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateFilter('timeRange', undefined);
+                    updateFilter('customTimeStart', undefined);
+                    updateFilter('customTimeEnd', undefined);
+                  }}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              {[
+                { id: undefined, label: 'All time' },
+                { id: 'today', label: 'Today (from 00:00 MYT)' },
+                { id: '24h', label: 'Last 24 hours' },
+                { id: '7d', label: 'Last 7 days' },
+                { id: '30d', label: 'Last 30 days' },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => {
+                    updateFilter('timeRange', opt.id);
+                    updateFilter('customTimeStart', undefined);
+                    updateFilter('customTimeEnd', undefined);
+                  }}
+                  className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
+                >
+                  <span>{opt.label}</span>
+                  {filters.timeRange === opt.id && <Check className="size-3.5 text-primary" />}
+                </button>
+              ))}
+            </div>
           </PopoverContent>
         </Popover>
 
-        {/* Source Filter */}
+        {/* 5. Source Popover (Edge service, Manual, Partner feed) */}
         <Popover>
           <PopoverTrigger render={
-            <button className={cn(
-              'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
-              filters.source ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-            )}>
-              <span>Source{filters.source ? `: ${filters.source}` : ''}</span>
+            <button
+              type="button"
+              className={cn(
+                'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                filters.source ? 'bg-primary/10 border-primary text-primary font-semibold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <span>Source{filters.source ? `: ${filters.source.replace(/,/g, ', ')}` : ''}</span>
+              <ChevronDown className="size-3 opacity-60" />
             </button>
           } />
-          <PopoverContent className="w-40 p-1.5 bg-popover border border-border shadow-lg z-50 text-xs">
-            {['Edge service', 'Manual', 'Partner feed'].map((src) => (
-              <button
-                key={src}
-                onClick={() => updateFilter('source', filters.source === src ? undefined : src)}
-                className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted text-left cursor-pointer"
-              >
-                <span>{src}</span>
-                {filters.source === src && <Check className="size-3 text-primary" />}
-              </button>
-            ))}
+          <PopoverContent className="w-52 p-2 bg-popover border border-border shadow-lg z-50 text-xs">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border font-semibold">
+              <span>Filter Source</span>
+              {filters.source && (
+                <button
+                  type="button"
+                  onClick={() => updateFilter('source', undefined)}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              {['Edge service', 'Manual', 'Partner feed'].map((src) => {
+                const isChecked = (filters.source ? filters.source.split(',') : []).includes(src);
+                return (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => handleToggleSource(src)}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isChecked} className="size-3.5 pointer-events-none" />
+                      <span>{src}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </PopoverContent>
         </Popover>
 
-        {/* Active Removable Chips */}
+        {/* Active Removable Chips (Priority, Status, Case, Time, Source, Device, Asset, CapturedBefore) */}
         {activePills.map((pill) => (
           <span
             key={pill.key}
@@ -448,6 +795,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
           >
             <span>{pill.label}: <strong>{pill.value}</strong></span>
             <button
+              type="button"
               onClick={() => removeFilter(pill.key)}
               className="size-4 rounded-full hover:bg-primary/20 flex items-center justify-center cursor-pointer"
               title={`Remove ${pill.label} filter`}
@@ -457,20 +805,16 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
           </span>
         ))}
 
-        {/* Clear All */}
+        {/* Clear All action */}
         {activePills.length > 0 && (
           <button
+            type="button"
             onClick={clearAllFilters}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-2 shrink-0 cursor-pointer"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 shrink-0 cursor-pointer"
           >
             Clear all
           </button>
         )}
-
-        {/* Result Count Indicator */}
-        <span className="text-[11px] text-muted-foreground ml-auto shrink-0 font-medium tabular-nums hidden sm:inline">
-          {filteredCount} event{filteredCount === 1 ? '' : 's'}
-        </span>
       </div>
     </div>
   );

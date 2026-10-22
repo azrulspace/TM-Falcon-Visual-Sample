@@ -6,7 +6,9 @@ import { useOverview } from './OverviewContext';
 export interface SavedView {
   id: string;
   name: string;
+  isDefault?: boolean;
   filters: {
+    tab?: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
     search?: string;
     priority?: string;
     status?: string;
@@ -16,8 +18,9 @@ export interface SavedView {
     asset?: string;
     type?: string;
     source?: string;
-    density?: 'comfortable' | 'compact';
-    viewMode?: 'table' | 'grouped' | 'gallery';
+    viewMode?: 'table' | 'gallery';
+    sortKey?: string;
+    sortDir?: 'asc' | 'desc';
   };
 }
 
@@ -43,7 +46,9 @@ export interface EventsContextType {
   // Saved Views
   savedViews: SavedView[];
   saveView: (name: string, filters: SavedView['filters']) => void;
+  renameSavedView: (id: string, newName: string) => void;
   deleteSavedView: (id: string) => void;
+  setDefaultView: (id: string) => void;
   // Undo
   canUndo: boolean;
   undoLastAction: () => void;
@@ -77,14 +82,14 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // fallback
     }
     return [
-      { id: 'view-critical', name: 'Critical Unacknowledged', filters: { priority: 'Critical', status: 'New' } },
-      { id: 'view-monkeys', name: 'Monkey Detections', filters: { type: 'Monkey near cable' } },
-      { id: 'view-no-case', name: 'High Priority without Case', filters: { priority: 'High', caseFilter: 'without_case' } },
+      { id: 'view-critical', name: 'New and critical', isDefault: true, filters: { tab: 'new', priority: 'Critical,High' } },
+      { id: 'view-no-case', name: 'Without case', isDefault: false, filters: { tab: 'all', caseFilter: 'without_case' } },
+      { id: 'view-today', name: 'Today', isDefault: false, filters: { tab: 'all', timeRange: 'today' } },
     ];
   });
 
   const saveView = useCallback((name: string, filters: SavedView['filters']) => {
-    const newView: SavedView = { id: `view-${Date.now()}`, name, filters };
+    const newView: SavedView = { id: `view-${Date.now()}`, name, isDefault: false, filters };
     setSavedViews((prev) => {
       const next = [...prev, newView];
       try {
@@ -93,6 +98,18 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return next;
     });
     addToast('success', `Saved view "${name}" created.`);
+  }, [addToast]);
+
+  const renameSavedView = useCallback((id: string, newName: string) => {
+    if (!newName.trim()) return;
+    setSavedViews((prev) => {
+      const next = prev.map((v) => (v.id === id ? { ...v, name: newName.trim() } : v));
+      try {
+        localStorage.setItem(LOCAL_STORAGE_SAVED_VIEWS, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    addToast('success', `Saved view renamed to "${newName}".`);
   }, [addToast]);
 
   const deleteSavedView = useCallback((id: string) => {
@@ -104,6 +121,17 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return next;
     });
     addToast('info', 'Saved view removed.');
+  }, [addToast]);
+
+  const setDefaultView = useCallback((id: string) => {
+    setSavedViews((prev) => {
+      const next = prev.map((v) => ({ ...v, isDefault: v.id === id }));
+      try {
+        localStorage.setItem(LOCAL_STORAGE_SAVED_VIEWS, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    addToast('info', 'Default view updated.');
   }, [addToast]);
 
   const pushUndo = useCallback((description: string, prevEvents: FalconEvent[]) => {
@@ -417,7 +445,9 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addTimelineNote,
         savedViews,
         saveView,
+        renameSavedView,
         deleteSavedView,
+        setDefaultView,
         canUndo: undoStack.length > 0,
         undoLastAction,
         incomingNewEventsCount,
