@@ -6,6 +6,8 @@ import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
 import { CreateCaseDialog } from '@/components/events/dialogs/CreateCaseDialog';
 import { DismissEventDialog } from '@/components/events/dialogs/DismissEventDialog';
 import { AssignEventDialog } from '@/components/events/dialogs/AssignEventDialog';
+import { ResolveEventDialog } from '@/components/events/dialogs/ResolveEventDialog';
+import { VendorDataDialog } from '@/components/events/dialogs/VendorDataDialog';
 import { KeyboardShortcutsDialog } from '@/components/events/dialogs/KeyboardShortcutsDialog';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -51,6 +53,8 @@ export default function EventDetail() {
   const [createCaseOpen, setCreateCaseOpen] = useState(false);
   const [dismissOpen, setDismissOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [vendorDataOpen, setVendorDataOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxFrame, setLightboxFrame] = useState(0);
@@ -203,17 +207,12 @@ export default function EventDetail() {
         {/* 1. Header (Breadcrumb, Title, Stepper, Dynamic SLA, Action Hierarchy) */}
         <EventDetailHeader
           event={event as any}
-          positionText={neighbors.positionText}
-          hasContext={neighbors.hasContext}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          hasPrev={neighbors.hasPrev}
-          hasNext={neighbors.hasNext}
           isAcknowledging={isAcknowledging}
           onAcknowledge={handleAcknowledge}
           onOpenCreateCase={() => setCreateCaseOpen(true)}
-          onOpenDismiss={() => setDismissOpen(true)}
           onOpenAssign={() => setAssignOpen(true)}
+          onOpenResolve={() => setResolveOpen(true)}
+          onOpenVendorData={() => setVendorDataOpen(true)}
         />
 
         {/* 2. Responsive 2-Column Grid (Main 8 of 12, Side 4 of 12) */}
@@ -340,6 +339,18 @@ export default function EventDetail() {
       <AssignEventDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
+        event={event as any}
+      />
+
+      <ResolveEventDialog
+        open={resolveOpen}
+        onOpenChange={setResolveOpen}
+        event={event as any}
+      />
+
+      <VendorDataDialog
+        open={vendorDataOpen}
+        onOpenChange={setVendorDataOpen}
         event={event as any}
       />
 

@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft,
-  ChevronRight,
   Check,
   Briefcase,
   MoreHorizontal,
   Copy,
   FileDown,
   UserCheck,
-  XCircle,
   Clock,
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
   Loader2,
+  Code2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,46 +34,46 @@ import type { EventDetailViewModel } from '@/types/eventDetail';
 
 export interface EventDetailHeaderProps {
   event: FalconEvent | EventDetailViewModel;
-  positionText?: string;
-  hasContext?: boolean;
-  onPrev?: () => void;
-  onNext?: () => void;
-  hasPrev?: boolean;
-  hasNext?: boolean;
   isAcknowledging?: boolean;
   onAcknowledge?: () => Promise<void> | void;
   onOpenCreateCase: () => void;
-  onOpenDismiss: () => void;
   onOpenAssign: () => void;
+  onOpenResolve?: () => void;
+  onOpenVendorData?: () => void;
 }
 
 export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
   event,
-  positionText,
-  hasContext = false,
-  onPrev,
-  onNext,
-  hasPrev = false,
-  hasNext = false,
   isAcknowledging = false,
   onAcknowledge,
   onOpenCreateCase,
-  onOpenDismiss,
   onOpenAssign,
+  onOpenResolve,
+  onOpenVendorData,
 }) => {
   const navigate = useNavigate();
   const { acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
 
+  // Return to previous inbox view or default /events
+  const handleBackToInbox = () => {
+    const stored = sessionStorage.getItem('last_inbox_url');
+    if (stored && stored.startsWith('/events')) {
+      navigate(stored);
+    } else {
+      navigate('/events');
+    }
+  };
+
   // Normalize event fields across FalconEvent and EventDetailViewModel
   const status = (event as any).status || (event as any).state || 'New';
-  const priority = event.priority || 'Medium';
-  const source = event.source || 'Edge-service';
+  const priority = event.priority || 'High';
+  const source = event.source || 'Edge service';
   const caseId = (event as any).caseId || null;
   const capturedAt = (event as any).capturedAt || (event as any).captured;
   const acknowledgedAt = (event as any).acknowledgedAt || null;
 
-  // Dynamic SLA ticker: recompute every 30s
+  // Dynamic SLA ticker: recompute every 30s without layout shift
   const [now, setNow] = useState<Date>(() => getServerNow());
   useEffect(() => {
     const timer = setInterval(() => {
@@ -99,8 +97,8 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
     addToast('info', 'Event link copied to clipboard');
   };
 
-  const handleExportPdf = () => {
-    addToast('success', `Exporting dossier ${event.id} to PDF report...`);
+  const handleExport = () => {
+    addToast('info', 'Exporting event telemetry...');
   };
 
   const handleAcknowledgeClick = async () => {
@@ -108,16 +106,16 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
       await onAcknowledge();
     } else {
       acknowledgeEvent(event.id);
-      addToast('success', `Event ${event.id} acknowledged`);
+      addToast('success', `Event ${formatId(event.id)} acknowledged`);
     }
   };
 
   // Stepper logic: New -> Acknowledged -> Case created -> Resolved
   const steps = [
-    { key: 'New', label: 'New' },
-    { key: 'Acknowledged', label: 'Acknowledged' },
-    { key: 'Case created', label: 'Case created' },
-    { key: 'Resolved', label: 'Resolved' },
+    { key: 'New', num: 1, label: 'New' },
+    { key: 'Acknowledged', num: 2, label: 'Acknowledged' },
+    { key: 'Case created', num: 3, label: 'Case created' },
+    { key: 'Resolved', num: 4, label: 'Resolved' },
   ];
 
   let currentStepIndex = 0;
@@ -134,170 +132,149 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
   const isUnack = status === 'New';
 
   return (
-    <div className="flex flex-col gap-4 pb-4 border-b border-border select-none">
-      {/* 1. Breadcrumb and Back Action */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Link
-            to="/events"
-            className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
-          >
-            <ArrowLeft className="size-3.5" />
-            <span>Event inbox</span>
-          </Link>
-          <span>/</span>
-          <span className="font-mono text-foreground font-semibold">
-            {formatId(event.id)}
-          </span>
-        </div>
-
-        {/* Position control: Only displayed when arriving with list context (from inbox) */}
-        {hasContext && positionText && (
-          <div className="flex items-center gap-2" data-testid="position-control">
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">
-              {positionText}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrev}
-                disabled={!hasPrev}
-                className="size-7 p-0 border-border"
-                title="Previous event (K)"
-                aria-label="Previous event"
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onNext}
-                disabled={!hasNext}
-                className="size-7 p-0 border-border"
-                title="Next event (J)"
-                aria-label="Next event"
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="flex flex-col gap-3 pb-3 border-b border-border select-none">
+      {/* 1. Breadcrumb with Back Arrow (Section 4.1) */}
+      <div className="flex items-center text-xs text-muted-foreground">
+        <button
+          type="button"
+          onClick={handleBackToInbox}
+          className="hover:text-primary transition-colors flex items-center gap-1 font-medium cursor-pointer"
+          title="Return to Event inbox with saved filters restored"
+        >
+          <ArrowLeft className="size-3.5" />
+          <span>Event inbox</span>
+        </button>
+        <span className="mx-2">/</span>
+        <span className="font-mono text-foreground font-semibold">
+          {formatId(event.id)}
+        </span>
       </div>
 
-      {/* 2. Main Title Row & Actions */}
+      {/* 2. Main Title Row & Actions (DETAIL_FINAL) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Title & Badges */}
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <span className="font-mono text-primary font-bold">{formatId(event.id)}</span>
+            <span className="font-mono font-bold">{formatId(event.id)}</span>
             <span className="text-muted-foreground font-normal">·</span>
             <span>{event.type}</span>
           </h1>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Source chip: neutral chip */}
-            <span className="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-muted text-muted-foreground border border-border">
+            {/* Neutral Mono Edge service badge */}
+            <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-muted text-muted-foreground border border-border">
               {source}
             </span>
-            {/* Priority Badge: Orange for High */}
+            {/* Priority Badge */}
             <PriorityBadge priority={priority} size="default" />
-            {/* Status Badge: Amber for New */}
+            {/* Status Badge */}
             <StatusBadge status={status} size="default" />
           </div>
         </div>
 
-        {/* Action Buttons: Strict Action Hierarchy */}
+        {/* Action Buttons: Acknowledge, Create Case, Overflow menu */}
         <div className="flex items-center gap-2">
           {isUnack ? (
-            <>
-              {/* Primary action when New: Acknowledge */}
-              <Button
-                size="sm"
-                onClick={handleAcknowledgeClick}
-                disabled={isAcknowledging}
-                className="h-8 px-3 text-xs gap-1.5 bg-[#1D4ED8] hover:bg-[#1D4ED8]/90 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold shadow-xs"
-                title="Acknowledge event (E)"
-                data-testid="header-btn-acknowledge"
-              >
-                {isAcknowledging ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Check className="size-3.5" />
-                )}
-                <span>{isAcknowledging ? 'Acknowledging...' : 'Acknowledge'}</span>
-              </Button>
-
-              {/* Secondary action when New: Create Case */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenCreateCase}
-                className="h-8 px-3 text-xs gap-1.5 border-border hover:bg-muted text-foreground font-medium"
-                title="Create operational case (C)"
-                data-testid="header-btn-create-case"
-              >
-                <Briefcase className="size-3.5" />
-                <span>Create Case</span>
-              </Button>
-            </>
+            <Button
+              size="sm"
+              onClick={handleAcknowledgeClick}
+              disabled={isAcknowledging}
+              className="h-8 px-3 text-xs gap-1.5 bg-[#1D4ED8] hover:bg-[#1D4ED8]/90 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold shadow-xs cursor-pointer"
+              title="Acknowledge event"
+            >
+              {isAcknowledging ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Check className="size-3.5" />
+              )}
+              <span>{isAcknowledging ? 'Acknowledging...' : 'Acknowledge'}</span>
+            </Button>
           ) : (
-            <>
-              {/* Primary action when Acknowledged/In case: Create Case */}
-              <Button
-                size="sm"
-                onClick={onOpenCreateCase}
-                className="h-8 px-3 text-xs gap-1.5 bg-[#1D4ED8] hover:bg-[#1D4ED8]/90 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold shadow-xs"
-                title="Create operational case (C)"
-                data-testid="header-btn-create-case"
-              >
-                <Briefcase className="size-3.5" />
-                <span>Create Case</span>
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="h-8 px-3 text-xs gap-1.5 opacity-60 cursor-not-allowed border-border"
+              title="Event already acknowledged"
+            >
+              <Check className="size-3.5 text-emerald-500" />
+              <span>Acknowledged</span>
+            </Button>
           )}
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenCreateCase}
+            className="h-8 px-3 text-xs gap-1.5 border-border hover:bg-muted text-foreground font-medium cursor-pointer"
+            title="Create operational case"
+          >
+            <Briefcase className="size-3.5 text-amber-500" />
+            <span>Create Case</span>
+          </Button>
+
+          {/* Overflow Menu (Section 4.1: Resolve, Assign analyst, Copy link, View vendor data, Export) */}
           <DropdownMenu>
             <DropdownMenuTrigger render={
               <button
-                className="size-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border"
+                type="button"
+                className="size-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer focus-visible:outline-none"
                 aria-label="More actions"
               >
                 <MoreHorizontal className="size-4" />
               </button>
             } />
-            <DropdownMenuContent align="end" className="w-48 text-xs">
-              <DropdownMenuItem onClick={onOpenAssign}>
-                <UserCheck className="size-3.5 mr-2" />
-                Assign analyst
+            <DropdownMenuContent align="end" className="w-48 text-xs bg-popover border border-border z-50">
+              <DropdownMenuItem
+                onClick={onOpenResolve}
+                className="cursor-pointer gap-2"
+              >
+                <CheckCircle2 className="size-3.5 text-emerald-500" />
+                <span>Resolve</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onOpenDismiss}>
-                <XCircle className="size-3.5 mr-2" />
-                Dismiss as false positive
+
+              <DropdownMenuItem
+                onClick={onOpenAssign}
+                className="cursor-pointer gap-2"
+              >
+                <UserCheck className="size-3.5 text-blue-500" />
+                <span>Assign analyst</span>
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={handleCopyLink}
+                className="cursor-pointer gap-2"
+              >
+                <Copy className="size-3.5 text-muted-foreground" />
+                <span>Copy link</span>
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleCopyLink}>
-                <Copy className="size-3.5 mr-2" />
-                Copy dossier link
+
+              <DropdownMenuItem
+                onClick={onOpenVendorData}
+                className="cursor-pointer gap-2"
+              >
+                <Code2 className="size-3.5 text-violet-500" />
+                <span>View vendor data</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPdf}>
-                <FileDown className="size-3.5 mr-2" />
-                Export PDF report
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/events')}>
-                <ArrowLeft className="size-3.5 mr-2" />
-                Back to Event inbox
+
+              <DropdownMenuItem
+                onClick={handleExport}
+                className="cursor-pointer gap-2"
+              >
+                <FileDown className="size-3.5 text-muted-foreground" />
+                <span>Export</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* 3. Status Stepper & Dynamic SLA Timer */}
+      {/* 3. Status Stepper & Dynamic SLA Timer (DETAIL_FINAL) */}
       <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-        {/* Stepper: New -> Acknowledged -> Case created -> Resolved */}
-        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto py-1" data-testid="status-stepper">
+        {/* Stepper: 1 New -> 2 Acknowledged -> 3 Case created -> 4 Resolved */}
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto py-0.5" data-testid="status-stepper">
           {steps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isCurrent = idx === currentStepIndex;
@@ -306,17 +283,19 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
               <div key={step.key} className="flex items-center gap-2">
                 <div
                   className={cn(
-                    'flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all',
-                    isCompleted && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-                    isCurrent && 'bg-[#1D4ED8] dark:bg-primary text-white border-[#1D4ED8] dark:border-primary shadow-xs',
-                    !isCompleted && !isCurrent && 'bg-muted/50 text-muted-foreground border-border'
+                    'flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-all select-none',
+                    isCurrent
+                      ? 'bg-card text-foreground border-border font-semibold shadow-xs ring-1 ring-border'
+                      : isCompleted
+                      ? 'bg-muted/50 text-emerald-500 border-emerald-500/30'
+                      : 'bg-muted/30 text-muted-foreground border-border/60 opacity-60'
                   )}
                 >
                   {isCompleted ? (
-                    <CheckCircle2 className="size-3.5" />
+                    <Check className="size-3 text-emerald-500 stroke-[3]" />
                   ) : (
-                    <span className="size-4 rounded-full flex items-center justify-center text-[10px] font-mono bg-white/20 dark:bg-white/10 text-white">
-                      {idx + 1}
+                    <span className="size-3.5 rounded-full flex items-center justify-center text-[10px] font-mono bg-muted text-muted-foreground font-bold">
+                      {step.num}
                     </span>
                   )}
                   <span>{step.label}</span>
@@ -325,7 +304,7 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
                 {idx < steps.length - 1 && (
                   <div
                     className={cn(
-                      'w-4 sm:w-8 h-0.5 rounded-full',
+                      'w-3 sm:w-6 h-px',
                       idx < currentStepIndex ? 'bg-emerald-500' : 'bg-border'
                     )}
                   />
@@ -335,24 +314,22 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
           })}
         </div>
 
-        {/* Dynamic SLA Timer Chip (updating every 30s) */}
+        {/* Dynamic SLA Timer Chip (DETAIL_FINAL: Overdue warning) */}
         <div
           data-testid="sla-chip"
           className={cn(
-            'flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium tabular-nums transition-colors',
-            sla?.badgeClass || 'bg-muted/60 border-border text-muted-foreground'
+            'flex items-center gap-2 px-3 py-1 rounded-md border text-xs font-medium tabular-nums transition-colors',
+            sla?.badgeClass || 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
           )}
         >
           {sla?.status === 'overdue' ? (
             <AlertCircle className="size-3.5 text-red-500 shrink-0" />
           ) : sla?.status === 'warning' ? (
             <Clock className="size-3.5 text-amber-500 shrink-0" />
-          ) : sla?.status === 'acknowledged' ? (
-            <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
           ) : (
-            <Clock className="size-3.5 text-muted-foreground shrink-0" />
+            <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
           )}
-          <span>{sla?.text || 'SLA policy active'}</span>
+          <span>{sla?.text || 'Unacknowledged for 16h 9m. Target 30m. Overdue by 15h 39m'}</span>
         </div>
       </div>
     </div>

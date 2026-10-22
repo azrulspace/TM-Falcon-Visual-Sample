@@ -42,8 +42,10 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
   const detectionConfidence = (event as any).evidence?.confidence || null;
   const hasDetectionRegion = Boolean(detectionRegion && detectionRegion.width > 0);
 
-  // Download filename: e.g. EVT-0258_20261020_1628.jpg
-  const downloadFilename = (event as any).evidence?.downloadFilename || `${formatId(event.id)}_snapshot.jpg`;
+  // Download filename: named with the event ID and captured time (Section 4.2)
+  const capturedRaw = (event as any).captured || (event as any).capturedAt || 'snapshot';
+  const cleanCaptured = String(capturedRaw).replace(/[:]/g, '-').replace(/\.\d+Z?$/, '');
+  const downloadFilename = `${formatId(event.id)}_${cleanCaptured}.jpg`;
 
   const handleNext = () => {
     setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
@@ -53,7 +55,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
     setCurrentFrameIndex((prev) => (prev - 1 + frames.length) % frames.length);
   };
 
-  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 3));
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(z + 0.25, 4));
   const handleZoomOut = () => setZoomLevel((z) => {
     const next = Math.max(z - 0.25, 1);
     if (next === 1) setPan({ x: 0, y: 0 });
@@ -64,14 +66,23 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
     setPan({ x: 0, y: 0 });
   };
 
+  // Double click to toggle fit / zoom (Section 4.2)
+  const handleToggleFit = () => {
+    if (zoomLevel > 1) {
+      handleResetZoom();
+    } else {
+      setZoomLevel(1.75);
+    }
+  };
+
   // Wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     if (e.deltaY < 0) {
-      setZoomLevel((z) => Math.min(z + 0.15, 3));
+      setZoomLevel((z) => Math.min(z + 0.2, 4));
     } else {
       setZoomLevel((z) => {
-        const next = Math.max(z - 0.15, 1);
+        const next = Math.max(z - 0.2, 1);
         if (next === 1) setPan({ x: 0, y: 0 });
         return next;
       });
@@ -189,7 +200,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleZoomIn}
-            disabled={zoomLevel >= 3}
+            disabled={zoomLevel >= 4}
             className="size-7 p-0 text-muted-foreground hover:text-foreground"
             title="Zoom in (+)"
           >
@@ -240,6 +251,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onDoubleClick={handleToggleFit}
         className={cn(
           'relative w-full max-h-[56vh] min-h-[320px] bg-black overflow-hidden flex items-center justify-center select-none',
           zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
