@@ -11,7 +11,7 @@
  * (Wed, 21 Oct 2026 08:37:00 MYT / UTC+8).
  * In production this is adjusted via server time offset or Date header.
  */
-export const DEFAULT_SERVER_TIME_ISO = '2026-10-21T08:37:00+08:00';
+export const DEFAULT_SERVER_TIME_ISO = '2026-10-21T11:15:00+08:00';
 
 let serverTimeOffsetMs = 0;
 let hasExplicitServerTime = false;
