@@ -20,7 +20,7 @@ import { EventTableView } from './EventTableView';
 import { useEvents } from '@/contexts/EventsContext';
 import { cn } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
-import type { ColumnVisibility } from './InboxHeader';
+import type { ColumnVisibility } from './EventTableView';
 
 export interface EventGroup {
   key: string;

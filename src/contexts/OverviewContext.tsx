@@ -44,6 +44,7 @@ export interface OverviewContextType {
   refreshInterval: number; // in seconds
   setRefreshInterval: (seconds: number) => void;
   lastUpdatedTime: string;
+  lastFetchTimestamp: number;
   refreshNow: () => void;
   isShimmering: boolean;
 }
@@ -61,7 +62,8 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [liveState, setLiveState] = useState<'live' | 'paused'>('live');
   const [refreshInterval, setRefreshInterval] = useState<number>(15);
-  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('Just now');
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('5 min ago');
+  const [lastFetchTimestamp, setLastFetchTimestamp] = useState<number>(() => Date.now() - 5000);
   const [isShimmering, setIsShimmering] = useState<boolean>(false);
 
   // Single source of truth counts derived from devices dataset
@@ -94,6 +96,7 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const refreshNow = useCallback(() => {
     setIsShimmering(true);
+    setLastFetchTimestamp(Date.now());
     setLastUpdatedTime('Just now');
     setTimeout(() => setIsShimmering(false), 500);
   }, []);
@@ -126,6 +129,7 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshInterval,
     setRefreshInterval,
     lastUpdatedTime,
+    lastFetchTimestamp,
     refreshNow,
     isShimmering,
   };

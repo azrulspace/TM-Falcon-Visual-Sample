@@ -7,7 +7,6 @@ import {
   Check,
   Plus,
   Table as TableIcon,
-  FolderTree,
   LayoutGrid,
   Trash2,
 } from 'lucide-react';
@@ -22,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEvents } from '@/contexts/EventsContext';
 import { cn } from '@/lib/utils';
+import { getStatusCounts } from '@/data/eventSelectors';
 
 export interface InboxFilters {
   tab: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
@@ -39,8 +39,8 @@ export interface InboxFilters {
 export interface InboxToolbarProps {
   filters: InboxFilters;
   setFilters: React.Dispatch<React.SetStateAction<InboxFilters>>;
-  viewMode: 'table' | 'grouped' | 'gallery';
-  setViewMode: (m: 'table' | 'grouped' | 'gallery') => void;
+  viewMode: 'table' | 'gallery';
+  setViewMode: (m: 'table' | 'gallery') => void;
   filteredCount: number;
 }
 
@@ -56,16 +56,35 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
   const [saveViewName, setSaveViewName] = React.useState('');
   const [saveViewOpen, setSaveViewOpen] = React.useState(false);
 
-  // Tab counts
+  // Faceted tab counts respecting all active filters except status
   const tabCounts = React.useMemo(() => {
-    return {
-      all: events.length,
-      new: events.filter((e) => e.state === 'New').length,
-      acknowledged: events.filter((e) => e.state === 'Acknowledged').length,
-      in_case: events.filter((e) => e.state === 'In case').length,
-      resolved: events.filter((e) => e.state === 'Resolved').length,
-    };
-  }, [events]);
+    return getStatusCounts(events, {
+      search: filters.search,
+      priority: filters.priority ? filters.priority.split(',') : undefined,
+      status: filters.status ? filters.status.split(',') : undefined,
+      caseFilter: filters.caseFilter,
+      timeRange: filters.timeRange,
+      device: filters.device,
+      asset: filters.asset,
+      source: filters.source ? filters.source.split(',') : undefined,
+    });
+  }, [events, filters]);
+
+  // Local search state with 250ms debouncing (Section 3.4)
+  const [localSearch, setLocalSearch] = React.useState(filters.search);
+
+  useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== filters.search) {
+        setFilters((prev) => ({ ...prev, search: localSearch.trim() }));
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [localSearch, filters.search, setFilters]);
 
   // Keyboard shortcut '/' to focus search
   useEffect(() => {
@@ -167,15 +186,20 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             <input
               ref={searchInputRef}
               type="text"
-              value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               placeholder="Search by ID, type, device, asset..."
               className="w-full h-9 pl-8 pr-7 text-xs bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors"
             />
-            {filters.search ? (
+            {localSearch ? (
               <button
-                onClick={() => updateFilter('search', '')}
+                onClick={() => {
+                  setLocalSearch('');
+                  updateFilter('search', '');
+                  searchInputRef.current?.focus();
+                }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
+                title="Clear search"
               >
                 <X className="size-3" />
               </button>
@@ -258,7 +282,7 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* View Mode Toggle (Table, Grouped, Gallery) */}
+          {/* View Mode Toggle: Table and Gallery ONLY */}
           <div className="flex items-center rounded-lg border border-border p-0.5 bg-muted/40">
             <button
               onClick={() => setViewMode('table')}
@@ -270,17 +294,6 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               aria-label="Table view"
             >
               <TableIcon className="size-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('grouped')}
-              className={cn(
-                'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
-                viewMode === 'grouped' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-              )}
-              title="Grouped view"
-              aria-label="Grouped view"
-            >
-              <FolderTree className="size-4" />
             </button>
             <button
               onClick={() => setViewMode('gallery')}

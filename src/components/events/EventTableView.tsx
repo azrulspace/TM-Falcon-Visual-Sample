@@ -35,7 +35,31 @@ import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
-import type { ColumnVisibility } from './InboxHeader';
+export interface ColumnVisibility {
+  event?: boolean;
+  captured?: boolean;
+  type?: boolean;
+  device?: boolean;
+  asset?: boolean;
+  priority?: boolean;
+  status?: boolean;
+  case?: boolean;
+  source?: boolean;
+  actions?: boolean;
+}
+
+export const defaultColumnVisibility: ColumnVisibility = {
+  event: true,
+  captured: true,
+  type: true,
+  device: true,
+  asset: true,
+  priority: true,
+  status: true,
+  case: true,
+  source: false,
+  actions: true,
+};
 
 export interface EventTableViewProps {
   events: FalconEvent[];
@@ -46,8 +70,8 @@ export interface EventTableViewProps {
   onRowClick: (event: FalconEvent) => void;
   sortConfig: { key: string; direction: 'asc' | 'desc' };
   onSort: (key: string) => void;
-  columns: ColumnVisibility;
-  density: 'comfortable' | 'compact';
+  columns?: ColumnVisibility;
+  density?: 'comfortable' | 'compact';
   currentPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   rowsPerPage: number;
@@ -108,8 +132,8 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
   onRowClick,
   sortConfig,
   onSort,
-  columns,
-  density,
+  columns = defaultColumnVisibility,
+  density = 'comfortable',
   currentPage,
   setCurrentPage,
   rowsPerPage,

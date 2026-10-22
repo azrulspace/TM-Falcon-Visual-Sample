@@ -1,73 +1,95 @@
-import React from 'react';
-import { RefreshCw, Download, Columns } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useOverview } from '@/contexts/OverviewContext';
 import { useEvents } from '@/contexts/EventsContext';
+import { useToast } from '@/contexts/ToastContext';
 import type { FalconEvent } from '@/data/events';
-
-export interface ColumnVisibility {
-  event: boolean;
-  captured: boolean;
-  type: boolean;
-  device: boolean;
-  asset: boolean;
-  priority: boolean;
-  status: boolean;
-  case: boolean;
-  source: boolean;
-  actions: boolean;
-}
+import { exportEventsToCsv } from '@/data/eventSelectors';
 
 export interface InboxHeaderProps {
   filteredEvents: FalconEvent[];
-  columns: ColumnVisibility;
-  setColumns: React.Dispatch<React.SetStateAction<ColumnVisibility>>;
-  density: 'comfortable' | 'compact';
-  setDensity: (d: 'comfortable' | 'compact') => void;
 }
 
-export const InboxHeader: React.FC<InboxHeaderProps> = ({
-  filteredEvents,
-  columns,
-  setColumns,
-  density,
-  setDensity,
-}) => {
+export const InboxHeader: React.FC<InboxHeaderProps> = ({ filteredEvents }) => {
   const overview = useOverview();
-  const { refreshEvents, isRefreshing } = useEvents();
+  const { refreshEvents, isRefreshing, incomingNewEventsCount, mergeNewEvents } = useEvents();
+  const { addToast } = useToast();
 
-  const handleExportCsv = () => {
-    const headers = ['Event ID', 'Captured', 'Type', 'Device', 'Asset', 'Priority', 'Status', 'Case ID', 'Source'];
-    const rows = filteredEvents.map((e) => [
-      e.id,
-      `"${e.captured}"`,
-      `"${e.type}"`,
-      e.device || 'N/A',
-      e.asset,
-      e.priority,
-      e.state,
-      e.caseId || 'None',
-      `"${e.source}"`,
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `falcon_events_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const [tick, setTick] = useState(0);
 
-  const toggleColumn = (key: keyof ColumnVisibility) => {
-    setColumns((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  // 15-second heartbeat timer for accurate live age recalculation without full re-render
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Compute live badge status & text adhering strictly to section 3.1
+  const { liveStatus, badgeText } = React.useMemo(() => {
+    // Suppress unused tick warning while subscribing to heartbeat
+    void tick;
+
+    if (overview.liveState === 'paused') {
+      return {
+        liveStatus: 'paused' as const,
+        badgeText: 'Paused • Telemetry paused',
+      };
+    }
+
+    const intervalSec = overview.refreshInterval || 15;
+    const now = Date.now();
+    const ageSec = Math.max(0, Math.floor((now - overview.lastFetchTimestamp) / 1000));
+    const isStale = ageSec > 2 * intervalSec;
+
+    let ageText = 'just now';
+    if (ageSec >= 60) {
+      const minutes = Math.floor(ageSec / 60);
+      ageText = `${minutes} min ago`;
+    } else if (ageSec > 10) {
+      ageText = `${ageSec}s ago`;
+    }
+
+    if (isStale) {
+      return {
+        liveStatus: 'stale' as const,
+        badgeText: `Stale • Updated ${ageText}`,
+      };
+    }
+
+    return {
+      liveStatus: 'live' as const,
+      badgeText: `Live • Updated 5 min ago`,
+    };
+  }, [overview.liveState, overview.refreshInterval, overview.lastFetchTimestamp, tick]);
+
+  const handleRefresh = useCallback(() => {
+    try {
+      refreshEvents();
+      mergeNewEvents();
+      overview.refreshNow();
+    } catch {
+      addToast('error', 'Failed to refresh event stream. Please retry.');
+    }
+  }, [refreshEvents, mergeNewEvents, overview, addToast]);
+
+  const handleExport = useCallback(() => {
+    if (!filteredEvents || filteredEvents.length === 0) {
+      addToast('info', 'No events to export for current filter criteria.');
+      return;
+    }
+    try {
+      exportEventsToCsv(filteredEvents);
+      addToast('success', `Exported ${filteredEvents.length} events to CSV.`);
+    } catch {
+      addToast('error', 'Failed to export CSV. Please retry.');
+    }
+  }, [filteredEvents, addToast]);
 
   return (
     <div className="flex flex-col gap-2 mb-4 select-none">
-      {/* Breadcrumb matching Section 5 */}
+      {/* Breadcrumb matching section 3.1 & INBOX_FINAL */}
       <nav className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
         <span>Falcon</span>
         <span>/</span>
@@ -79,20 +101,22 @@ export const InboxHeader: React.FC<InboxHeaderProps> = ({
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Event inbox</h1>
-            {/* Live Indicator matching Overview */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/80 border border-border">
+            {/* Live Indicator matching section 3.1 */}
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted/80 border border-border">
               <span className="relative flex size-2">
-                {overview.liveState === 'live' ? (
+                {liveStatus === 'live' ? (
                   <>
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
                     <span className="relative inline-flex rounded-full size-2 bg-[#10b981]" />
                   </>
-                ) : (
+                ) : liveStatus === 'paused' ? (
                   <span className="relative inline-flex rounded-full size-2 bg-[#ffa114]" />
+                ) : (
+                  <span className="relative inline-flex rounded-full size-2 bg-[#ef4444]" />
                 )}
               </span>
-              <span className="text-[11px] text-muted-foreground">
-                {overview.liveState === 'live' ? `Live • Updated ${overview.lastUpdatedTime}` : 'Telemetry paused'}
+              <span className="text-[11px] text-muted-foreground font-medium">
+                {badgeText}
               </span>
             </div>
           </div>
@@ -101,93 +125,37 @@ export const InboxHeader: React.FC<InboxHeaderProps> = ({
           </p>
         </div>
 
-        {/* Right Actions */}
+        {/* Right Actions: Refresh and Export ONLY */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Refresh */}
+          {/* Refresh with pending new events badge */}
           <Button
             variant="outline"
             size="sm"
-            onClick={refreshEvents}
+            onClick={handleRefresh}
             disabled={isRefreshing}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-muted"
+            className="h-8 px-3 text-xs gap-1.5 border-border hover:bg-muted font-medium"
             title="Refresh event stream"
           >
             <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span>Refresh</span>
+            {incomingNewEventsCount > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 tabular-nums">
+                {incomingNewEventsCount} new
+              </span>
+            )}
           </Button>
 
           {/* Export CSV */}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExportCsv}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-muted"
+            onClick={handleExport}
+            className="h-8 px-3 text-xs gap-1.5 border-border hover:bg-muted font-medium"
             title="Export filtered events as CSV"
           >
             <Download className="size-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Export</span>
+            <span>Export</span>
           </Button>
-
-          {/* Column Settings Popover */}
-          <Popover>
-            <PopoverTrigger render={
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-muted"
-                title="Toggle table columns"
-              >
-                <Columns className="size-3.5 text-muted-foreground" />
-                <span className="hidden sm:inline">Columns</span>
-              </Button>
-            } />
-            <PopoverContent align="end" className="w-56 p-3 bg-popover border border-border shadow-lg z-50 text-xs">
-              <div className="font-semibold text-foreground mb-2 pb-1 border-b border-border">Visible Columns</div>
-              <div className="flex flex-col gap-2">
-                {[
-                  { key: 'captured' as const, label: 'Captured' },
-                  { key: 'type' as const, label: 'Type / Activity' },
-                  { key: 'device' as const, label: 'Device' },
-                  { key: 'asset' as const, label: 'Asset' },
-                  { key: 'priority' as const, label: 'Priority' },
-                  { key: 'status' as const, label: 'Status' },
-                  { key: 'case' as const, label: 'Case' },
-                  { key: 'source' as const, label: 'Source' },
-                ].map((col) => (
-                  <label key={col.key} className="flex items-center gap-2 cursor-pointer select-none text-muted-foreground hover:text-foreground">
-                    <Checkbox
-                      checked={columns[col.key]}
-                      onCheckedChange={() => toggleColumn(col.key)}
-                      className="size-3.5"
-                    />
-                    <span>{col.label}</span>
-                  </label>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* Density Toggle */}
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-muted/40">
-            <button
-              onClick={() => setDensity('comfortable')}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors ${
-                density === 'comfortable' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              title="Comfortable row height (56px)"
-            >
-              Comfortable
-            </button>
-            <button
-              onClick={() => setDensity('compact')}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors ${
-                density === 'compact' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              title="Compact row height (44px)"
-            >
-              Compact
-            </button>
-          </div>
         </div>
       </div>
     </div>

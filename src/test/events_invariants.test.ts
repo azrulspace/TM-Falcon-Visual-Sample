@@ -81,3 +81,24 @@ test('Snapshot integrity: every event has snapshot frames', () => {
     }
   }
 });
+
+test('Phase 2 Invariant: Faceted Status Tab Counts respect active search filter', () => {
+  // Query for 'Monkey' should only facet the 117 Monkey events
+  const counts = getStatusCounts(events, { search: 'Monkey' });
+  assert.equal(counts.all, 117, 'Faceted search for Monkey must filter base to 117');
+  assert.equal(counts.new + counts.acknowledged + counts.in_case + counts.resolved, 117);
+});
+
+test('Phase 2 Invariant: Search matches event ID, type, device ID, asset ID, and detection rule', () => {
+  const byId = getStatusCounts(events, { search: 'EVT-0258' });
+  assert.equal(byId.all, 1, 'Search by ID matches EVT-0258');
+
+  const byDev = getStatusCounts(events, { search: 'DEV-004' });
+  assert.equal(byDev.all, 117, 'Search by DEV-004 matches 117 cluster events');
+
+  const byAsset = getStatusCounts(events, { search: 'CBL-005' });
+  assert.ok(byAsset.all >= 117, 'Search by CBL-005 matches cable span');
+
+  const byRule = getStatusCounts(events, { search: 'Motion Detection' });
+  assert.ok(byRule.all >= 117, 'Search by rule matches motion detection');
+});
