@@ -9,6 +9,10 @@ import { CaseEvidenceCard } from '@/components/cases/detail/CaseEvidenceCard';
 import { CaseRecentActivityCard } from '@/components/cases/detail/CaseRecentActivityCard';
 import { CaseDetailsCard } from '@/components/cases/detail/CaseDetailsCard';
 import { CaseLocationCard } from '@/components/cases/detail/CaseLocationCard';
+import { CaseVerificationTab } from '@/components/cases/detail/tabs/CaseVerificationTab';
+import { CaseFieldFindingsTab } from '@/components/cases/detail/tabs/CaseFieldFindingsTab';
+import { CaseClosureTab } from '@/components/cases/detail/tabs/CaseClosureTab';
+import { CaseActivityTab } from '@/components/cases/detail/tabs/CaseActivityTab';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -127,15 +131,11 @@ export default function CaseDetail() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Main Column (8 of 12) */}
           <div className="xl:col-span-8 space-y-6">
+            {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                {/* Source event card */}
                 <CaseSourceEventCard caseData={caseData} />
-
-                {/* Evidence card */}
                 <CaseEvidenceCard caseData={caseData} />
-
-                {/* Recent activity card */}
                 <CaseRecentActivityCard
                   activities={caseData.activities}
                   onOpenAllActivity={() => handleTabChange('activity')}
@@ -143,12 +143,24 @@ export default function CaseDetail() {
               </div>
             )}
 
-            {activeTab !== 'overview' && (
-              <div className="p-6 rounded-xl border border-border bg-card">
-                <span className="text-xs text-muted-foreground">
-                  Tab content for <strong className="text-foreground capitalize">{activeTab.replace('_', ' ')}</strong> (Phase 7)
-                </span>
-              </div>
+            {/* Verification Tab */}
+            {activeTab === 'verification' && (
+              <CaseVerificationTab caseData={caseData} />
+            )}
+
+            {/* Field Findings Tab */}
+            {activeTab === 'field_findings' && (
+              <CaseFieldFindingsTab caseData={caseData} />
+            )}
+
+            {/* Closure Tab */}
+            {activeTab === 'closure' && (
+              <CaseClosureTab caseData={caseData} />
+            )}
+
+            {/* Activity Tab */}
+            {activeTab === 'activity' && (
+              <CaseActivityTab activities={caseData.activities} />
             )}
           </div>
 
