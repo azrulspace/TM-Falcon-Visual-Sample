@@ -13,8 +13,9 @@ import { KeyboardShortcutsDialog } from '@/components/events/dialogs/KeyboardSho
 import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
-import { SearchX } from 'lucide-react';
+import { SearchX, History, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 import { filterEvents, sortEvents, exportEventsToCsv, type EventFilterState } from '@/data/eventSelectors';
 
@@ -40,6 +41,8 @@ export default function Events() {
     asset: searchParams.get('asset') || undefined,
     type: searchParams.get('type') || undefined,
     source: searchParams.get('source') || undefined,
+    capturedBefore: searchParams.get('captured_before') || undefined,
+    fromEventId: searchParams.get('from') || undefined,
   }));
 
   // 2. View Mode (Table and Gallery ONLY)
@@ -114,6 +117,12 @@ export default function Events() {
       if (filters.source) next.set('source', filters.source);
       else next.delete('source');
 
+      if (filters.capturedBefore) next.set('captured_before', filters.capturedBefore);
+      else next.delete('captured_before');
+
+      if (filters.fromEventId) next.set('from', filters.fromEventId);
+      else next.delete('from');
+
       if (viewMode === 'gallery') next.set('view', 'gallery');
       else next.delete('view');
 
@@ -132,6 +141,61 @@ export default function Events() {
       return next;
     }, { replace: true });
   }, [filters, viewMode, sortConfig, currentPage, rowsPerPage, setSearchParams]);
+
+  // Synchronize state when browser back/forward or external navigation updates searchParams
+  useEffect(() => {
+    const urlTab = (searchParams.get('tab') as InboxFilters['tab']) || 'all';
+    const urlSearch = searchParams.get('q') || '';
+    const urlTime = searchParams.get('time') || undefined;
+    const urlPriority = searchParams.get('priority') || undefined;
+    const urlStatus = searchParams.get('status') || undefined;
+    const urlCase = searchParams.get('case') || undefined;
+    const urlDevice = searchParams.get('device') || undefined;
+    const urlAsset = searchParams.get('asset') || undefined;
+    const urlType = searchParams.get('type') || undefined;
+    const urlSource = searchParams.get('source') || undefined;
+    const urlCapturedBefore = searchParams.get('captured_before') || undefined;
+    const urlFromEventId = searchParams.get('from') || undefined;
+
+    setFilters((prev) => {
+      if (
+        prev.tab === urlTab &&
+        prev.search === urlSearch &&
+        prev.timeRange === urlTime &&
+        prev.priority === urlPriority &&
+        prev.status === urlStatus &&
+        prev.caseFilter === urlCase &&
+        prev.device === urlDevice &&
+        prev.asset === urlAsset &&
+        prev.type === urlType &&
+        prev.source === urlSource &&
+        prev.capturedBefore === urlCapturedBefore &&
+        prev.fromEventId === urlFromEventId
+      ) {
+        return prev;
+      }
+      return {
+        tab: urlTab,
+        search: urlSearch,
+        timeRange: urlTime,
+        priority: urlPriority,
+        status: urlStatus,
+        caseFilter: urlCase,
+        device: urlDevice,
+        asset: urlAsset,
+        type: urlType,
+        source: urlSource,
+        capturedBefore: urlCapturedBefore,
+        fromEventId: urlFromEventId,
+      };
+    });
+  }, [searchParams]);
+
+  // Persist current inbox URL to sessionStorage so detail view back returns to exact state (Section 4.1 & 6)
+  useEffect(() => {
+    const fullUrl = window.location.pathname + window.location.search;
+    sessionStorage.setItem('last_inbox_url', fullUrl);
+  }, [searchParams]);
 
   // 5. Quick filter from SummaryStrip
   const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilterKey | null>(null);
@@ -178,10 +242,39 @@ export default function Events() {
       device: filters.device,
       asset: filters.asset,
       source: filters.source ? filters.source.split(',') : undefined,
-      capturedBefore: searchParams.get('captured_before') || undefined,
-      fromEventId: searchParams.get('from') || undefined,
+      capturedBefore: filters.capturedBefore || searchParams.get('captured_before') || undefined,
+      fromEventId: filters.fromEventId || searchParams.get('from') || undefined,
     };
   }, [filters, searchParams]);
+
+  // Alert History Scoped Context Evaluation (Section 6)
+  const isContextScoped = Boolean(
+    (filters.asset || filters.device) && (filterState.capturedBefore || filterState.fromEventId)
+  );
+  const contextScopeLabel = formatId(filters.asset || filters.device || 'CBL-005');
+  const contextFromEventId = filterState.fromEventId || filterState.capturedBefore || null;
+
+  const scopedEventsForKpis = useMemo(() => {
+    if (isContextScoped) {
+      return filterEvents(events, {
+        asset: filters.asset,
+        device: filters.device,
+        capturedBefore: filterState.capturedBefore,
+      });
+    }
+    return events;
+  }, [events, isContextScoped, filters.asset, filters.device, filterState.capturedBefore]);
+
+  const handleClearContextFilter = () => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      delete next.asset;
+      delete next.device;
+      delete next.capturedBefore;
+      delete next.fromEventId;
+      return next;
+    });
+  };
 
   const filteredEvents = useMemo(() => {
     const matched = filterEvents(events, filterState);
@@ -264,8 +357,54 @@ export default function Events() {
 
       {/* 2. Main Body Container (Fluid width, 24px padding, 16px gaps) */}
       <main className="flex-1 flex flex-col p-4 sm:p-6 gap-4 max-w-[1920px] w-full mx-auto">
+        {/* Context Banner (Section 6: Alert History Scoped View) */}
+        {isContextScoped && (
+          <div
+            data-testid="context-banner"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-border bg-card shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <History className="size-3.5" />
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold text-foreground">
+                  Alert history for {contextScopeLabel}: {filteredEvents.length} events captured before {formatId(contextFromEventId || 'EVT-0258')}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  (Counts are scoped to this {filters.device ? 'device' : 'span'})
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {contextFromEventId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/events/${contextFromEventId}`)}
+                  className="h-7 px-2.5 text-xs border-border hover:bg-muted text-foreground gap-1.5 cursor-pointer font-medium"
+                >
+                  <ArrowLeft className="size-3" />
+                  <span>Back to {formatId(contextFromEventId)}</span>
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearContextFilter}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Clear filter
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Summary Strip (4 KPI cells matching INBOX_FINAL) */}
         <SummaryStrip
+          eventsOverride={isContextScoped ? scopedEventsForKpis : undefined}
           activeQuickFilter={activeQuickFilter}
           onSelectQuickFilter={handleSelectQuickFilter}
         />

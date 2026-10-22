@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useEvents, type SavedView } from '@/contexts/EventsContext';
-import { cn } from '@/lib/utils';
+import { cn, formatId } from '@/lib/utils';
 import { getStatusCounts } from '@/data/eventSelectors';
 
 export interface InboxFilters {
@@ -125,6 +125,9 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
     setFilters((prev) => {
       const next = { ...prev };
       delete next[key];
+      if (key === 'capturedBefore') {
+        delete next.fromEventId;
+      }
       return next;
     });
   };
@@ -133,6 +136,16 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
     setFilters({
       tab: 'all',
       search: '',
+      timeRange: undefined,
+      priority: undefined,
+      status: undefined,
+      caseFilter: undefined,
+      device: undefined,
+      asset: undefined,
+      type: undefined,
+      source: undefined,
+      capturedBefore: undefined,
+      fromEventId: undefined,
     });
   };
 
@@ -195,9 +208,9 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
     }
     if (filters.timeRange) pills.push({ key: 'timeRange', label: 'Time', value: filters.timeRange });
     if (filters.source) pills.push({ key: 'source', label: 'Source', value: filters.source.replace(/,/g, ', ') });
-    if (filters.device) pills.push({ key: 'device', label: 'Device', value: filters.device });
-    if (filters.asset) pills.push({ key: 'asset', label: 'Asset', value: filters.asset });
-    if (filters.capturedBefore) pills.push({ key: 'capturedBefore', label: 'Captured before', value: filters.capturedBefore });
+    if (filters.device) pills.push({ key: 'device', label: 'Device', value: formatId(filters.device) });
+    if (filters.asset) pills.push({ key: 'asset', label: 'Asset', value: formatId(filters.asset) });
+    if (filters.capturedBefore) pills.push({ key: 'capturedBefore', label: 'Captured before', value: formatId(filters.capturedBefore) });
     return pills;
   }, [filters]);
 

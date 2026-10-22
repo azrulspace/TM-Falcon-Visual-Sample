@@ -139,3 +139,19 @@ test('Phase 3 Invariant: Alert history context filter (asset + capturedBefore)',
     assert.ok(currNum < 258, `Event ${e.id} must be before EVT-0258`);
   }
 });
+
+test('Phase 7 Invariant: Scoped context preserves status tab sum and result count', () => {
+  const scoped = filterEvents(events, {
+    asset: 'CBL-005',
+    capturedBefore: 'EVT-0258',
+  });
+  assert.equal(scoped.length, 130);
+
+  const counts = getStatusCounts(events, {
+    asset: 'CBL-005',
+    capturedBefore: 'EVT-0258',
+  });
+  assert.equal(counts.all, 130);
+  assert.equal(counts.new + counts.acknowledged + counts.in_case + counts.resolved, 130);
+});
+
