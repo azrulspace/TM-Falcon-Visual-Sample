@@ -26,7 +26,7 @@ export default function PlannedPage() {
         </div>
         <h4 className="h4 mb-2">Planned page</h4>
         <p className="text_md text-tertiary mb-6">The {title} screen is not part of this prototype.</p>
-        <Button variant="outline" onClick={() => navigate('/overview')}>Back to Overview</Button>
+        <Button variant="outline" className="min-h-[44px] px-6 text-sm" onClick={() => navigate('/overview')}>Back to Overview</Button>
       </div>
     </div>
   );

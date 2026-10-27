@@ -5,10 +5,13 @@ import { useAppContext } from '../contexts/AppContext';
 import { devices as initialDevices } from '../data/devices';
 import { Plus, ChevronDown, Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 
 export default function Inventory() {
   const { reviewMode } = useAppContext();
   const navigate = useNavigate();
+  const { isTablet } = useUiMode();
   
   const [devices] = useState(initialDevices);
   const [filterType, setFilterType] = useState('All');
@@ -78,7 +81,7 @@ export default function Inventory() {
         pageId="FAL_INV_01"
         roles="Admin, System"
         actions={
-          <Button size="sm" onClick={() => navigate('/assets/inventory/devices/new')}>
+          <Button size="sm" className={cn(isTablet && "h-11 px-4 text-sm gap-2")} onClick={() => navigate('/assets/inventory/devices/new')}>
             <Plus className="w-4 h-4 mr-2" /> Add device
           </Button>
         }
@@ -86,18 +89,18 @@ export default function Inventory() {
 
       <div className="app_card p-0 overflow-hidden mt-6">
         <div className="p-4 border-b border-secondary bg-elevated flex items-center justify-between">
-          <div className="flex items-center gap-3 w-full">
-            <div className="relative h-10 w-full max-w-[300px]">
+          <div className="flex items-center gap-3 w-full flex-wrap">
+            <div className={cn("relative w-full max-w-[300px]", isTablet ? "h-11" : "h-10")}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary" />
               <input 
-                className="w-full h-10 pl-9 pr-3 rounded-[10px] border border-secondary bg-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow" 
+                className={cn("w-full pl-9 pr-3 rounded-[10px] border border-secondary bg-primary focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow", isTablet ? "h-11 text-sm" : "h-10 text-sm")} 
                 placeholder="Search by ID or name..." 
                 value={search}
                 onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
               />
             </div>
             
-            <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center min-w-[140px]">
+            <div className={cn("relative bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center min-w-[140px]", isTablet ? "h-11" : "h-10")}>
               <select className="h-full w-full pl-3 pr-8 bg-transparent text-sm outline-none appearance-none cursor-pointer" value={filterType} onChange={e => { setFilterType(e.target.value); setCurrentPage(1); }}>
                 <option value="All">All types</option>
                 <option value="Gateway">Gateway</option>
@@ -107,7 +110,7 @@ export default function Inventory() {
               <ChevronDown className="absolute right-3 w-4 h-4 text-tertiary pointer-events-none" />
             </div>
 
-            <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center min-w-[140px]">
+            <div className={cn("relative bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center min-w-[140px]", isTablet ? "h-11" : "h-10")}>
               <select className="h-full w-full pl-3 pr-8 bg-transparent text-sm outline-none appearance-none cursor-pointer" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}>
                 <option value="All">All statuses</option>
                 <option value="Online">Online</option>
@@ -148,7 +151,7 @@ export default function Inventory() {
                     <td className="text-tertiary">{d.lastContact}</td>
                     <td className="text-tertiary">{d.model}</td>
                     <td>
-                      <Link to={`/assets/inventory/devices/${d.id}`}><Button variant="ghost" size="sm">View</Button></Link>
+                      <Link to={`/assets/inventory/devices/${d.id}`}><Button variant="ghost" size="sm" className={cn(isTablet && "h-11 min-w-[44px] px-3")}>View</Button></Link>
                     </td>
                   </tr>
                 ))}
@@ -156,16 +159,16 @@ export default function Inventory() {
             </table>
             
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-secondary flex items-center justify-between bg-primary rounded-b-[16px]">
+            <div className="p-4 border-t border-secondary flex items-center justify-between bg-primary rounded-b-[16px] flex-wrap gap-4">
               <div className="text_sm text-secondary">
                 Showing <span className="font-medium text-primary">{(currentPage - 1) * rowsPerPage + 1}</span> to <span className="font-medium text-primary">{Math.min(currentPage * rowsPerPage, totalFiltered)}</span> of <span className="font-medium text-primary">{totalFiltered}</span> devices
               </div>
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4 sm:gap-6">
                 <div className="flex items-center gap-2 text_sm text-secondary">
                   Rows per page
-                  <div className="relative h-8 bg-transparent border-transparent hover:bg-secondary transition-colors cursor-pointer rounded-[8px] flex items-center">
+                  <div className={cn("relative bg-transparent border-transparent hover:bg-secondary transition-colors cursor-pointer rounded-[8px] flex items-center", isTablet ? "h-11" : "h-8")}>
                     <select 
-                      className="h-full pl-2 pr-8 bg-transparent font-medium text-primary cursor-pointer outline-none appearance-none" 
+                      className={cn("h-full pl-2 pr-8 bg-transparent font-medium text-primary cursor-pointer outline-none appearance-none", isTablet && "text-sm")} 
                       value={rowsPerPage} 
                       onChange={e => {
                         setRowsPerPage(Number(e.target.value));
@@ -183,17 +186,17 @@ export default function Inventory() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
+                    className={cn("p-0 flex items-center justify-center rounded-[8px]", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "w-8 h-8")}
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
+                  <div className={cn("font-medium text-center tabular-nums", isTablet ? "text-sm w-10" : "text_sm w-8")}>{currentPage}</div>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
+                    className={cn("p-0 flex items-center justify-center rounded-[8px]", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "w-8 h-8")}
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   >

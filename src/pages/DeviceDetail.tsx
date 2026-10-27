@@ -5,11 +5,15 @@ import { devices } from '../data/devices';
 import { Edit2, Terminal, MapPin, Wifi, Cpu, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 
 export default function DeviceDetail() {
   const { reviewMode } = useAppContext();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
   
   const device = devices.find(d => d.id === id);
 
@@ -30,17 +34,17 @@ export default function DeviceDetail() {
         roles="Admin, System, Operator"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate(`/assets/inventory/devices/${device.id}/edit`)}>
+            <Button variant="outline" size="sm" className={cn(isTablet && "h-11 px-4 text-sm")} onClick={() => navigate(`/assets/inventory/devices/${device.id}/edit`)}>
               <Edit2 className="w-4 h-4 mr-2" /> Edit
             </Button>
-            <Button size="sm" onClick={() => alert('Command modal')}>
+            <Button size="sm" className={cn(isTablet && "h-11 px-4 text-sm")} onClick={() => alert('Command modal')}>
               <Terminal className="w-4 h-4 mr-2" /> Send command
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className={cn("gap-6 mb-8", isPortrait ? "flex flex-col" : "grid grid-cols-1 lg:grid-cols-3")}>
         <div className="lg:col-span-2 app_card p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -84,15 +88,15 @@ export default function DeviceDetail() {
             <MapPin className="w-6 h-6 text-tertiary" />
           </div>
           <p className="text_sm text-tertiary max-w-[200px] mb-4">Map view of this specific device's location and coverage.</p>
-          <Button variant="outline" size="sm">Open map</Button>
+          <Button variant="outline" size="sm" className={cn(isTablet && "h-11 px-4 text-sm")}>Open map</Button>
         </div>
       </div>
 
       <Tabs defaultValue="events">
-        <TabsList className="flex gap-6 border-b border-secondary mb-6 bg-transparent p-0 justify-start h-auto rounded-none">
-          <TabsTrigger value="events" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Recent Events</TabsTrigger>
-          <TabsTrigger value="telemetry" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Telemetry</TabsTrigger>
-          <TabsTrigger value="logs" className="pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent">Device Logs</TabsTrigger>
+        <TabsList className="flex gap-2 sm:gap-6 border-b border-secondary mb-6 bg-transparent p-0 justify-start h-auto rounded-none overflow-x-auto scrollbar-none">
+          <TabsTrigger value="events" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Recent Events</TabsTrigger>
+          <TabsTrigger value="telemetry" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Telemetry</TabsTrigger>
+          <TabsTrigger value="logs" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Device Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="events">

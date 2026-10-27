@@ -8,11 +8,13 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Info, Search, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 
-const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: { icon?: React.ElementType, value: string, options: string[], onChange: (v: string) => void, prefix?: string }) => (
+const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "", isTablet = false }: { icon?: React.ElementType, value: string, options: string[], onChange: (v: string) => void, prefix?: string, isTablet?: boolean }) => (
   <DropdownMenu>
     <DropdownMenuTrigger render={
-      <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
+      <Button variant="outline" className={cn("px-3 bg-primary border border-primary hover:border-secondary rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary", isTablet ? "h-11 min-h-[44px]" : "h-10")}>
         {Icon && <Icon className="w-4 h-4 text-secondary" />}
         <span>{prefix}{value}</span>
         <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
@@ -22,7 +24,7 @@ const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: {
       {options.map(opt => (
         <DropdownMenuItem 
           key={opt}
-          className={`flex items-center px-3 py-2 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary ${value === opt ? 'font-medium' : ''}`} 
+          className={cn("flex items-center px-3 text_sm rounded-[8px] cursor-pointer outline-none text-primary hover:bg-secondary", isTablet ? "h-12 min-h-[44px]" : "py-2", value === opt ? 'font-medium' : '')} 
           style={value === opt ? { backgroundColor: 'var(--bg_selected)' } : {}}
           onSelect={() => onChange(opt)}
         >
@@ -36,6 +38,8 @@ const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "" }: {
 export default function Risk() {
   const { reviewMode } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
   
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterRoute, setFilterRoute] = useState('All');
@@ -103,50 +107,63 @@ export default function Risk() {
       />
 
       {/* View Tabs */}
-      <div className="flex items-center gap-6 border-b border-secondary mb-6 -mt-2">
+      <div className="flex items-center gap-2 border-b border-secondary mb-6 -mt-2 overflow-x-auto scrollbar-none">
         <button 
-          className={`pb-3 text_sm font-medium transition-colors border-b-2 ${tabValue === 'Map' ? 'border-brand text-primary' : 'border-transparent text-secondary hover:text-primary'}`}
+          className={cn(
+            "pb-3 text_sm font-medium transition-colors border-b-2 cursor-pointer whitespace-nowrap",
+            isTablet ? "min-h-[44px] flex items-center px-4" : "px-2",
+            tabValue === 'Map' ? 'border-brand text-primary' : 'border-transparent text-secondary hover:text-primary'
+          )}
           onClick={() => setTab('Map')}
         >
           Map
         </button>
         <button 
-          className={`pb-3 text_sm font-medium transition-colors border-b-2 ${tabValue === 'Ranked list' ? 'border-brand text-primary' : 'border-transparent text-secondary hover:text-primary'}`}
+          className={cn(
+            "pb-3 text_sm font-medium transition-colors border-b-2 cursor-pointer whitespace-nowrap",
+            isTablet ? "min-h-[44px] flex items-center px-4" : "px-2",
+            tabValue === 'Ranked list' ? 'border-brand text-primary' : 'border-transparent text-secondary hover:text-primary'
+          )}
           onClick={() => setTab('Ranked list')}
         >
           Ranked list
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className={`${tabValue === 'Map' ? 'xl:col-span-8 h-[640px]' : 'xl:col-span-12 h-auto'} app_card p-0 flex flex-col overflow-hidden relative`}>
+      <div className={cn("gap-6", isPortrait ? "flex flex-col" : "grid grid-cols-1 xl:grid-cols-12")}>
+        <div className={cn(
+          tabValue === 'Map' ? (isPortrait ? 'w-full h-[520px]' : 'xl:col-span-8 h-[640px]') : 'w-full xl:col-span-12 h-auto',
+          'app_card p-0 flex flex-col overflow-hidden relative'
+        )}>
           <div className="app_toolbar flex-wrap z-10 justify-between items-center w-full">
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
               <FilterDropdown 
                 prefix="Priority: "
                 value={filterPriority} 
                 options={['All', 'High', 'Medium', 'Low']} 
                 onChange={(v) => { setFilterPriority(v); }} 
+                isTablet={isTablet}
               />
               <FilterDropdown 
                 prefix="Route: "
                 value={filterRoute} 
                 options={['All', 'Route 01', 'Route 02']} 
                 onChange={(v) => { setFilterRoute(v); }} 
+                isTablet={isTablet}
               />
               
               {/* Map Toolbar Extras (Only visible in Map view) */}
               {tabValue === 'Map' && (
                 <Popover>
                   <PopoverTrigger render={
-                    <Button variant="outline" className="h-10 px-3 bg-primary border border-primary hover:border-[var(--border\_hover)] rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary">
+                    <Button variant="outline" className={cn("px-3 bg-primary border border-primary hover:border-secondary rounded-[10px] shadow-sm transition-shadow flex items-center gap-2 text_sm text-primary", isTablet ? "h-11 min-h-[44px]" : "h-10")}>
                       <span>Basemap: Street</span>
                       <ChevronDown className="w-4 h-4 text-tertiary ml-1" />
                     </Button>
                   } />
                   <PopoverContent className="bg-elevated border border-secondary shadow-lg rounded-[10px] p-2 z-50 flex flex-col gap-1 min-w-[160px]" align="start" sideOffset={4}>
-                    <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" defaultChecked /><span className="choice_body"><span className="choice_label text_sm">Street</span></span></label>
-                    <label className="choice px-2 py-2 rounded-[8px] hover:bg-secondary cursor-pointer"><input type="radio" name="basemap" className="radio" /><span className="choice_body"><span className="choice_label text_sm">Satellite</span></span></label>
+                    <label className={cn("choice px-2 rounded-[8px] hover:bg-secondary cursor-pointer", isTablet ? "min-h-[44px]" : "py-2")}><input type="radio" name="basemap" className="radio" defaultChecked /><span className="choice_body"><span className="choice_label text_sm">Street</span></span></label>
+                    <label className={cn("choice px-2 rounded-[8px] hover:bg-secondary cursor-pointer", isTablet ? "min-h-[44px]" : "py-2")}><input type="radio" name="basemap" className="radio" /><span className="choice_body"><span className="choice_label text_sm">Satellite</span></span></label>
                   </PopoverContent>
                 </Popover>
               )}
@@ -212,13 +229,13 @@ export default function Risk() {
 
                 {/* Floating Map Controls */}
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col bg-elevated rounded-[8px] shadow-sm border border-secondary overflow-hidden">
-                  <button className="p-2 text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary" aria-label="Zoom in">
+                  <button className={cn("text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary flex items-center justify-center", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "p-2")} aria-label="Zoom in">
                     <Plus className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary" aria-label="Zoom out">
+                  <button className={cn("text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary flex items-center justify-center", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "p-2")} aria-label="Zoom out">
                     <Minus className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-secondary hover:bg-secondary hover:text-primary transition-colors" aria-label="Fullscreen">
+                  <button className={cn("text-secondary hover:bg-secondary hover:text-primary transition-colors flex items-center justify-center", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "p-2")} aria-label="Fullscreen">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                   </button>
                 </div>
@@ -299,17 +316,17 @@ export default function Risk() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
+                          className={cn("p-0 flex items-center justify-center rounded-[8px]", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "w-8 h-8")}
                           disabled={currentPage === 1}
                           onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <div className="text_sm font-medium w-8 text-center tabular-nums">{currentPage}</div>
+                        <div className={cn("font-medium text-center tabular-nums", isTablet ? "text-sm w-10" : "text_sm w-8")}>{currentPage}</div>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="w-8 h-8 p-0 flex items-center justify-center rounded-[8px]"
+                          className={cn("p-0 flex items-center justify-center rounded-[8px]", isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "w-8 h-8")}
                           disabled={currentPage === totalPages || totalPages === 0}
                           onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         >
@@ -381,8 +398,8 @@ export default function Risk() {
                     </div>
                     
                     <div className="flex gap-2 mt-4 pt-3 border-t border-secondary">
-                      <Button variant="secondary" size="sm" className="flex-1">Investigate</Button>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={(e) => e.stopPropagation()}>Dismiss</Button>
+                      <Button variant="secondary" size="sm" className={cn("flex-1", isTablet ? "h-11 text-sm" : "")}>Investigate</Button>
+                      <Button variant="outline" size="sm" className={cn("flex-1", isTablet ? "h-11 text-sm" : "")} onClick={(e) => e.stopPropagation()}>Dismiss</Button>
                     </div>
                   </div>
                 );

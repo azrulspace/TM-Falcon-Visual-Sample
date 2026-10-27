@@ -6,12 +6,16 @@ import { useToast } from '../contexts/ToastContext';
 import { devices } from '../data/devices';
 import { ChevronDown, MapPin, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 
 export default function CreateDevice() {
   const { reviewMode } = useAppContext();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { id } = useParams();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
   
   const isEdit = !!id;
   const existingDevice = isEdit ? devices.find(d => d.id === id) : null;
@@ -68,12 +72,12 @@ export default function CreateDevice() {
           
           <div>
             <h4 className="h5 mb-6 text-primary">Device Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={cn("grid gap-6", isPortrait ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
               
               <div className="field">
                 <label className="field_label text_sm font-medium text-secondary mb-1">Device ID</label>
                 <input 
-                  className="w-full h-10 px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none" 
+                  className={cn("w-full px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none", isTablet ? "h-11" : "h-10")} 
                   value={form.id} 
                   disabled 
                   readOnly
@@ -84,7 +88,7 @@ export default function CreateDevice() {
               <div className="field">
                 <label className="field_label text_sm font-medium text-secondary mb-1">Name <span className="text-error">*</span></label>
                 <input 
-                  className={`w-full h-10 px-3 rounded-[10px] border ${errors.name ? 'border-error ring-1 ring-error' : 'border-secondary'} bg-primary text-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow`} 
+                  className={cn(`w-full px-3 rounded-[10px] border ${errors.name ? 'border-error ring-1 ring-error' : 'border-secondary'} bg-primary text-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow`, isTablet ? "h-11" : "h-10")} 
                   placeholder="e.g. Gateway North" 
                   value={form.name} 
                   onChange={e => {setForm({...form, name: e.target.value}); setErrors({...errors, name: false});}} 
@@ -93,7 +97,7 @@ export default function CreateDevice() {
 
               <div className="field">
                 <label className="field_label text_sm font-medium text-secondary mb-1">Type <span className="text-error">*</span></label>
-                <div className="relative h-10 bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center">
+                <div className={cn("relative bg-primary border border-secondary rounded-[10px] shadow-sm flex items-center", isTablet ? "h-11" : "h-10")}>
                   <select 
                     className="h-full w-full pl-3 pr-8 bg-transparent text-sm outline-none appearance-none cursor-pointer" 
                     value={form.type} 
@@ -110,7 +114,7 @@ export default function CreateDevice() {
               <div className="field">
                 <label className="field_label text_sm font-medium text-secondary mb-1">MAC Address</label>
                 <input 
-                  className="w-full h-10 px-3 rounded-[10px] border border-secondary bg-primary text-primary text-sm font-mono focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow" 
+                  className={cn("w-full px-3 rounded-[10px] border border-secondary bg-primary text-primary text-sm font-mono focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow", isTablet ? "h-11" : "h-10")} 
                   placeholder="00:00:00:00:00:00" 
                   value={form.mac} 
                   onChange={e => setForm({...form, mac: e.target.value})} 
@@ -121,14 +125,14 @@ export default function CreateDevice() {
 
           <div className="border-t border-slate-100 my-6 pt-6">
             <h4 className="h5 mb-6 text-primary">Placement Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={cn("grid gap-6", isPortrait ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
               
-              <div className="field md:col-span-2">
+              <div className={cn("field", !isPortrait && "md:col-span-2")}>
                 <label className="field_label text_sm font-medium text-secondary mb-1">Location description <span className="text-error">*</span></label>
-                <div className="relative h-10 w-full">
+                <div className={cn("relative w-full", isTablet ? "h-11" : "h-10")}>
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary" />
                   <input 
-                    className={`w-full h-10 pl-9 pr-3 rounded-[10px] border ${errors.location ? 'border-error ring-1 ring-error' : 'border-secondary'} bg-primary text-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow`} 
+                    className={cn(`w-full pl-9 pr-3 rounded-[10px] border ${errors.location ? 'border-error ring-1 ring-error' : 'border-secondary'} bg-primary text-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow`, isTablet ? "h-11" : "h-10")} 
                     placeholder="e.g. Block A, Roof" 
                     value={form.location} 
                     onChange={e => {setForm({...form, location: e.target.value}); setErrors({...errors, location: false});}} 
@@ -139,13 +143,13 @@ export default function CreateDevice() {
               <div className="field">
                 <label className="field_label text_sm font-medium text-secondary mb-1">Coordinates</label>
                 <div className="flex gap-2">
-                  <input className="flex-1 h-10 px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none" placeholder="Lat" disabled readOnly />
-                  <input className="flex-1 h-10 px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none" placeholder="Lng" disabled readOnly />
+                  <input className={cn("flex-1 px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none", isTablet ? "h-11" : "h-10")} placeholder="Lat" disabled readOnly />
+                  <input className={cn("flex-1 px-3 rounded-[10px] border border-secondary bg-secondary text-tertiary text-sm cursor-not-allowed outline-none", isTablet ? "h-11" : "h-10")} placeholder="Lng" disabled readOnly />
                 </div>
                 <p className="text-xs text-tertiary mt-1">Automatically set during field commissioning.</p>
               </div>
 
-              <div className="field md:col-span-2">
+              <div className={cn("field", !isPortrait && "md:col-span-2")}>
                 <label className="field_label text_sm font-medium text-secondary mb-1">Notes</label>
                 <textarea 
                   className="w-full min-h-[90px] p-3 rounded-[10px] border border-secondary bg-primary text-primary text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-shadow resize-y" 
@@ -158,8 +162,8 @@ export default function CreateDevice() {
           </div>
 
           <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
-            <Button variant="ghost" type="button" onClick={() => navigate(isEdit ? `/assets/inventory/devices/${form.id}` : '/assets/inventory')}>Cancel</Button>
-            <Button type="submit">{isEdit ? 'Save changes' : 'Register device'}</Button>
+            <Button variant="ghost" type="button" className={cn(isTablet && "h-11 px-4 text-sm")} onClick={() => navigate(isEdit ? `/assets/inventory/devices/${form.id}` : '/assets/inventory')}>Cancel</Button>
+            <Button type="submit" className={cn(isTablet && "h-11 px-5 text-sm")}>{isEdit ? 'Save changes' : 'Register device'}</Button>
           </div>
 
         </form>
