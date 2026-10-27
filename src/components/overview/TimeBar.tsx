@@ -22,12 +22,14 @@ import {
 } from '@/components/ui/popover';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useOverview } from '@/contexts/OverviewContext';
+import { useUiMode } from '@/hooks/useUiMode';
 import { initialCases } from '@/data/cases';
 import type { FalconCase, CaseStatus } from '@/types/cases';
 import {
   formatStagingLiveClock,
   formatTimelineWindowStart,
   formatCaseOpenedDate,
+  formatStagingShortMYT,
   parseDate,
   getServerNow,
 } from '@/lib/dateTime';
@@ -50,6 +52,11 @@ export const TimeBar: React.FC<TimeBarProps> = ({
   className = '',
 }) => {
   const { selectEntity, liveState, setLiveState, lastUpdatedTime, refreshNow } = useOverview();
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
+  const isTabletLandscape = isTablet && orientation === 'landscape';
+
   const [now, setNow] = useState<Date>(() => getServerNow());
   const [scrubberPos, setScrubberPos] = useState<number>(75);
   const [isDragging, setIsDragging] = useState(false);
@@ -201,60 +208,72 @@ export const TimeBar: React.FC<TimeBarProps> = ({
     return `Active cases by opening time. ${count} active case${count === 1 ? '' : 's'}.`;
   }, [timeMode, activeCases.length]);
 
+  const clockDisplay = isTabletLandscape || isTabletPortrait
+    ? formatStagingShortMYT(now)
+    : formatStagingLiveClock(now);
+
+  const buttonHeightClass = isTablet ? 'h-[44px]' : 'h-[34px]';
+  const subButtonHeightClass = isTablet ? 'h-[38px] px-3.5' : 'h-[28px] px-3';
+
   return (
     <footer
-      className={`w-full h-[56px] shrink-0 px-4 md:px-6 flex items-center justify-between gap-3 select-none dark:bg-[#10151c] bg-white border-t dark:border-[#2a323d] border-slate-200 z-30 transition-colors ${className}`}
+      className={`w-full ${
+        isTabletPortrait ? 'min-h-[96px] py-2.5 flex-col justify-between gap-2.5' : 'h-[56px] items-center justify-between'
+      } shrink-0 px-4 md:px-6 flex gap-3 select-none dark:bg-[#10151c] bg-white border-t dark:border-[#2a323d] border-slate-200 z-30 transition-colors ${className}`}
       data-testid="docked-time-bar"
       role="region"
       aria-label="Time navigation and live clock"
     >
-      {/* ================= LEFT CONTROLS ================= */}
-      <div className="flex items-center gap-3 shrink-0">
-        {/* Tooltip on "Cases" label */}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <span className="text-xs font-medium text-muted-foreground select-none cursor-help hover:text-foreground transition-colors">
-                Cases
-              </span>
-            }
-          />
-          <TooltipContent side="top" className="text-xs">
-            The timeline shows active cases by the time they were opened.
-          </TooltipContent>
-        </Tooltip>
+      {/* Upper Container / Row 1 in Portrait */}
+      <div className={`flex items-center ${isTabletPortrait ? 'justify-between w-full' : 'contents'}`}>
+        {/* ================= LEFT CONTROLS ================= */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Tooltip on "Cases" label */}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="text-xs font-medium text-muted-foreground select-none cursor-help hover:text-foreground transition-colors">
+                  Cases
+                </span>
+              }
+            />
+            <TooltipContent side="top" className="text-xs">
+              The timeline shows active cases by the time they were opened.
+            </TooltipContent>
+          </Tooltip>
 
-        {/* Mode Segmented Control: Active now vs History */}
-        <div className="bg-slate-100 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200 p-0.5 flex h-[34px] items-center rounded-lg overflow-hidden shrink-0">
-          {/* Active now button */}
-          <button
-            type="button"
-            onClick={() => onTimeModeChange('Active now')}
-            aria-pressed={timeMode === 'Active now'}
-            className={`flex items-center justify-center gap-1.5 h-[28px] px-3 rounded-md text-xs transition-all cursor-pointer ${
-              timeMode === 'Active now'
-                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <AudioLines className="size-3.5 shrink-0" />
-            <span>Active now</span>
-          </button>
+          {/* Mode Segmented Control: Active now vs History */}
+          <div className={`bg-slate-100 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200 p-0.5 flex ${buttonHeightClass} items-center rounded-lg overflow-hidden shrink-0`}>
+            {/* Active now button */}
+            <button
+              type="button"
+              onClick={() => onTimeModeChange('Active now')}
+              aria-pressed={timeMode === 'Active now'}
+              className={`flex items-center justify-center gap-1.5 ${subButtonHeightClass} rounded-md text-xs transition-all cursor-pointer ${
+                timeMode === 'Active now'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <AudioLines className="size-3.5 shrink-0" />
+              <span>Active now</span>
+            </button>
 
-          {/* History button */}
-          <button
-            type="button"
-            onClick={() => onTimeModeChange('History')}
-            aria-pressed={timeMode === 'History'}
-            className={`flex items-center justify-center gap-1.5 h-[28px] px-3 rounded-md text-xs transition-all cursor-pointer ${
-              timeMode === 'History'
-                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Clock className="size-3.5 shrink-0" />
-            <span>History</span>
-          </button>
+            {/* History button */}
+            <button
+              type="button"
+              onClick={() => onTimeModeChange('History')}
+              aria-pressed={timeMode === 'History'}
+              className={`flex items-center justify-center gap-1.5 ${subButtonHeightClass} rounded-md text-xs transition-all cursor-pointer ${
+                timeMode === 'History'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Clock className="size-3.5 shrink-0" />
+              <span>History</span>
+            </button>
+          </div>
         </div>
 
         {/* History mode range dropdown and Back to Live button */}
@@ -295,14 +314,76 @@ export const TimeBar: React.FC<TimeBarProps> = ({
             </button>
           </div>
         )}
-      </div>
 
-      {/* ================= CENTER TIMELINE ================= */}
-      <div className="flex-1 flex flex-col justify-center max-w-[700px] h-full relative px-2 md:px-4">
-        {/* Caption Centered Above Track */}
-        <div className="w-full text-center text-[10.5px] text-muted-foreground truncate mb-1">
-          {captionText}
+      {/* Portrait Tablet Mode: Right controls sit in Row 1 */}
+      {isTabletPortrait && (
+        <div className="flex items-center gap-3 shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3 h-[44px] rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer"
+                  title="Telemetry connection status"
+                >
+                  <span className="relative flex size-2.5">
+                    {liveState === 'live' ? (
+                      <>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                        <span className="relative inline-flex rounded-full size-2.5 bg-emerald-500" />
+                      </>
+                    ) : (
+                      <span className="relative inline-flex rounded-full size-2.5 bg-amber-500" />
+                    )}
+                  </span>
+                  <span className="text-[11px] font-semibold text-foreground">
+                    {liveState === 'live' ? 'Live' : 'Paused'}
+                  </span>
+                </button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
+              <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
+                <span>Telemetry Feed</span>
+                <span className="text-[10px] font-normal text-muted-foreground">{lastUpdatedTime}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setLiveState('live')}
+                className={`cursor-pointer ${liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
+              >
+                <span className="size-2 rounded-full bg-emerald-500 mr-2 inline-block" />
+                <span>Live stream active</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLiveState('paused')}
+                className={`cursor-pointer ${liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
+              >
+                <span className="size-2 rounded-full bg-amber-500 mr-2 inline-block" />
+                <span>Pause telemetry stream</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={refreshNow} className="cursor-pointer">
+                <RotateCcw className="size-3 mr-2" />
+                <span>Refresh data now</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="h-4 w-px bg-border shrink-0" />
+
+          <p className="text-xs font-mono tabular-nums text-foreground/90 whitespace-nowrap">
+            {clockDisplay}
+          </p>
         </div>
+      )}
+    </div>
+
+    {/* ================= CENTER TIMELINE (Row 2 in Portrait) ================= */}
+    <div className={`${isTabletPortrait ? 'w-full' : 'flex-1'} flex flex-col justify-center max-w-[700px] h-full relative px-2 md:px-4`}>
+      {/* Caption Centered Above Track */}
+      <div className="w-full text-center text-[10.5px] text-muted-foreground truncate mb-1">
+        {captionText}
+      </div>
 
         {/* Track Line Container */}
         <div
@@ -371,8 +452,10 @@ export const TimeBar: React.FC<TimeBarProps> = ({
                       onClick={() => handleSelectCase(caseItem)}
                       style={{ left: `${posPercent}%` }}
                       aria-label={`${caseItem.id}, ${caseItem.status}, opened ${formatCaseOpenedDate(caseItem.createdAt)}`}
-                      className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2.5 rounded-full ring-2 ring-background transition-transform outline-none hover:scale-150 focus-visible:scale-150 cursor-pointer shadow-xs z-10 ${statusClass}`}
-                    />
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-11 flex items-center justify-center outline-none cursor-pointer z-10 group"
+                    >
+                      <span className={`size-2.5 rounded-full ring-2 ring-background transition-transform group-hover:scale-150 group-focus-visible:scale-150 shadow-xs ${statusClass}`} />
+                    </button>
                   }
                 />
                 <TooltipContent side="top" className="text-xs p-2 max-w-xs space-y-0.5">
@@ -415,67 +498,69 @@ export const TimeBar: React.FC<TimeBarProps> = ({
         </div>
       </div>
 
-      {/* ================= RIGHT CONTROLS ================= */}
-      <div className="flex items-center gap-3 shrink-0">
-        {/* Live Pill with Telemetry Dropdown Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                type="button"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer"
-                title="Telemetry connection status"
+      {/* ================= RIGHT CONTROLS (Landscape / Desktop) ================= */}
+      {!isTabletPortrait && (
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Live Pill with Telemetry Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 ${isTablet ? 'h-[44px] px-3' : 'px-2.5 py-1'} rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer`}
+                  title="Telemetry connection status"
+                >
+                  <span className="relative flex size-2">
+                    {liveState === 'live' ? (
+                      <>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                        <span className="relative inline-flex rounded-full size-2 bg-emerald-500" />
+                      </>
+                    ) : (
+                      <span className="relative inline-flex rounded-full size-2 bg-amber-500" />
+                    )}
+                  </span>
+                  <span className="text-[11px] font-semibold text-foreground">
+                    {liveState === 'live' ? 'Live' : 'Paused'}
+                  </span>
+                </button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
+              <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
+                <span>Telemetry Feed</span>
+                <span className="text-[10px] font-normal text-muted-foreground">{lastUpdatedTime}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setLiveState('live')}
+                className={`cursor-pointer ${liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
               >
-                <span className="relative flex size-2">
-                  {liveState === 'live' ? (
-                    <>
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                      <span className="relative inline-flex rounded-full size-2 bg-emerald-500" />
-                    </>
-                  ) : (
-                    <span className="relative inline-flex rounded-full size-2 bg-amber-500" />
-                  )}
-                </span>
-                <span className="text-[11px] font-semibold text-foreground">
-                  {liveState === 'live' ? 'Live' : 'Paused'}
-                </span>
-              </button>
-            }
-          />
-          <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
-            <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
-              <span>Telemetry Feed</span>
-              <span className="text-[10px] font-normal text-muted-foreground">{lastUpdatedTime}</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setLiveState('live')}
-              className={`cursor-pointer ${liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
-            >
-              <span className="size-2 rounded-full bg-emerald-500 mr-2 inline-block" />
-              <span>Live stream active</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setLiveState('paused')}
-              className={`cursor-pointer ${liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
-            >
-              <span className="size-2 rounded-full bg-amber-500 mr-2 inline-block" />
-              <span>Pause telemetry stream</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={refreshNow} className="cursor-pointer">
-              <RotateCcw className="size-3 mr-2" />
-              <span>Refresh data now</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <span className="size-2 rounded-full bg-emerald-500 mr-2 inline-block" />
+                <span>Live stream active</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLiveState('paused')}
+                className={`cursor-pointer ${liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
+              >
+                <span className="size-2 rounded-full bg-amber-500 mr-2 inline-block" />
+                <span>Pause telemetry stream</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={refreshNow} className="cursor-pointer">
+                <RotateCcw className="size-3 mr-2" />
+                <span>Refresh data now</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        <div className="h-4 w-px bg-border shrink-0" />
+          <div className="h-4 w-px bg-border shrink-0" />
 
-        {/* Live Staging Ticking Clock (e.g. "Tue, 27 Oct 2026, 2:49:50 pm MYT") */}
-        <p className="text-xs font-mono tabular-nums text-foreground/90 whitespace-nowrap">
-          {formatStagingLiveClock(now)}
-        </p>
-      </div>
+          {/* Clock display */}
+          <p className="text-xs font-mono tabular-nums text-foreground/90 whitespace-nowrap">
+            {clockDisplay}
+          </p>
+        </div>
+      )}
     </footer>
   );
 };

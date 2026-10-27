@@ -318,3 +318,25 @@ export function formatCaseOpenedDate(dateInput: string | number | Date | null | 
   }).format(date);
 }
 
+/**
+ * Short date-time format for tablet mode matching spec:
+ * e.g. "27 Oct, 2:49 pm MYT"
+ */
+export function formatStagingShortMYT(dateInput: string | number | Date | null | undefined): string {
+  if (!dateInput) return '—';
+  const date = parseDate(dateInput);
+  if (!date) return '—';
+
+  const formatted = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kuala_Lumpur',
+  }).format(date);
+
+  return `${formatted} MYT`;
+}
+
+

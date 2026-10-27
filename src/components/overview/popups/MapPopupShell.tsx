@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { X, MapPinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUiMode } from '@/hooks/useUiMode';
 import type { PlacementSide } from '@/lib/popupPlacement';
 
 export interface MapPopupShellProps {
@@ -17,6 +18,7 @@ export interface MapPopupShellProps {
   footerActions?: React.ReactNode;
   style?: React.CSSProperties;
   className?: string;
+  isDrawer?: boolean;
 }
 
 export const MapPopupShell: React.FC<MapPopupShellProps> = ({
@@ -33,7 +35,14 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
   footerActions,
   style,
   className = '',
+  isDrawer: propIsDrawer,
 }) => {
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
+  const isTabletLandscape = isTablet && orientation === 'landscape';
+  const isDrawer = propIsDrawer ?? isTabletPortrait;
+
   const bodyRef = useRef<HTMLDivElement>(null);
   const [hasScrollMore, setHasScrollMore] = useState(false);
 
@@ -75,13 +84,77 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
       : 'bg-primary/15 text-primary border-primary/30';
 
+  if (isDrawer) {
+    return (
+      <div
+        role="dialog"
+        aria-modal="false"
+        aria-label={`${typeChip} ${id} details`}
+        className={`pointer-events-auto fixed bottom-0 left-0 right-0 max-h-[52vh] z-40 flex flex-col rounded-t-2xl border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/98 bg-white/98 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in slide-in-from-bottom duration-200 ${className}`}
+      >
+        {/* Drag handle */}
+        <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30 mx-auto my-2.5 shrink-0" />
+
+        {/* Unlocated Notice Banner */}
+        {unlocated && (
+          <div className="bg-amber-500/15 dark:bg-amber-500/10 border-b border-amber-500/30 px-3.5 py-1.5 flex items-center gap-2 text-xs text-amber-500 font-medium shrink-0">
+            <MapPinOff className="size-3.5 shrink-0" />
+            <span>This record has no map location</span>
+          </div>
+        )}
+
+        {/* 1. Header (44px) */}
+        <div className="flex items-center justify-between h-[44px] px-4 border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/80 bg-slate-50/80 shrink-0 z-10">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider border font-sans ${chipColorClass}`}>
+              {typeChip}
+            </span>
+            <span className="font-mono text-xs font-bold text-foreground truncate">{id}</span>
+            {badge}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground size-9 rounded-md cursor-pointer shrink-0"
+            aria-label="Close details"
+          >
+            <X className="size-5" />
+          </Button>
+        </div>
+
+        {/* 2. Scrollable Body */}
+        <div
+          ref={bodyRef}
+          className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs font-sans divide-y divide-border/40 *:pt-3.5 first:*:pt-0 no-scrollbar relative"
+        >
+          {title && (
+            <div className="space-y-0.5 pb-0.5">
+              <h3 className="text-sm font-bold text-foreground leading-snug">{title}</h3>
+            </div>
+          )}
+          {children}
+        </div>
+
+        {/* 3. Footer */}
+        {footerActions && (
+          <div className="p-3.5 border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/95 bg-slate-50/95 flex items-center justify-between gap-3 shrink-0 z-10">
+            {footerActions}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       role="dialog"
       aria-modal="false"
       aria-label={`${typeChip} ${id} details`}
       style={style}
-      className={`pointer-events-auto absolute z-40 w-[360px] max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
+      className={`pointer-events-auto absolute z-40 ${
+        isTabletLandscape ? 'w-[340px]' : 'w-[360px]'
+      } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
     >
       {/* Visual Tail pointing to marker */}
       {side === 'top' && !unlocated && (

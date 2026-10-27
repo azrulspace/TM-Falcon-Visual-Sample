@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { ZoomIn, ZoomOut, Info } from 'lucide-react';
+import { useUiMode } from '@/hooks/useUiMode';
 import {
   Popover,
   PopoverContent,
@@ -17,6 +18,10 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
   onZoomOut,
   scaleLevel = 1,
 }) => {
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
+
   // Support +/- keyboard shortcuts for zoom
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,12 +43,12 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
   const midDistance = (2.5 / scaleLevel).toFixed(scaleLevel > 1.5 ? 1 : 1);
 
   return (
-    <div className="flex flex-col items-end gap-1.5 pointer-events-auto select-none" data-node-id="138:13833">
-      {/* Upper row: 112px Scale bar + 200px Zoom container */}
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col items-end gap-2 pointer-events-auto select-none" data-node-id="138:13833">
+      {/* Controls row */}
+      <div className={`flex ${isTablet ? 'items-end' : 'items-center'} gap-3`}>
         {/* Scale bar matching Figma node 138:13834 (112x25) */}
         <div
-          className="h-[25px] w-[112px] relative pointer-events-none select-none drop-shadow"
+          className="h-[25px] w-[112px] relative pointer-events-none select-none drop-shadow mb-1"
           data-node-id="138:13834"
           data-name="Map scale"
         >
@@ -65,41 +70,67 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
           </div>
         </div>
 
-        {/* Zoom controls container matching Figma node 138:13849 (200x42) */}
-        <div
-          className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors"
-          data-node-id="138:13849"
-          data-name="Zoom controls"
-        >
-          {/* Zoom In button (w-[87px] h-[32px]) */}
-          <button
-            onClick={onZoomIn}
-            className="flex items-center justify-center gap-1.5 w-[87px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
-            aria-label="Zoom In"
-            title="Zoom In (+)"
+        {/* Zoom controls: Stacked 48px buttons in tablet mode, horizontal pill in desktop */}
+        {isTablet ? (
+          <div
+            className="flex flex-col gap-1.5 p-1 rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors"
+            data-node-id="138:13849"
+            data-name="Zoom controls tablet"
           >
-            <ZoomIn className="size-3.5 shrink-0" />
-            <span>Zoom In</span>
-          </button>
-
-          {/* 1px divider */}
-          <div className="w-px h-[16px] dark:bg-[#2a323d] bg-slate-200 shrink-0" />
-
-          {/* Zoom Out button (w-[98px] h-[32px]) */}
-          <button
-            onClick={onZoomOut}
-            className="flex items-center justify-center gap-1.5 w-[98px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
-            aria-label="Zoom Out"
-            title="Zoom Out (-)"
+            <button
+              onClick={onZoomIn}
+              className="flex items-center justify-center size-12 rounded-lg text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Zoom In"
+              title="Zoom In (+)"
+            >
+              <ZoomIn className="size-5 shrink-0" />
+            </button>
+            <div className="h-px w-8 mx-auto dark:bg-[#2a323d] bg-slate-200 shrink-0" />
+            <button
+              onClick={onZoomOut}
+              className="flex items-center justify-center size-12 rounded-lg text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Zoom Out"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut className="size-5 shrink-0" />
+            </button>
+          </div>
+        ) : (
+          <div
+            className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors"
+            data-node-id="138:13849"
+            data-name="Zoom controls"
           >
-            <ZoomOut className="size-3.5 shrink-0" />
-            <span>Zoom Out</span>
-          </button>
-        </div>
+            {/* Zoom In button */}
+            <button
+              onClick={onZoomIn}
+              className="flex items-center justify-center gap-1.5 w-[87px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Zoom In"
+              title="Zoom In (+)"
+            >
+              <ZoomIn className="size-3.5 shrink-0" />
+              <span>Zoom In</span>
+            </button>
+
+            {/* 1px divider */}
+            <div className="w-px h-[16px] dark:bg-[#2a323d] bg-slate-200 shrink-0" />
+
+            {/* Zoom Out button */}
+            <button
+              onClick={onZoomOut}
+              className="flex items-center justify-center gap-1.5 w-[98px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Zoom Out"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut className="size-3.5 shrink-0" />
+              <span>Zoom Out</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Attribution line matching Figma node 138:13613 */}
-      <div className="flex items-center gap-1.5 text-[10px] text-white/75 drop-shadow pr-0.5">
+      {/* Attribution line matching Figma node 138:13613 (wraps cleanly to two lines on portrait) */}
+      <div className={`flex items-center gap-1.5 text-[10px] text-white/75 drop-shadow pr-0.5 ${isTabletPortrait ? 'max-w-[280px] text-right justify-end flex-wrap' : ''}`}>
         <span>Maxar Technologies, OpenStreetMap contributors | TM FALCON (Internal Use Only)</span>
         <Popover>
           <PopoverTrigger

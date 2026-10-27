@@ -301,6 +301,62 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     setScale((s) => Math.min(Math.max(s + zoomDelta, 0.85), 2.8));
   };
 
+  // Touch gestures: Pinch-to-zoom and one-finger pan
+  const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchInitialDistance = useRef<number | null>(null);
+  const touchInitialScale = useRef<number>(1);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      setIsDragging(true);
+      setDragStart({
+        x: t.clientX - pan.x,
+        y: t.clientY - pan.y,
+      });
+      touchStartPos.current = { x: t.clientX, y: t.clientY };
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      touchInitialDistance.current = dist;
+      touchInitialScale.current = scale;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging) {
+      const t = e.touches[0];
+      setPan({
+        x: t.clientX - dragStart.x,
+        y: t.clientY - dragStart.y,
+      });
+    } else if (e.touches.length === 2 && touchInitialDistance.current !== null) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = dist / touchInitialDistance.current;
+      const nextScale = Math.min(Math.max(touchInitialScale.current * factor, 0.85), 2.8);
+      setScale(nextScale);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+      touchInitialDistance.current = null;
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      setIsDragging(true);
+      setDragStart({
+        x: t.clientX - pan.x,
+        y: t.clientY - pan.y,
+      });
+      touchInitialDistance.current = null;
+    }
+  };
+
   // Real GIS tile grid calculation around Kuching (z=12, x=3303, y=2030)
   // Generous grid spanning 11 columns and 10 rows to cover any viewport without gaps
   const tiles = useMemo(() => {
@@ -383,6 +439,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      style={{ touchAction: 'none' }}
       className={`w-full h-full relative overflow-hidden select-none bg-[#08101C] cursor-grab active:cursor-grabbing ${className}`}
     >
       {/* SVG Vector & Tile Map Canvas (Fills area with zero letterbox gaps) */}
