@@ -72,7 +72,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   const startingStatus: ClipStatus = !deviceSupportsVideo
     ? 'not_supported'
     : !deviceIsOnline
-    ? 'offline_or_forbidden'
+    ? 'device_offline'
     : initialClipStatus;
 
   const [clipState, dispatch] = useReducer(clipReducer, {
@@ -350,7 +350,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             )}
 
             {/* 2. OFFLINE OR FORBIDDEN */}
-            {clipState.status === 'offline_or_forbidden' && (
+            {clipState.status === 'device_offline' && (
               <div className="text-center p-6 space-y-2 text-slate-400 max-w-xs">
                 <AlertTriangle className="size-8 mx-auto text-amber-500" />
                 <h4 className="text-xs font-bold text-foreground">Device currently offline</h4>
