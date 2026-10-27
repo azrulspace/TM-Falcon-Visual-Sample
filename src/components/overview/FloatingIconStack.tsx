@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { AlertTriangle, Layers, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Layers } from 'lucide-react';
 import { useOverview } from '@/contexts/OverviewContext';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { IncidentsPanel } from '@/components/overview/IncidentsPanel';
+import { NeedsAttentionPanel } from '@/components/overview/panels/NeedsAttentionPanel';
+import { AssetsAndDevicesPanel } from '@/components/overview/panels/AssetsAndDevicesPanel';
 
 export interface FloatingIconStackProps {
   className?: string;
@@ -22,8 +23,6 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
     attentionDevices,
     totalFeaturesCount,
     activePopup,
-    selectedId,
-    selectEntity,
   } = useOverview();
 
   // Escape key handler: closes active panel only if popup is NOT currently active
@@ -53,39 +52,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
           {renderAttentionPanel ? (
             renderAttentionPanel()
           ) : (
-            <div className="flex flex-col max-h-[calc(100vh-240px)]">
-              {/* Header with collapse chevron */}
-              <div className="flex items-center justify-between h-[42px] px-3.5 border-b dark:border-[#222b38] border-slate-200 shrink-0 bg-slate-50/50 dark:bg-black/20">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-foreground tracking-tight">
-                    Needs attention
-                  </span>
-                  {attentionCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono bg-[#e33f50] text-white">
-                      {attentionCount}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setActivePanel(null)}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                  aria-label="Collapse Needs attention panel"
-                  title="Collapse panel"
-                >
-                  <ChevronUp className="size-4" />
-                </button>
-              </div>
-
-              {/* Incidents / Attention List */}
-              <div className="flex-1 overflow-y-auto no-scrollbar">
-                <IncidentsPanel
-                  selectedId={selectedId}
-                  onSelectItem={(id) => {
-                    selectEntity('device', id, { fly: true, source: 'panel' });
-                  }}
-                />
-              </div>
-            </div>
+            <NeedsAttentionPanel onClose={() => setActivePanel(null)} />
           )}
         </div>
       ) : (
@@ -122,35 +89,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
           {renderAssetsPanel ? (
             renderAssetsPanel()
           ) : (
-            <div className="flex flex-col max-h-[calc(100vh-240px)]">
-              {/* Header with collapse chevron */}
-              <div className="flex items-center justify-between h-[42px] px-3.5 border-b dark:border-[#222b38] border-slate-200 shrink-0 bg-slate-50/50 dark:bg-black/20">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-foreground tracking-tight">
-                    Assets and devices
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono bg-primary text-primary-foreground">
-                    {assetsCount}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setActivePanel(null)}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                  aria-label="Collapse Assets and devices panel"
-                  title="Collapse panel"
-                >
-                  <ChevronUp className="size-4" />
-                </button>
-              </div>
-
-              {/* Placeholder until Phase 3 virtualized list */}
-              <div className="p-4 text-xs text-muted-foreground space-y-2">
-                <p>120 Poles • 114 Cable spans • 4 Devices</p>
-                <p className="text-[11px] text-muted-foreground/80">
-                  Records without coordinates appear here only.
-                </p>
-              </div>
-            </div>
+            <AssetsAndDevicesPanel onClose={() => setActivePanel(null)} />
           )}
         </div>
       ) : (

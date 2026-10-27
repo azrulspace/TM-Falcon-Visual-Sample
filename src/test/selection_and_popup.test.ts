@@ -107,3 +107,22 @@ test('Entity Resolution: resolves pole AST-002 and span SEG_02', () => {
   assert.equal(span.id, 'SEG-02');
   assert.ok(span.relatedSpanId);
 });
+
+test('Feature Data: exact 238 total features breakdown (120 poles + 114 cable spans + 4 devices)', async () => {
+  const { allFeatures, featureCounts } = await import('../data/features.ts');
+  assert.equal(allFeatures.length, 238);
+  assert.equal(featureCounts.total, 238);
+  assert.equal(featureCounts.poles, 120);
+  assert.equal(featureCounts.spans, 114);
+  assert.equal(featureCounts.devices, 4);
+  assert.equal(featureCounts.attentionDevices, 4);
+
+  // Unlocated features check (beyond GIS survey range)
+  const unlocatedPoles = allFeatures.filter((f) => f.type === 'pole' && !f.hasLocation);
+  assert.ok(unlocatedPoles.length > 0);
+  assert.equal(unlocatedPoles[0].id, 'AST-043');
+
+  // Located features check (matches mapPoles surveyed points)
+  const locatedPoles = allFeatures.filter((f) => f.type === 'pole' && f.hasLocation);
+  assert.equal(locatedPoles.length, 42);
+});
