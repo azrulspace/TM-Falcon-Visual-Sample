@@ -71,6 +71,8 @@ export interface OverviewContextType {
   summaryFilter: 'events' | 'cases' | 'attention' | null;
   setSummaryFilter: React.Dispatch<React.SetStateAction<'events' | 'cases' | 'attention' | null>>;
   toggleSummaryFilter: (filter: 'events' | 'cases' | 'attention') => void;
+  assetTypeFilter: 'all' | 'pole' | 'span' | 'device';
+  setAssetTypeFilter: React.Dispatch<React.SetStateAction<'all' | 'pole' | 'span' | 'device'>>;
   eventsCount: number;
   openCasesCount: number;
   needingAttentionCount: number;
@@ -203,6 +205,7 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isShimmering, setIsShimmering] = useState<boolean>(false);
 
   const [summaryFilter, setSummaryFilterState] = useState<'events' | 'cases' | 'attention' | null>(null);
+  const [assetTypeFilter, setAssetTypeFilter] = useState<'all' | 'pole' | 'span' | 'device'>('all');
 
   const setSummaryFilter: React.Dispatch<React.SetStateAction<'events' | 'cases' | 'attention' | null>> = useCallback(
     (action) => {
@@ -399,6 +402,8 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     summaryFilter,
     setSummaryFilter,
     toggleSummaryFilter,
+    assetTypeFilter,
+    setAssetTypeFilter,
     eventsCount,
     openCasesCount,
     needingAttentionCount,

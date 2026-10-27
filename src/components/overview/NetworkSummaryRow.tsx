@@ -28,6 +28,7 @@ export const NetworkSummaryRow: React.FC = () => {
     devicesCount,
     triggerAssetPulse,
     setActivePanel,
+    setAssetTypeFilter,
     isShimmering,
   } = useOverview();
 
@@ -188,21 +189,21 @@ export const NetworkSummaryRow: React.FC = () => {
                 </SheetHeader>
                 <div className="grid grid-cols-3 gap-3">
                   <button
-                    onClick={() => { triggerAssetPulse('poles'); setNetworkSheetOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('poles' as any); triggerAssetPulse('poles'); setNetworkSheetOpen(false); setActivePanel('assets'); }}
                     className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{polesCount}</span>
                     <span className="text-xs text-muted-foreground">Poles</span>
                   </button>
                   <button
-                    onClick={() => { triggerAssetPulse('cables'); setNetworkSheetOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('span'); triggerAssetPulse('cables'); setNetworkSheetOpen(false); setActivePanel('assets'); }}
                     className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{cableSpansCount}</span>
                     <span className="text-xs text-muted-foreground">Cable spans</span>
                   </button>
                   <button
-                    onClick={() => { setActivePanel('assets'); setNetworkSheetOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('device'); setActivePanel('assets'); setNetworkSheetOpen(false); }}
                     className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{devicesCount}</span>
@@ -233,21 +234,21 @@ export const NetworkSummaryRow: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <button
-                    onClick={() => { triggerAssetPulse('poles'); setNetworkPopoverOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('pole'); triggerAssetPulse('poles'); setNetworkPopoverOpen(false); setActivePanel('assets'); }}
                     className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{polesCount}</span>
                     <span className="text-[11px] text-muted-foreground">Poles</span>
                   </button>
                   <button
-                    onClick={() => { triggerAssetPulse('cables'); setNetworkPopoverOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('span'); triggerAssetPulse('cables'); setNetworkPopoverOpen(false); setActivePanel('assets'); }}
                     className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{cableSpansCount}</span>
                     <span className="text-[11px] text-muted-foreground">Cable spans</span>
                   </button>
                   <button
-                    onClick={() => { setActivePanel('assets'); setNetworkPopoverOpen(false); }}
+                    onClick={() => { setAssetTypeFilter('device'); setActivePanel('assets'); setNetworkPopoverOpen(false); }}
                     className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{devicesCount}</span>
@@ -266,6 +267,7 @@ export const NetworkSummaryRow: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  setAssetTypeFilter('pole');
                   triggerAssetPulse('poles');
                   setActivePanel('assets');
                 }}
@@ -290,6 +292,7 @@ export const NetworkSummaryRow: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  setAssetTypeFilter('span');
                   triggerAssetPulse('cables');
                   setActivePanel('assets');
                 }}
@@ -314,6 +317,7 @@ export const NetworkSummaryRow: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  setAssetTypeFilter('device');
                   setActivePanel('assets');
                 }}
                 className="flex items-baseline gap-1.5 cursor-pointer transition-transform hover:scale-105 active:scale-95 leading-tight"

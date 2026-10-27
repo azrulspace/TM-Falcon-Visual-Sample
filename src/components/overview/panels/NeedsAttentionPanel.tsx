@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Camera,
   RadioTower,
@@ -59,17 +59,6 @@ const attentionDevicesList: AttentionItem[] = [
     location: 'Petra Jaya',
     reason: 'Last data 08:14',
   },
-  {
-    id: 'DEV-008',
-    rawId: 'DEV_008',
-    type: 'device',
-    deviceType: 'camera',
-    severity: 'stale',
-    badgeLabel: 'Stale',
-    age: '6h 11m',
-    location: 'Telaga Air',
-    reason: 'Last data 10:31',
-  },
 ];
 
 const attentionEventsList: AttentionItem[] = [
@@ -110,8 +99,20 @@ export interface NeedsAttentionPanelProps {
 }
 
 export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClose }) => {
-  const { selectEntity, selectedEntity, selectedId } = useOverview();
-  const [activeTab, setActiveTab] = useState<'devices' | 'events'>('devices');
+  const { selectEntity, selectedEntity, selectedId, summaryFilter } = useOverview();
+  const [activeTab, setActiveTab] = useState<'devices' | 'events'>(() => {
+    if (summaryFilter === 'events') return 'events';
+    return 'devices';
+  });
+
+  // Synchronize activeTab when summary filter changes
+  useEffect(() => {
+    if (summaryFilter === 'events') {
+      setActiveTab('events');
+    } else if (summaryFilter === 'attention') {
+      setActiveTab('devices');
+    }
+  }, [summaryFilter]);
 
   // Compute total count
   const totalCount = attentionDevicesList.length + attentionEventsList.length;

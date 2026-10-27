@@ -65,6 +65,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     flyToSignal,
     toastNotification,
     setToastNotification,
+    summaryFilter,
   } = useOverview();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -840,11 +841,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               const pillHeight = 26;
               const isOffline = m.isOffline;
               const isWarning = m.id === 'DEV_002';
+              const isDimmed = summaryFilter === 'events' && m.id !== 'DEV_002';
 
               return (
                 <g
                   key={m.id}
                   transform={`translate(${m.x}, ${m.y})`}
+                  opacity={isDimmed ? 0.25 : 1}
                   className="cursor-pointer transition-all duration-150 hover:scale-110 select-none"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -937,11 +940,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             }
 
             // Online devices: 22x22 halo with green body and white ring (Section 4.10)
+            const isOnlineDimmed = summaryFilter === 'attention' || summaryFilter === 'events';
             return (
               <g
                 key={m.id}
                 transform={`translate(${m.x}, ${m.y})`}
-                className="cursor-pointer transition-transform hover:scale-130"
+                opacity={isOnlineDimmed ? 0.2 : 1}
+                className="cursor-pointer transition-all duration-150 hover:scale-130"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMarkerClick(m.id);

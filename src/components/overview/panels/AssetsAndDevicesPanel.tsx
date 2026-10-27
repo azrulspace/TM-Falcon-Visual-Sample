@@ -19,12 +19,24 @@ export interface AssetsAndDevicesPanelProps {
 export type FeatureTypeFilter = 'all' | 'pole' | 'span' | 'device';
 
 export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ onClose }) => {
-  const { selectEntity, selectedEntity, selectedId } = useOverview();
+  const { selectEntity, selectedEntity, selectedId, assetTypeFilter, setAssetTypeFilter } = useOverview();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [rawSearch, setRawSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<FeatureTypeFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<FeatureTypeFilter>(assetTypeFilter || 'all');
+
+  // Synchronize when assetTypeFilter changes from summary row or external trigger
+  useEffect(() => {
+    if (assetTypeFilter) {
+      setTypeFilter(assetTypeFilter);
+    }
+  }, [assetTypeFilter]);
+
+  const handleSelectType = (newType: FeatureTypeFilter) => {
+    setTypeFilter(newType);
+    setAssetTypeFilter(newType);
+  };
 
   // Debounce search query by 250ms per Section 4.3
   useEffect(() => {
@@ -144,7 +156,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       {/* 3. Type Filter Chips */}
       <div className="flex items-center px-3 py-1.5 gap-1 overflow-x-auto no-scrollbar border-b dark:border-[#222b38] border-slate-200/60 shrink-0">
         <button
-          onClick={() => setTypeFilter('all')}
+          onClick={() => handleSelectType('all')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'all'
               ? 'bg-primary text-primary-foreground font-semibold'
@@ -154,7 +166,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           All ({featureCounts.total})
         </button>
         <button
-          onClick={() => setTypeFilter('pole')}
+          onClick={() => handleSelectType('pole')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'pole'
               ? 'bg-primary text-primary-foreground font-semibold'
@@ -164,7 +176,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           Poles ({featureCounts.poles})
         </button>
         <button
-          onClick={() => setTypeFilter('span')}
+          onClick={() => handleSelectType('span')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'span'
               ? 'bg-primary text-primary-foreground font-semibold'
@@ -174,7 +186,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           Cable spans ({featureCounts.spans})
         </button>
         <button
-          onClick={() => setTypeFilter('device')}
+          onClick={() => handleSelectType('device')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'device'
               ? 'bg-primary text-primary-foreground font-semibold'
