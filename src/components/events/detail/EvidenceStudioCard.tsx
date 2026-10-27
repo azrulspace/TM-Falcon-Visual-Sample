@@ -8,12 +8,14 @@ import {
   ChevronRight,
   Camera,
   ScanEye,
+  Film,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
+import { EvidenceViewer } from '@/components/evidence/EvidenceViewer';
 
 export interface EvidenceStudioCardProps {
   event: FalconEvent | EventDetailViewModel;
@@ -24,6 +26,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
   event,
   onOpenLightbox,
 }) => {
+  const [activeStudioTab, setActiveStudioTab] = useState<'studio' | 'clip'>('studio');
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -159,15 +162,44 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             {ruleLabel}
           </span>
 
-          {frames.length > 1 && (
+          {frames.length > 1 && activeStudioTab === 'studio' && (
             <span className="text-xs text-muted-foreground font-mono ml-1">
               Frame {currentFrameIndex + 1} of {frames.length}
             </span>
           )}
+
+          {/* Mode Switcher: Snapshot Studio vs Clip Playback */}
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/10 dark:bg-black/30 border border-border ml-2">
+            <button
+              type="button"
+              onClick={() => setActiveStudioTab('studio')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                activeStudioTab === 'studio'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Camera className="size-3.5" />
+              <span>Snapshot Studio</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStudioTab('clip')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                activeStudioTab === 'clip'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Film className="size-3.5" />
+              <span>Clip Playback</span>
+            </button>
+          </div>
         </div>
 
-        {/* Toolbar Controls */}
-        <div className="flex items-center gap-1">
+        {/* Toolbar Controls (Visible when in Snapshot Studio mode) */}
+        {activeStudioTab === 'studio' && (
+          <div className="flex items-center gap-1">
           {/* Optional Detection Box Toggle (only if region exists) */}
           {hasDetectionRegion && (
             <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border">
@@ -241,22 +273,34 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             <span className="hidden sm:inline">Lightbox</span>
           </Button>
         </div>
+        )}
       </div>
 
-      {/* 2. Main Viewport: Capped at ~56vh with object-fit contain on card surface (D2) */}
-      <div
-        ref={containerRef}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onDoubleClick={handleToggleFit}
-        className={cn(
-          'relative w-full max-h-[56vh] min-h-[320px] bg-black overflow-hidden flex items-center justify-center select-none',
-          zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
-        )}
-      >
+      {/* When Clip mode is active, render the shared EvidenceViewer */}
+      {activeStudioTab === 'clip' ? (
+        <div className="p-4 bg-muted/10">
+          <EvidenceViewer
+            eventId={event.id}
+            snapshots={frames}
+            capturedTimeMYT={(event as any).captured || 'Oct 20, 2026, 4:28 PM MYT'}
+          />
+        </div>
+      ) : (
+        <>
+          {/* 2. Main Viewport: Capped at ~56vh with object-fit contain on card surface (D2) */}
+          <div
+            ref={containerRef}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onDoubleClick={handleToggleFit}
+            className={cn(
+              'relative w-full max-h-[56vh] min-h-[320px] bg-black overflow-hidden flex items-center justify-center select-none',
+              zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
+            )}
+          >
         <div
           className="relative max-w-full max-h-full flex items-center justify-center transition-transform duration-75 ease-out"
           style={{
@@ -345,6 +389,8 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             </button>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

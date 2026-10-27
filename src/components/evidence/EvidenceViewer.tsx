@@ -38,6 +38,8 @@ export interface EvidenceViewerProps {
   windowEndTimeMYT?: string;
   className?: string;
   compact?: boolean;
+  initialTab?: 'snapshot' | 'clip';
+  initialMode?: 'snapshot' | 'clip';
 }
 
 export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
@@ -53,9 +55,11 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   windowEndTimeMYT = '4:28:19 PM',
   className = '',
   compact = false,
+  initialTab,
+  initialMode,
 }) => {
   // Segmented control: 'snapshot' (default) vs 'clip'
-  const [activeTab, setActiveTab] = useState<'snapshot' | 'clip'>('snapshot');
+  const [activeTab, setActiveTab] = useState<'snapshot' | 'clip'>(initialMode || initialTab || 'snapshot');
   const [activeFrameIndex, setActiveFrameIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 

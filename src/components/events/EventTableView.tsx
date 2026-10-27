@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronDown,
   Camera,
+  Film,
   Activity,
   Copy,
   Radio,
@@ -516,6 +517,20 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                             >
                               <Copy className="size-3.5 text-muted-foreground" />
                               <span>Copy link</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => {
+                                addToast(
+                                  'info',
+                                  `Requested on-demand clip for ${formatId(event.id)} from device.`,
+                                  'Clip requested'
+                                );
+                              }}
+                              className="cursor-pointer gap-2"
+                            >
+                              <Film className="size-3.5 text-primary" />
+                              <span>Request clip</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
