@@ -4,26 +4,22 @@ import {
   LogOut,
   Moon,
   Sun,
+  PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
-  Bell,
   ChevronRight,
   ChevronDown,
-  Menu,
   Laptop,
   Tablet,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { useAppContext } from '../contexts/AppContext';
-import { useOverview } from '../contexts/OverviewContext';
 import { useUiMode } from '@/hooks/useUiMode';
-import { TabletModeToggle } from '@/components/common/TabletModeToggle';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,72 +29,35 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GlobalSearchCommand } from './GlobalSearchCommand';
 import { navigationConfig, type NavItem } from '@/config/navigation';
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
-  const overview = useOverview();
   const { modeSetting, setModeSetting, resolvedMode, orientation, viewportWidth } = useUiMode();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isOverview = location.pathname === '/overview';
+  const [selectedLocation, setSelectedLocation] = useState('Teluk Panglima Garang');
+  const locations = [
+    'Teluk Panglima Garang',
+    'Kuching Central',
+    'Kuching North',
+    'Samarahan',
+    'Shah Alam',
+    'Petaling Jaya',
+  ];
 
-  // Notifications state
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(4);
-  const [notificationsList] = useState([
-    {
-      id: 'notif-1',
-      deviceId: 'DEV-004',
-      badge: 'Offline',
-      title: 'DEV-004 Signal Lost',
-      desc: 'Batu Lintang Relay Tower • No telemetry signal for 2h 14m',
-      time: '2h 14m ago',
-    },
-    {
-      id: 'notif-2',
-      deviceId: 'DEV-011',
-      badge: 'Offline',
-      title: 'DEV-011 Mains Blackout',
-      desc: 'Pending Industrial Substation • Power loss detected',
-      time: '5h 03m ago',
-    },
-    {
-      id: 'notif-3',
-      deviceId: 'DEV-003',
-      badge: 'Stale',
-      title: 'DEV-003 Telemetry Delayed',
-      desc: 'Petra Jaya Hub Cabinet B • Last packet 08:14 MYT',
-      time: '8h 27m ago',
-    },
-    {
-      id: 'notif-4',
-      deviceId: 'DEV-008',
-      badge: 'Stale',
-      title: 'DEV-008 Telemetry Delayed',
-      desc: 'Telaga Air Coastal Station • Last packet 10:31 MYT',
-      time: '6h 11m ago',
-    },
-    {
-      id: 'notif-5',
-      deviceId: 'CBL-KCH-01',
-      badge: 'Restored',
-      title: 'Trunk Link Nominal',
-      desc: 'Kuching - Samarahan 18km optical path healthy',
-      time: '12m ago',
-    },
-    {
-      id: 'notif-6',
-      deviceId: 'DEV-002',
-      badge: 'Updated',
-      title: 'Firmware Patch Applied',
-      desc: 'Satok repeater node upgraded to v3.2 build 410',
-      time: '1h 45m ago',
-    },
-  ]);
+  const pageTitle = useMemo(() => {
+    if (location.pathname.startsWith('/overview')) return 'Overview';
+    if (location.pathname.startsWith('/events')) return 'Event inbox';
+    if (location.pathname.startsWith('/cases')) return 'Cases';
+    if (location.pathname.startsWith('/risk')) return 'Risk & preventive';
+    if (location.pathname.startsWith('/assets')) return 'Assets & devices';
+    return 'Overview';
+  }, [location.pathname]);
+
+  const isOverview = location.pathname === '/overview';
 
   // Mobile navigation drawer (< 1024px)
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -134,33 +93,6 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       : "light"
   );
   const [searchOpen, setSearchOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState('Tue, 26 Aug 2025');
-  const [currentTime, setCurrentTime] = useState('14:32 MYT');
-
-  // Keep live date & time updated with MYT timezone
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-GB', {
-        timeZone: 'Asia/Kuala_Lumpur',
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      });
-      const timeStr = now.toLocaleTimeString('en-GB', {
-        timeZone: 'Asia/Kuala_Lumpur',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-      setCurrentDate(dateStr);
-      setCurrentTime(`${timeStr} MYT`);
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const toggleTheme = useCallback(() => {
     const r = document.documentElement;
@@ -291,372 +223,185 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-[100dvh] w-full min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-background text-foreground">
-        {/* Header matching Figma: 60px brand row */}
-        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between px-4 sm:px-6 z-30 shrink-0 select-none gap-3 sm:gap-4 transition-colors">
-          {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
-          <div className="flex items-center gap-3 shrink-0">
-            {/* Mobile / Portrait Menu trigger */}
-            {(isTabletPortrait || viewportWidth < 1024) && (
-              <button
-                className="flex p-2 rounded-lg hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none cursor-pointer"
-                onClick={() => setMobileNavOpen(true)}
-                aria-label="Open navigation menu"
-              >
-                <Menu className="size-5" />
-              </button>
-            )}
-
-            <Link to="/overview" className="flex items-center gap-3">
-              <Logo className="h-7 w-auto" markOnly={true} />
-              {!isTabletPortrait && (
-                <>
-                  <div className="h-[32px] w-px bg-slate-200 dark:bg-[#2a323d]" />
-                  <div className="flex flex-col select-none">
-                    <span className="text-[20px] font-bold text-slate-900 dark:text-[#e2e7ef] leading-tight tracking-tight">
-                      FALCON
-                    </span>
-                    {!isTabletLandscape && (
-                      <span className="text-[10px] text-slate-500 dark:text-[#a3adbd] leading-tight font-normal">
-                        Telecom Infrastructure Monitoring
-                      </span>
-                    )}
-                  </div>
-                </>
-              )}
+        {/* Header matching Staging: TM Logo, Sidebar Toggle, Page Title, Location, Avatar */}
+        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#10151c] bg-white flex items-center justify-between px-4 sm:px-6 z-30 shrink-0 select-none gap-4 transition-colors">
+          {/* Left: TM Logo, Sidebar Toggle, Page Title */}
+          <div className="flex items-center gap-3.5 shrink-0">
+            <Link to="/overview" className="flex items-center" aria-label="Falcon Overview">
+              <Logo className="h-6 w-auto" markOnly={true} />
             </Link>
+
+            {/* Sidebar Toggle Icon (Panel layout icon) */}
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isTabletPortrait || viewportWidth < 1024) {
+                      setMobileNavOpen(true);
+                    } else {
+                      setSidebarMinimized((prev) => !prev);
+                    }
+                  }}
+                  className="flex items-center justify-center size-8 rounded-lg text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors cursor-pointer"
+                  aria-label="Toggle sidebar navigation"
+                  title="Toggle sidebar"
+                >
+                  <PanelLeft className="size-4.5" />
+                </button>
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content side="bottom" sideOffset={6} className="bg-popover text-popover-foreground border border-border shadow-md px-2 py-1 rounded text-xs z-50">
+                  Toggle sidebar
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+
+            <span className="text-[15px] font-semibold text-slate-900 dark:text-[#ecf0f5] tracking-tight">
+              {pageTitle}
+            </span>
           </div>
 
-          {/* Center: Global Search Input with shortcut badge '/' */}
-          {isTabletPortrait ? (
-            <div className="flex-1" />
-          ) : isTabletLandscape ? (
-            <div className="flex-1 flex justify-center">
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex items-center gap-2 text-xs text-slate-500 dark:text-[#a3adbd] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors"
-                aria-label="Search navigation and assets"
-              >
-                <Search className="size-4" />
-                <span>Search (/)</span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex-1 flex justify-center max-w-sm mx-auto">
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="w-[298px] h-[36px] px-[11px] rounded-[8px] border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] flex items-center justify-between text-xs text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary shadow-xs cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <Search className="size-4 shrink-0 text-slate-400 dark:text-[#a3adbd]" />
-                  <span className="text-[11px] text-slate-600 dark:text-[#a3adbd] font-normal truncate">Search devices, sites, poles, cables...</span>
-                </div>
-                <div className="flex items-center shrink-0">
-                  <kbd className="h-[19px] min-w-[18px] px-1 border dark:border-[#2a323d] border-slate-200 rounded flex items-center justify-center text-[11px] font-mono text-slate-500 dark:text-[#778394] dark:bg-[#10151c] bg-slate-100">
-                    /
-                  </kbd>
-                </div>
-              </button>
-            </div>
-          )}
+          {/* Right: Location Dropdown and User Profile Avatar */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Location Selector Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] text-xs font-medium text-slate-800 dark:text-[#ecf0f5] transition-colors cursor-pointer select-none"
+                    aria-label="Select location"
+                  >
+                    <MapPin className="size-3.5 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+                    <span className="truncate max-w-[150px] sm:max-w-none">{selectedLocation}</span>
+                    <ChevronDown className="size-3 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Monitoring Region
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {locations.map((loc) => (
+                  <DropdownMenuItem
+                    key={loc}
+                    onClick={() => setSelectedLocation(loc)}
+                    className="cursor-pointer flex items-center justify-between text-xs"
+                  >
+                    <span>{loc}</span>
+                    {selectedLocation === loc && <span className="text-primary text-[10px] font-bold">✓</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Right: Notifications, Live data dropdown, Clock, User Profile */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Search icon button on Portrait Tablet */}
-            {isTabletPortrait && (
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="size-9 rounded-md flex items-center justify-center hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-600 dark:text-[#a3adbd] cursor-pointer"
-                aria-label="Search"
-              >
-                <Search className="size-4.5" />
-              </button>
-            )}
-              {/* Notifications Popover with unread indicator and list */}
-              <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="relative text-slate-600 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632] cursor-pointer"
-                      aria-label="View notifications"
-                    >
-                      <Bell className="size-4.5" />
-                      {unreadNotifications > 0 && (
-                        <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 dark:ring-[#151a22] ring-white" />
-                      )}
-                    </Button>
-                  }
-                />
-                <PopoverContent align="end" side="bottom" sideOffset={10} className="w-80 p-0 bg-popover border border-border shadow-2xl rounded-xl z-50 text-xs overflow-hidden">
-                  <div className="flex items-center justify-between p-3 border-b border-border bg-muted/40">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground">Notifications</span>
-                      {unreadNotifications > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white font-bold">
-                          {unreadNotifications} new
-                        </span>
-                      )}
+            {/* User Profile Avatar with dropdown (appearance, admin, tablet mode, logout) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors focus-visible:outline-none cursor-pointer select-none"
+                    aria-label="User account menu"
+                  >
+                    <div className="size-8 rounded-full bg-[#581c87] dark:bg-[#6b21a8] text-white flex items-center justify-center text-xs font-semibold shadow-xs">
+                      A
                     </div>
-                    {unreadNotifications > 0 && (
-                      <button
-                        onClick={() => setUnreadNotifications(0)}
-                        className="text-[11px] text-primary hover:underline cursor-pointer"
-                      >
-                        Mark all read
-                      </button>
-                    )}
+                    <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</span>
+                    <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
                   </div>
-
-                  <div className="max-h-72 overflow-y-auto divide-y divide-border/60">
-                    {notificationsList.map((notif) => (
-                      <div
-                        key={notif.id}
-                        onClick={() => {
-                          overview.setSelectedId(notif.deviceId);
-                          if (!isOverview) navigate('/overview');
-                          setNotificationsOpen(false);
-                        }}
-                        className="p-2.5 hover:bg-muted/50 cursor-pointer transition-colors flex flex-col gap-1"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-semibold text-foreground truncate">{notif.title}</span>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap font-mono">{notif.time}</span>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground line-clamp-2">{notif.desc}</span>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
-
-              {/* Live Data Status Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <button
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors text-xs font-medium text-slate-800 dark:text-[#ecf0f5] select-none cursor-pointer ${
-                        isTabletPortrait ? 'size-9 justify-center p-0' : ''
-                      }`}
-                      aria-label="Telemetry status"
-                    >
-                      <span className="relative flex size-2.5">
-                        {overview.liveState === 'live' ? (
-                          <>
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
-                            <span className="relative inline-flex rounded-full size-2.5 bg-[#10b981]" />
-                          </>
-                        ) : (
-                          <span className="relative inline-flex rounded-full size-2.5 bg-[#ffa114]" />
-                        )}
-                      </span>
-                      {!isTabletPortrait && (!isTabletLandscape || viewportWidth >= 1180) && (
-                        <span className="text-[11.4px]">
-                          {overview.liveState === 'live' ? 'Live data' : 'Updates paused'}
-                        </span>
-                      )}
-                      {!isTabletPortrait && <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />}
-                    </button>
-                  }
-                />
-                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
-                  <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
-                    <span>Telemetry Feed</span>
-                    <span className="text-[10px] font-normal text-muted-foreground">{overview.lastUpdatedTime}</span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => overview.setLiveState('live')}
-                    className={`cursor-pointer font-medium ${overview.liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
-                  >
-                    <span className="size-2 rounded-full bg-[#10b981] mr-2 inline-block" />
-                    <span>Live stream active</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => overview.setLiveState('paused')}
-                    className={`cursor-pointer ${overview.liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
-                  >
-                    <span className="size-2 rounded-full bg-[#ffa114] mr-2 inline-block" />
-                    <span>Pause telemetry stream</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={overview.refreshNow} className="cursor-pointer">
-                    <span>Refresh now (shimmer)</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Refresh Interval
-                  </DropdownMenuLabel>
-                  {[5, 15, 30, 60].map((sec) => (
-                    <DropdownMenuItem
-                      key={sec}
-                      onClick={() => overview.setRefreshInterval(sec)}
-                      className="cursor-pointer flex items-center justify-between"
-                    >
-                      <span>{sec < 60 ? `${sec} seconds` : '1 minute'}</span>
-                      {overview.refreshInterval === sec && <span className="text-primary text-[10px]">✓</span>}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Real-time date/time display */}
-              {!isTabletPortrait && (
-                <>
-                  <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
-                  {isTabletLandscape ? (
-                    <Tooltip.Root>
-                      <Tooltip.Trigger asChild>
-                        <div className="flex items-center text-xs font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums px-1.5 cursor-default select-none">
-                          {currentTime}
-                        </div>
-                      </Tooltip.Trigger>
-                      <Tooltip.Portal>
-                        <Tooltip.Content side="bottom" sideOffset={8} className="bg-popover text-popover-foreground border border-border shadow-md px-2 py-1 rounded text-xs z-50 font-medium">
-                          {currentDate}
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    </Tooltip.Root>
-                  ) : (
-                    <div className="flex flex-col text-left leading-[1.35] select-none pr-1">
-                      <span className="text-[9.5px] text-slate-500 dark:text-[#bdc5d1]">{currentDate}</span>
-                      <span className="text-[12.4px] font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums">{currentTime}</span>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
-
-              {/* User Profile Avatar with dropdown (appearance, admin, reports, logout) */}
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <button className="flex items-center gap-3 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer">
-                      <Avatar className="size-[34px] border dark:border-[#2a323d] border-slate-200">
-                        <AvatarFallback className="dark:bg-[#2b3440] bg-slate-200 dark:text-[#e2e7ef] text-slate-800 text-xs font-bold">
-                          AS
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col text-left leading-tight hidden xl:flex">
-                        <span className="text-[11px] font-semibold text-slate-800 dark:text-[#e2e7ef]">Ahmad Syukri</span>
-                        <span className="text-[9px] text-slate-500 dark:text-[#a3adbd]">TM Operations</span>
-                      </div>
-                      <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
-                    </button>
-                  }
-                />
-
-                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</span>
-                      <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
-                    <span>Administration Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
-                    <span>Reports & Audits</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">Appearance</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (theme !== 'light') toggleTheme();
-                    }}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sun className="size-3.5" />
-                      <span>Light Theme</span>
-                    </div>
-                    {theme === 'light' && <span className="text-[10px] text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (theme !== 'dark') toggleTheme();
-                    }}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Moon className="size-3.5" />
-                      <span>Dark Theme</span>
-                    </div>
-                    {theme === 'dark' && <span className="text-[10px] text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => toggleTheme()}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Laptop className="size-3.5" />
-                      <span>Toggle (Shift+T)</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">UI Mode</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => setModeSetting('auto')}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="size-3.5" />
-                      <span>Auto ({resolvedMode})</span>
-                    </div>
-                    {modeSetting === 'auto' && <span className="text-[10px] text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setModeSetting('tablet')}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Tablet className="size-3.5" />
-                      <span>Tablet Mode</span>
-                    </div>
-                    {modeSetting === 'tablet' && <span className="text-[10px] text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setModeSetting('desktop')}
-                    className="cursor-pointer text-xs flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Laptop className="size-3.5" />
-                      <span>Desktop Mode</span>
-                    </div>
-                    {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
-                    <LogOut className="mr-2 size-3.5" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Explicit Theme Toggle Button matching Figma node 138:13096 / 138:14047 */}
-              {!isTabletPortrait && (
-                <button
-                  id="theme-toggle-button"
-                  onClick={() => toggleTheme()}
-                  className="flex items-center justify-center size-[36px] rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none cursor-pointer"
-                  aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-                  title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
+                  <span>Administration Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
+                  <span>Reports & Audits</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">Appearance</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (theme !== 'light') toggleTheme();
+                  }}
+                  className="cursor-pointer text-xs flex items-center justify-between"
                 >
-                  {theme === 'dark' ? (
-                    <Sun className="size-4" />
-                  ) : (
-                    <Moon className="size-4" />
-                  )}
-                </button>
-              )}
-
-              {/* Tablet Mode Header Toggle Icon Button */}
-              <TabletModeToggle />
-            </div>
+                  <div className="flex items-center gap-2">
+                    <Sun className="size-3.5" />
+                    <span>Light Theme</span>
+                  </div>
+                  {theme === 'light' && <span className="text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (theme !== 'dark') toggleTheme();
+                  }}
+                  className="cursor-pointer text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Moon className="size-3.5" />
+                    <span>Dark Theme</span>
+                  </div>
+                  {theme === 'dark' && <span className="text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => toggleTheme()}
+                  className="cursor-pointer text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Laptop className="size-3.5" />
+                    <span>Toggle (Shift+T)</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">UI Mode</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => setModeSetting('auto')}
+                  className="cursor-pointer text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-3.5" />
+                    <span>Auto ({resolvedMode})</span>
+                  </div>
+                  {modeSetting === 'auto' && <span className="text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setModeSetting('tablet')}
+                  className="cursor-pointer text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Tablet className="size-3.5" />
+                    <span>Tablet Mode</span>
+                  </div>
+                  {modeSetting === 'tablet' && <span className="text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setModeSetting('desktop')}
+                  className="cursor-pointer text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Laptop className="size-3.5" />
+                    <span>Desktop Mode</span>
+                  </div>
+                  {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 size-3.5" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         {/* Global Search Dialog */}
