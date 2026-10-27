@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn, formatId } from '@/lib/utils';
+import { useUiMode } from '@/hooks/useUiMode';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
 import { EvidenceViewer } from '@/components/evidence/EvidenceViewer';
@@ -26,6 +27,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
   event,
   onOpenLightbox,
 }) => {
+  const { isTablet } = useUiMode();
   const [activeStudioTab, setActiveStudioTab] = useState<'studio' | 'clip'>('studio');
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -33,6 +35,12 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showDetectionBox, setShowDetectionBox] = useState(false);
+
+  // Touch gesture state
+  const [touchDistance, setTouchDistance] = useState<number | null>(null);
+  const [initialZoom, setInitialZoom] = useState(1);
+  const [lastTapTime, setLastTapTime] = useState(0);
+  const [touchPanStart, setTouchPanStart] = useState({ x: 0, y: 0 });
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -173,25 +181,29 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             <button
               type="button"
               onClick={() => setActiveStudioTab('studio')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center rounded-md font-semibold transition-all cursor-pointer ${
+                isTablet ? 'h-[44px] px-3.5 text-sm gap-2' : 'px-2.5 py-1 text-xs gap-1.5'
+              } ${
                 activeStudioTab === 'studio'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Camera className="size-3.5" />
+              <Camera className={isTablet ? 'size-4' : 'size-3.5'} />
               <span>Snapshot Studio</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveStudioTab('clip')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center rounded-md font-semibold transition-all cursor-pointer ${
+                isTablet ? 'h-[44px] px-3.5 text-sm gap-2' : 'px-2.5 py-1 text-xs gap-1.5'
+              } ${
                 activeStudioTab === 'clip'
                   ? 'bg-card text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Film className="size-3.5" />
+              <Film className={isTablet ? 'size-4' : 'size-3.5'} />
               <span>Clip Playback</span>
             </button>
           </div>
@@ -202,9 +214,9 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
           <div className="flex items-center gap-1">
           {/* Optional Detection Box Toggle (only if region exists) */}
           {hasDetectionRegion && (
-            <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-border">
-              <ScanEye className="size-3.5 text-muted-foreground" />
-              <span className="text-[11px] text-muted-foreground select-none">Detection box</span>
+            <div className={`flex items-center gap-1.5 mr-2 pr-2 border-r border-border ${isTablet ? 'h-[44px]' : ''}`}>
+              <ScanEye className={isTablet ? 'size-4 text-muted-foreground' : 'size-3.5 text-muted-foreground'} />
+              <span className={`${isTablet ? 'text-xs' : 'text-[11px]'} text-muted-foreground select-none`}>Detection box</span>
               <Switch
                 checked={showDetectionBox}
                 onCheckedChange={setShowDetectionBox}
@@ -218,10 +230,10 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             size="sm"
             onClick={handleZoomOut}
             disabled={zoomLevel <= 1}
-            className="size-7 p-0 text-muted-foreground hover:text-foreground"
+            className={`${isTablet ? 'size-11' : 'size-7'} p-0 text-muted-foreground hover:text-foreground cursor-pointer`}
             title="Zoom out (-)"
           >
-            <ZoomOut className="size-3.5" />
+            <ZoomOut className={isTablet ? 'size-5' : 'size-3.5'} />
           </Button>
 
           <span className="text-xs font-mono text-muted-foreground w-11 text-center select-none tabular-nums">
@@ -233,10 +245,10 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             size="sm"
             onClick={handleZoomIn}
             disabled={zoomLevel >= 4}
-            className="size-7 p-0 text-muted-foreground hover:text-foreground"
+            className={`${isTablet ? 'size-11' : 'size-7'} p-0 text-muted-foreground hover:text-foreground cursor-pointer`}
             title="Zoom in (+)"
           >
-            <ZoomIn className="size-3.5" />
+            <ZoomIn className={isTablet ? 'size-5' : 'size-3.5'} />
           </Button>
 
           <Button
@@ -244,32 +256,32 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             size="sm"
             onClick={handleResetZoom}
             disabled={zoomLevel === 1 && pan.x === 0 && pan.y === 0}
-            className="size-7 p-0 text-muted-foreground hover:text-foreground"
+            className={`${isTablet ? 'size-11' : 'size-7'} p-0 text-muted-foreground hover:text-foreground cursor-pointer`}
             title="Fit to width (0)"
           >
-            <Maximize2 className="size-3.5" />
+            <Maximize2 className={isTablet ? 'size-5' : 'size-3.5'} />
           </Button>
 
-          <div className="w-px h-4 bg-border mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="size-7 p-0 text-muted-foreground hover:text-foreground"
+            className={`${isTablet ? 'size-11' : 'size-7'} p-0 text-muted-foreground hover:text-foreground cursor-pointer`}
             title={`Download snapshot (${downloadFilename})`}
           >
-            <Download className="size-3.5" />
+            <Download className={isTablet ? 'size-5' : 'size-3.5'} />
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={() => onOpenLightbox(currentFrameIndex)}
-            className="h-7 px-2 text-xs gap-1 ml-1 border-border"
+            className={`${isTablet ? 'h-[44px] px-3.5 text-sm gap-1.5' : 'h-7 px-2 text-xs gap-1'} ml-1 border-border cursor-pointer`}
             title="Open fullscreen lightbox"
           >
-            <Maximize2 className="size-3 text-primary" />
+            <Maximize2 className={isTablet ? 'size-4 text-primary' : 'size-3 text-primary'} />
             <span className="hidden sm:inline">Lightbox</span>
           </Button>
         </div>
@@ -296,10 +308,56 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onDoubleClick={handleToggleFit}
+            onTouchStart={(e) => {
+              if (e.touches.length === 2) {
+                const dist = Math.hypot(
+                  e.touches[0].clientX - e.touches[1].clientX,
+                  e.touches[0].clientY - e.touches[1].clientY
+                );
+                setTouchDistance(dist);
+                setInitialZoom(zoomLevel);
+              } else if (e.touches.length === 1) {
+                const now = Date.now();
+                if (now - lastTapTime < 300) {
+                  handleToggleFit();
+                  setLastTapTime(0);
+                } else {
+                  setLastTapTime(now);
+                }
+                if (zoomLevel > 1) {
+                  setIsDragging(true);
+                  setTouchPanStart({
+                    x: e.touches[0].clientX - pan.x,
+                    y: e.touches[0].clientY - pan.y,
+                  });
+                }
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.touches.length === 2 && touchDistance !== null) {
+                const newDist = Math.hypot(
+                  e.touches[0].clientX - e.touches[1].clientX,
+                  e.touches[0].clientY - e.touches[1].clientY
+                );
+                const factor = newDist / touchDistance;
+                const nextZoom = Math.min(Math.max(initialZoom * factor, 1), 4);
+                setZoomLevel(nextZoom);
+              } else if (e.touches.length === 1 && isDragging && zoomLevel > 1) {
+                setPan({
+                  x: e.touches[0].clientX - touchPanStart.x,
+                  y: e.touches[0].clientY - touchPanStart.y,
+                });
+              }
+            }}
+            onTouchEnd={() => {
+              setTouchDistance(null);
+              setIsDragging(false);
+            }}
             className={cn(
               'relative w-full max-h-[56vh] min-h-[320px] bg-black overflow-hidden flex items-center justify-center select-none',
               zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
             )}
+            style={{ touchAction: 'none' }}
           >
         <div
           className="relative max-w-full max-h-full flex items-center justify-center transition-transform duration-75 ease-out"
@@ -340,7 +398,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             <button
               type="button"
               onClick={handlePrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all active:scale-95"
+              className={`absolute left-3 top-1/2 -translate-y-1/2 ${isTablet ? 'size-11' : 'size-9'} rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all active:scale-95 cursor-pointer`}
               title="Previous frame"
             >
               <ChevronLeft className="size-5" />
@@ -348,7 +406,7 @@ export const EvidenceStudioCard: React.FC<EvidenceStudioCardProps> = ({
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all active:scale-95"
+              className={`absolute right-3 top-1/2 -translate-y-1/2 ${isTablet ? 'size-11' : 'size-9'} rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-xs shadow-md transition-all active:scale-95 cursor-pointer`}
               title="Next frame"
             >
               <ChevronRight className="size-5" />

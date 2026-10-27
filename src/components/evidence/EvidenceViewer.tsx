@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useUiMode } from '@/hooks/useUiMode';
 import {
   clipReducer,
   getPollingBackoff,
@@ -58,6 +59,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   initialTab,
   initialMode,
 }) => {
+  const { isTablet } = useUiMode();
   // Segmented control: 'snapshot' (default) vs 'clip'
   const [activeTab, setActiveTab] = useState<'snapshot' | 'clip'>(initialMode || initialTab || 'snapshot');
   const [activeFrameIndex, setActiveFrameIndex] = useState(0);
@@ -382,9 +384,9 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                   <Button
                     size="sm"
                     onClick={handleRequestClip}
-                    className="h-8 text-xs px-4 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold gap-1.5 cursor-pointer shadow-md"
+                    className={`${isTablet ? 'h-[44px] text-sm px-6 gap-2' : 'h-8 text-xs px-4 gap-1.5'} bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer shadow-md`}
                   >
-                    <Film className="size-3.5" />
+                    <Film className={isTablet ? 'size-4' : 'size-3.5'} />
                     <span>Request clip</span>
                   </Button>
                 </div>
@@ -476,13 +478,13 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       <button
                         type="button"
                         onClick={handlePlayToggle}
-                        className="p-1 hover:text-primary transition-colors cursor-pointer"
+                        className={`${isTablet ? 'size-11 flex items-center justify-center' : 'p-1'} hover:text-primary transition-colors cursor-pointer`}
                         title={isPlaying ? 'Pause' : 'Play'}
                       >
                         {isPlaying ? (
-                          <Pause className="size-4" />
+                          <Pause className={isTablet ? 'size-5' : 'size-4'} />
                         ) : (
-                          <Play className="size-4 fill-current" />
+                          <Play className={`${isTablet ? 'size-5' : 'size-4'} fill-current`} />
                         )}
                       </button>
 
@@ -492,12 +494,12 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       {/* Speed button: 1x, 1.5x, 2x */}
                       <button
                         type="button"
                         onClick={handleSpeedChange}
-                        className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                        className={`${isTablet ? 'h-[44px] px-3 text-xs' : 'px-1.5 py-0.5 text-[10px]'} rounded font-mono font-bold bg-white/10 hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center`}
                         title="Playback speed"
                       >
                         {playbackRate}x
@@ -507,10 +509,10 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       <button
                         type="button"
                         onClick={handleVolumeToggle}
-                        className="p-1 hover:text-primary transition-colors cursor-pointer"
+                        className={`${isTablet ? 'size-11 flex items-center justify-center' : 'p-1'} hover:text-primary transition-colors cursor-pointer`}
                         title={isMuted ? 'Unmute' : 'Mute'}
                       >
-                        {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+                        {isMuted ? <VolumeX className={isTablet ? 'size-5' : 'size-4'} /> : <Volume2 className={isTablet ? 'size-5' : 'size-4'} />}
                       </button>
 
                       {/* Download */}
@@ -519,20 +521,20 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                         onClick={() => {
                           if (clipState.videoUrl) window.open(clipState.videoUrl, '_blank');
                         }}
-                        className="p-1 hover:text-primary transition-colors cursor-pointer"
+                        className={`${isTablet ? 'size-11 flex items-center justify-center' : 'p-1'} hover:text-primary transition-colors cursor-pointer`}
                         title="Download clip"
                       >
-                        <Download className="size-3.5" />
+                        <Download className={isTablet ? 'size-5' : 'size-3.5'} />
                       </button>
 
                       {/* Fullscreen */}
                       <button
                         type="button"
                         onClick={handleFullscreen}
-                        className="p-1 hover:text-primary transition-colors cursor-pointer"
+                        className={`${isTablet ? 'size-11 flex items-center justify-center' : 'p-1'} hover:text-primary transition-colors cursor-pointer`}
                         title="Fullscreen"
                       >
-                        <Maximize2 className="size-3.5" />
+                        <Maximize2 className={isTablet ? 'size-5' : 'size-3.5'} />
                       </button>
                     </div>
                   </div>

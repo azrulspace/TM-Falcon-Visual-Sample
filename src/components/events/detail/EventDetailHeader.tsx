@@ -29,6 +29,7 @@ import { getServerNow } from '@/lib/dateTime';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { cn, formatId } from '@/lib/utils';
+import { useUiMode } from '@/hooks/useUiMode';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
 
@@ -51,6 +52,7 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
   onOpenResolve,
   onOpenVendorData,
 }) => {
+  const { isTablet } = useUiMode();
   const navigate = useNavigate();
   const { acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
@@ -138,10 +140,10 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
         <button
           type="button"
           onClick={handleBackToInbox}
-          className="hover:text-primary transition-colors flex items-center gap-1 font-medium cursor-pointer"
+          className={`hover:text-primary transition-colors flex items-center gap-1 font-medium cursor-pointer ${isTablet ? 'min-h-[44px]' : ''}`}
           title="Return to Event inbox with saved filters restored"
         >
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className={isTablet ? 'size-4' : 'size-3.5'} />
           <span>Event inbox</span>
         </button>
         <span className="mx-2">/</span>
@@ -179,13 +181,13 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
               size="sm"
               onClick={handleAcknowledgeClick}
               disabled={isAcknowledging}
-              className="h-8 px-3 text-xs gap-1.5 bg-[#1D4ED8] hover:bg-[#1D4ED8]/90 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold shadow-xs cursor-pointer"
+              className={`${isTablet ? 'h-[44px] px-4 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5'} bg-[#1D4ED8] hover:bg-[#1D4ED8]/90 dark:bg-primary dark:hover:bg-primary/90 text-white font-semibold shadow-xs cursor-pointer`}
               title="Acknowledge event"
             >
               {isAcknowledging ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className={isTablet ? 'size-4 animate-spin' : 'size-3.5 animate-spin'} />
               ) : (
-                <Check className="size-3.5" />
+                <Check className={isTablet ? 'size-4' : 'size-3.5'} />
               )}
               <span>{isAcknowledging ? 'Acknowledging...' : 'Acknowledge'}</span>
             </Button>
@@ -194,10 +196,10 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
               variant="outline"
               size="sm"
               disabled
-              className="h-8 px-3 text-xs gap-1.5 opacity-60 cursor-not-allowed border-border"
+              className={`${isTablet ? 'h-[44px] px-4 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5'} opacity-60 cursor-not-allowed border-border`}
               title="Event already acknowledged"
             >
-              <Check className="size-3.5 text-emerald-500" />
+              <Check className={`${isTablet ? 'size-4' : 'size-3.5'} text-emerald-500`} />
               <span>Acknowledged</span>
             </Button>
           )}
@@ -206,10 +208,10 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onOpenCreateCase}
-            className="h-8 px-3 text-xs gap-1.5 border-border hover:bg-muted text-foreground font-medium cursor-pointer"
+            className={`${isTablet ? 'h-[44px] px-4 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5'} border-border hover:bg-muted text-foreground font-medium cursor-pointer`}
             title="Create operational case"
           >
-            <Briefcase className="size-3.5 text-amber-500" />
+            <Briefcase className={`${isTablet ? 'size-4' : 'size-3.5'} text-amber-500`} />
             <span>Create Case</span>
           </Button>
 
@@ -218,34 +220,34 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
             <DropdownMenuTrigger render={
               <button
                 type="button"
-                className="size-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer focus-visible:outline-none"
+                className={`${isTablet ? 'size-11' : 'size-8'} rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer focus-visible:outline-none`}
                 aria-label="More actions"
               >
-                <MoreHorizontal className="size-4" />
+                <MoreHorizontal className={isTablet ? 'size-5' : 'size-4'} />
               </button>
             } />
-            <DropdownMenuContent align="end" className="w-48 text-xs bg-popover border border-border z-50">
+            <DropdownMenuContent align="end" className="w-52 text-xs bg-popover border border-border z-50">
               <DropdownMenuItem
                 onClick={onOpenResolve}
-                className="cursor-pointer gap-2"
+                className={`cursor-pointer gap-2.5 ${isTablet ? 'h-11 text-sm' : ''}`}
               >
-                <CheckCircle2 className="size-3.5 text-emerald-500" />
+                <CheckCircle2 className="size-4 text-emerald-500" />
                 <span>Resolve</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={onOpenAssign}
-                className="cursor-pointer gap-2"
+                className={`cursor-pointer gap-2.5 ${isTablet ? 'h-11 text-sm' : ''}`}
               >
-                <UserCheck className="size-3.5 text-blue-500" />
+                <UserCheck className="size-4 text-blue-500" />
                 <span>Assign analyst</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={handleCopyLink}
-                className="cursor-pointer gap-2"
+                className={`cursor-pointer gap-2.5 ${isTablet ? 'h-11 text-sm' : ''}`}
               >
-                <Copy className="size-3.5 text-muted-foreground" />
+                <Copy className="size-4 text-muted-foreground" />
                 <span>Copy link</span>
               </DropdownMenuItem>
 
@@ -253,17 +255,17 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
 
               <DropdownMenuItem
                 onClick={onOpenVendorData}
-                className="cursor-pointer gap-2"
+                className={`cursor-pointer gap-2.5 ${isTablet ? 'h-11 text-sm' : ''}`}
               >
-                <Code2 className="size-3.5 text-violet-500" />
+                <Code2 className="size-4 text-violet-500" />
                 <span>View vendor data</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={handleExport}
-                className="cursor-pointer gap-2"
+                className={`cursor-pointer gap-2.5 ${isTablet ? 'h-11 text-sm' : ''}`}
               >
-                <FileDown className="size-3.5 text-muted-foreground" />
+                <FileDown className="size-4 text-muted-foreground" />
                 <span>Export</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -272,9 +274,9 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
       </div>
 
       {/* 3. Status Stepper & Dynamic SLA Timer (DETAIL_FINAL) */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+      <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar pt-1 w-full flex-nowrap shrink-0">
         {/* Stepper: 1 New -> 2 Acknowledged -> 3 Case created -> 4 Resolved */}
-        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto py-0.5" data-testid="status-stepper">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 py-0.5" data-testid="status-stepper">
           {steps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isCurrent = idx === currentStepIndex;
@@ -318,7 +320,7 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
         <div
           data-testid="sla-chip"
           className={cn(
-            'flex items-center gap-2 px-3 py-1 rounded-md border text-xs font-medium tabular-nums transition-colors',
+            'flex items-center gap-2 px-3 py-1 rounded-md border text-xs font-medium tabular-nums transition-colors shrink-0 whitespace-nowrap',
             sla?.badgeClass || 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
           )}
         >

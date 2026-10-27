@@ -34,6 +34,7 @@ import {
 import { useEvents, type SavedView } from '@/contexts/EventsContext';
 import { cn, formatId } from '@/lib/utils';
 import { getStatusCounts } from '@/data/eventSelectors';
+import { useUiMode } from '@/hooks/useUiMode';
 
 export interface InboxFilters {
   tab: 'all' | 'new' | 'acknowledged' | 'in_case' | 'resolved';
@@ -68,6 +69,9 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
   filteredCount,
 }) => {
   const { events, savedViews, saveView, renameSavedView, deleteSavedView, setDefaultView } = useEvents();
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Saved Views state
@@ -268,7 +272,8 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
                   }));
                 }}
                 className={cn(
-                  'flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer',
+                  'flex items-center gap-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer',
+                  isTablet ? 'h-[44px] px-3.5' : 'h-8 px-3',
                   isActive
                     ? 'bg-card text-foreground font-semibold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
@@ -288,10 +293,10 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
           })}
         </div>
 
-        {/* Right side: Search, Saved Views, View Mode Switcher, Result Count */}
+        {/* Right side: Search, Filters button, Saved Views, View Mode Switcher, Result Count */}
         <div className="flex items-center gap-2">
           {/* Search Input with / badge (Section 3.4) */}
-          <div className="relative w-64 lg:w-72">
+          <div className={cn('relative', isTablet ? 'w-56 md:w-64' : 'w-64 lg:w-72')}>
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <input
               ref={searchInputRef}
@@ -299,7 +304,10 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder="Search by ID, type, device, asset..."
-              className="w-full h-9 pl-8 pr-7 text-xs bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors"
+              className={cn(
+                'w-full pl-8 pr-7 text-xs bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors',
+                isTablet ? 'h-[44px]' : 'h-9'
+              )}
             />
             {localSearch ? (
               <button
@@ -309,10 +317,10 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
                   updateFilter('search', '');
                   searchInputRef.current?.focus();
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
+                className="absolute right-2 top-1/2 -translate-y-1/2 size-5 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
                 title="Clear search"
               >
-                <X className="size-3" />
+                <X className="size-3.5" />
               </button>
             ) : (
               <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[10px] font-mono rounded bg-muted text-muted-foreground border border-border pointer-events-none">
@@ -321,13 +329,37 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
             )}
           </div>
 
+          {/* Filters Sheet Trigger Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileFilterSheetOpen(true)}
+            className={cn(
+              'gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer font-medium',
+              isTablet ? 'h-[44px] px-3 text-xs' : 'h-9 px-2.5 text-xs',
+              activePills.length > 0 && 'border-primary/50 text-primary bg-primary/5'
+            )}
+            title="Open all filters in sheet"
+          >
+            <Filter className={isTablet ? 'size-4' : 'size-3.5'} />
+            <span>Filters</span>
+            {activePills.length > 0 && (
+              <span className="size-4.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {activePills.length}
+              </span>
+            )}
+          </Button>
+
           {/* Saved Views Dropdown (Section 3.4) */}
           <DropdownMenu>
             <DropdownMenuTrigger render={
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-2.5 text-xs gap-1.5 border-border hover:bg-muted font-medium"
+                className={cn(
+                  'gap-1.5 border-border hover:bg-muted font-medium',
+                  isTablet ? 'h-[44px] px-3 text-xs' : 'h-9 px-2.5 text-xs'
+                )}
                 title="Views dropdown"
               >
                 <Bookmark className="size-3.5 text-muted-foreground" />
@@ -476,25 +508,27 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
               type="button"
               onClick={() => setViewMode('table')}
               className={cn(
-                'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
+                'flex items-center justify-center rounded transition-colors cursor-pointer',
+                isTablet ? 'size-11' : 'size-8',
                 viewMode === 'table' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               title="Table view"
               aria-label="Table view"
             >
-              <TableIcon className="size-4" />
+              <TableIcon className={isTablet ? 'size-5' : 'size-4'} />
             </button>
             <button
               type="button"
               onClick={() => setViewMode('gallery')}
               className={cn(
-                'size-8 flex items-center justify-center rounded transition-colors cursor-pointer',
+                'flex items-center justify-center rounded transition-colors cursor-pointer',
+                isTablet ? 'size-11' : 'size-8',
                 viewMode === 'gallery' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               title="Gallery view"
               aria-label="Gallery view"
             >
-              <LayoutGrid className="size-4" />
+              <LayoutGrid className={isTablet ? 'size-5' : 'size-4'} />
             </button>
           </div>
 
@@ -505,8 +539,8 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
         </div>
       </div>
 
-      {/* Lower Filter Chips Strip (Desktop & Tablet >= 768px) (Section 3.5) */}
-      <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      {/* Lower Filter Chips Strip (Desktop & Tablet >= 768px in Landscape) (Section 3.5) */}
+      <div className={cn("items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar", isTabletPortrait ? "hidden" : "hidden md:flex")}>
         <span className="text-muted-foreground flex items-center gap-1 shrink-0 font-medium mr-1">
           <Filter className="size-3" />
           <span>Filter:</span>
@@ -839,38 +873,45 @@ export const InboxToolbar: React.FC<InboxToolbarProps> = ({
         )}
       </div>
 
-      {/* Mobile Filter Trigger Strip (< 768px) (Section 8) */}
-      <div className="flex md:hidden items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      {/* Mobile & Portrait Tablet Filter Trigger Strip (Section 8) */}
+      <div className={cn("items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar", isTabletPortrait ? "flex" : "flex md:hidden")}>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setMobileFilterSheetOpen(true)}
           className={cn(
-            'h-7 px-2.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 cursor-pointer',
+            isTablet ? 'h-[44px] px-3.5 text-xs' : 'h-7 px-2.5 text-xs',
+            'rounded-full font-medium flex items-center gap-1.5 shrink-0 cursor-pointer',
             activePills.length > 0
               ? 'border-primary text-primary bg-primary/10'
               : 'border-border text-muted-foreground hover:text-foreground'
           )}
         >
-          <Filter className="size-3" />
+          <Filter className={isTablet ? 'size-4' : 'size-3'} />
           <span>Filters{activePills.length > 0 ? ` (${activePills.length})` : ''}</span>
-          <ChevronDown className="size-3 opacity-60" />
+          <ChevronDown className={isTablet ? 'size-3.5 opacity-70' : 'size-3 opacity-60'} />
         </Button>
 
         {/* Scrollable active pills preview */}
         {activePills.map((pill) => (
           <span
             key={pill.key}
-            className="h-7 pl-2.5 pr-1.5 rounded-full bg-primary/10 border border-primary/40 text-primary text-xs font-medium flex items-center gap-1 shrink-0"
+            className={cn(
+              isTablet ? 'h-[40px] pl-3 pr-2 text-xs' : 'h-7 pl-2.5 pr-1.5 text-xs',
+              'rounded-full bg-primary/10 border border-primary/40 text-primary font-medium flex items-center gap-1.5 shrink-0'
+            )}
           >
             <span>{pill.label}: <strong>{pill.value}</strong></span>
             <button
               type="button"
               onClick={() => removeFilter(pill.key)}
-              className="size-4 rounded-full hover:bg-primary/20 flex items-center justify-center cursor-pointer"
+              className={cn(
+                isTablet ? 'size-6' : 'size-4',
+                'rounded-full hover:bg-primary/20 flex items-center justify-center cursor-pointer'
+              )}
               title={`Remove ${pill.label} filter`}
             >
-              <X className="size-3" />
+              <X className={isTablet ? 'size-3.5' : 'size-3'} />
             </button>
           </span>
         ))}

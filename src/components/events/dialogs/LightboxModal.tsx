@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
+import { useUiMode } from '@/hooks/useUiMode';
 import type { FalconEvent } from '@/data/events';
 import type { EventDetailViewModel } from '@/types/eventDetail';
 
@@ -31,16 +32,20 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
   event,
   initialFrameIndex = 0,
 }) => {
+  const { isTablet } = useUiMode();
   const [frameIndex, setFrameIndex] = useState(initialFrameIndex);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchDeltaY, setTouchDeltaY] = useState(0);
 
   useEffect(() => {
     setFrameIndex(initialFrameIndex);
     setZoomLevel(1);
     setPan({ x: 0, y: 0 });
+    setTouchDeltaY(0);
   }, [open, initialFrameIndex]);
 
   // Keyboard navigation (+, -, 0, Esc, Left, Right)
@@ -165,10 +170,10 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               size="sm"
               onClick={handleZoomOut}
               disabled={zoomLevel <= 1}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className={`${isTablet ? 'size-11' : 'size-8'} p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer`}
               title="Zoom out (-)"
             >
-              <ZoomOut className="size-4" />
+              <ZoomOut className={isTablet ? 'size-5' : 'size-4'} />
             </Button>
             <span className="text-xs font-mono text-slate-400 w-12 text-center tabular-nums">
               {Math.round(zoomLevel * 100)}%
@@ -178,39 +183,39 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               size="sm"
               onClick={handleZoomIn}
               disabled={zoomLevel >= 4}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className={`${isTablet ? 'size-11' : 'size-8'} p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer`}
               title="Zoom in (+)"
             >
-              <ZoomIn className="size-4" />
+              <ZoomIn className={isTablet ? 'size-5' : 'size-4'} />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleResetZoom}
               disabled={zoomLevel === 1 && pan.x === 0 && pan.y === 0}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className={`${isTablet ? 'size-11' : 'size-8'} p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer`}
               title="Fit to window (0)"
             >
-              <Maximize2 className="size-4" />
+              <Maximize2 className={isTablet ? 'size-5' : 'size-4'} />
             </Button>
-            <div className="w-px h-4 bg-slate-800 mx-1" />
+            <div className="w-px h-5 bg-slate-800 mx-1" />
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDownload}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer"
+              className={`${isTablet ? 'size-11' : 'size-8'} p-0 text-slate-300 hover:text-white hover:bg-slate-800 cursor-pointer`}
               title="Download snapshot"
             >
-              <Download className="size-4" />
+              <Download className={isTablet ? 'size-5' : 'size-4'} />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="size-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800 ml-2 cursor-pointer"
+              className={`${isTablet ? 'size-11' : 'size-8'} p-0 text-slate-300 hover:text-white hover:bg-slate-800 ml-1 cursor-pointer`}
               title="Close (Esc)"
             >
-              <X className="size-4" />
+              <X className={isTablet ? 'size-5' : 'size-4'} />
             </Button>
           </div>
         </div>
@@ -222,15 +227,33 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={(e) => {
+            if (e.touches.length === 1) setTouchStartY(e.touches[0].clientY);
+          }}
+          onTouchMove={(e) => {
+            if (zoomLevel === 1 && touchStartY !== null && e.touches.length === 1) {
+              const dy = e.touches[0].clientY - touchStartY;
+              if (dy > 0) setTouchDeltaY(dy);
+            }
+          }}
+          onTouchEnd={() => {
+            if (touchDeltaY > 80 && zoomLevel === 1) {
+              onOpenChange(false);
+            }
+            setTouchStartY(null);
+            setTouchDeltaY(0);
+          }}
           className={`relative flex-1 bg-black flex items-center justify-center overflow-hidden p-4 select-none ${
             zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
           }`}
+          style={{ touchAction: 'none' }}
         >
           {currentFrame ? (
             <div
               className="flex items-center justify-center max-w-full max-h-full transition-transform duration-75 ease-out"
               style={{
-                transform: `scale(${zoomLevel}) translate(${pan.x / zoomLevel}px, ${pan.y / zoomLevel}px)`,
+                transform: `scale(${zoomLevel}) translate(${pan.x / zoomLevel}px, ${(pan.y + touchDeltaY) / zoomLevel}px)`,
+                opacity: touchDeltaY > 0 ? Math.max(0.3, 1 - touchDeltaY / 300) : 1,
               }}
             >
               <img
@@ -249,7 +272,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               <button
                 type="button"
                 onClick={handlePrevFrame}
-                className="absolute left-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
+                className={`absolute left-4 top-1/2 -translate-y-1/2 ${isTablet ? 'size-11' : 'size-10'} rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer`}
                 title="Previous frame"
               >
                 <ChevronLeft className="size-6" />
@@ -257,7 +280,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
               <button
                 type="button"
                 onClick={handleNextFrame}
-                className="absolute right-4 top-1/2 -translate-y-1/2 size-10 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
+                className={`absolute right-4 top-1/2 -translate-y-1/2 ${isTablet ? 'size-11' : 'size-10'} rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer`}
                 title="Next frame"
               >
                 <ChevronRight className="size-6" />

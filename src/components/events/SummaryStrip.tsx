@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { AlertCircle, ShieldAlert, FileQuestion, Activity } from 'lucide-react';
 import { useEvents } from '@/contexts/EventsContext';
+import { useUiMode } from '@/hooks/useUiMode';
 import { cn } from '@/lib/utils';
 import { getKpiCounts } from '@/data/eventSelectors';
 import type { FalconEvent } from '@/data/events';
@@ -19,6 +20,11 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
   onSelectQuickFilter,
 }) => {
   const { events: contextEvents } = useEvents();
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isPortrait = orientation === 'portrait';
+  const isTabletPortrait = isTablet && isPortrait;
+
   const dataset = eventsOverride || contextEvents;
 
   // Single source of truth calculation from eventSelectors.ts
@@ -37,34 +43,41 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
       key: 'new',
       label: 'New (unacknowledged)',
       value: kpis.newUnack,
-      icon: <AlertCircle className="size-3.5 text-amber-500 shrink-0" />,
+      icon: <AlertCircle className="size-4 text-amber-500 shrink-0" />,
       activeClass: 'bg-amber-500/10 ring-1 ring-inset ring-amber-500/50',
     },
     {
       key: 'high_priority',
       label: 'High & Critical priority',
       value: kpis.highAndCritical,
-      icon: <ShieldAlert className="size-3.5 text-orange-500 shrink-0" />,
+      icon: <ShieldAlert className="size-4 text-orange-500 shrink-0" />,
       activeClass: 'bg-orange-500/10 ring-1 ring-inset ring-orange-500/50',
     },
     {
       key: 'without_case',
       label: 'Without case',
       value: kpis.withoutCase,
-      icon: <FileQuestion className="size-3.5 text-blue-500 shrink-0" />,
+      icon: <FileQuestion className="size-4 text-blue-500 shrink-0" />,
       activeClass: 'bg-blue-500/10 ring-1 ring-inset ring-blue-500/50',
     },
     {
       key: 'today',
       label: 'Today Events',
       value: kpis.todayEvents,
-      icon: <Activity className="size-3.5 text-sky-400 shrink-0" />,
+      icon: <Activity className="size-4 text-sky-400 shrink-0" />,
       activeClass: 'bg-sky-500/10 ring-1 ring-inset ring-sky-500/50',
     },
   ];
 
   return (
-    <div className="h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-4 divide-x divide-border mb-4 select-none shrink-0">
+    <div
+      className={cn(
+        'w-full rounded-xl border border-border/80 bg-card/60 shadow-xs mb-4 select-none shrink-0 overflow-hidden',
+        isTabletPortrait
+          ? 'grid grid-cols-2 divide-x divide-y divide-border min-h-[140px]'
+          : 'h-[74px] flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-4 divide-x divide-border'
+      )}
+    >
       {cells.map((cell) => {
         const isActive = activeQuickFilter === cell.key;
         return (
@@ -73,7 +86,8 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
             type="button"
             onClick={() => onSelectQuickFilter(isActive ? null : cell.key)}
             className={cn(
-              'flex flex-col justify-center px-4 h-full text-left transition-all cursor-pointer group shrink-0 min-w-[190px] lg:min-w-0 lg:shrink',
+              'flex flex-col justify-center px-4 text-left transition-all cursor-pointer group shrink-0 min-h-[56px]',
+              isTabletPortrait ? 'py-3 w-full' : 'h-full min-w-[190px] lg:min-w-0 lg:shrink',
               isActive ? cell.activeClass : 'hover:bg-muted/40'
             )}
             title={`Filter by ${cell.label}`}

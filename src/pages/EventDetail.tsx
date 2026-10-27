@@ -19,12 +19,16 @@ import { KeyFactsCard } from '@/components/events/detail/KeyFactsCard';
 import { DetectionSpecificationCard } from '@/components/events/detail/DetectionSpecificationCard';
 import { AlertHistoryCard } from '@/components/events/detail/AlertHistoryCard';
 
+import { useUiMode } from '@/hooks/useUiMode';
+
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { events, acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
 
   // Load canonical ViewModel & neighbors via useEventDetail
   const {
@@ -197,7 +201,7 @@ export default function EventDetail() {
   const isUnack = (event as any).status === 'New' || (event as any).state === 'New';
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground antialiased pb-20 sm:pb-8">
+    <div className={`flex flex-col min-h-screen bg-background text-foreground antialiased ${isPortrait ? 'pb-24' : 'pb-20 sm:pb-8'}`}>
       <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-[1920px] w-full mx-auto">
         {/* 1. Header (Breadcrumb, Title, Stepper, Dynamic SLA, Action Hierarchy) */}
         <EventDetailHeader
@@ -210,11 +214,10 @@ export default function EventDetail() {
           onOpenVendorData={() => setVendorDataOpen(true)}
         />
 
-        {/* 2. Responsive 2-Column Grid (Main 8 of 12, Side 4 of 12) (DETAIL_FINAL) */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          {/* Main Column (8 of 12): Evidence Card + Detection Specification */}
-          <div className="xl:col-span-8 flex flex-col gap-6">
-            {/* Evidence Card */}
+        {/* 2. Responsive Layout */}
+        {isPortrait ? (
+          /* Portrait Tablet Order: Evidence, Key Facts, Location (collapsible), Detection Spec, Alert History */
+          <div className="flex flex-col gap-6">
             <EvidenceStudioCard
               event={event as any}
               onOpenLightbox={(frameIndex) => {
@@ -223,25 +226,49 @@ export default function EventDetail() {
               }}
             />
 
-            {/* Detection Specification Card (The ONLY card below Evidence) (Section 4.5) */}
-            <DetectionSpecificationCard event={event as any} />
-          </div>
-
-          {/* Side Column (4 of 12): Location + Key Facts + Alert History */}
-          <div className="xl:col-span-4 flex flex-col gap-6">
-            <LocationCard event={event as any} />
             <KeyFactsCard
               event={event as any}
               onOpenCreateCase={() => setCreateCaseOpen(true)}
               onOpenAssign={() => setAssignOpen(true)}
             />
+
+            <LocationCard event={event as any} defaultCollapsed={true} />
+
+            <DetectionSpecificationCard event={event as any} />
+
             <AlertHistoryCard event={event as any} />
           </div>
-        </div>
+        ) : (
+          /* Landscape & Desktop: 2-Column Grid (~60% and ~40%) */
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Main Column (60% on tablet, 66% on desktop) */}
+            <div className="md:col-span-7 xl:col-span-8 flex flex-col gap-6">
+              <EvidenceStudioCard
+                event={event as any}
+                onOpenLightbox={(frameIndex) => {
+                  setLightboxFrame(frameIndex);
+                  setLightboxOpen(true);
+                }}
+              />
+              <DetectionSpecificationCard event={event as any} />
+            </div>
+
+            {/* Side Column (40% on tablet, 33% on desktop) */}
+            <div className="md:col-span-5 xl:col-span-4 flex flex-col gap-6">
+              <LocationCard event={event as any} defaultCollapsed={false} />
+              <KeyFactsCard
+                event={event as any}
+                onOpenCreateCase={() => setCreateCaseOpen(true)}
+                onOpenAssign={() => setAssignOpen(true)}
+              />
+              <AlertHistoryCard event={event as any} />
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Sticky Bottom Action Bar (<768px mobile) with Action Hierarchy */}
-      <div className="fixed bottom-0 inset-x-0 z-30 md:hidden p-3 bg-card/95 backdrop-blur-md border-t border-border flex items-center justify-between gap-2">
+      {/* Sticky Bottom Action Bar (<768px mobile or Portrait Tablet) */}
+      <div className={`fixed bottom-0 inset-x-0 z-30 ${isPortrait ? 'flex' : 'flex md:hidden'} p-3 bg-card/95 backdrop-blur-md border-t border-border items-center justify-between gap-3 shadow-lg`}>
         {isUnack ? (
           <>
             {/* Primary Action when New: Acknowledge */}
@@ -249,7 +276,7 @@ export default function EventDetail() {
               size="sm"
               disabled={isAcknowledging}
               onClick={handleAcknowledge}
-              className="flex-1 h-9 text-xs bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-1.5 shadow-xs cursor-pointer"
+              className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-2 shadow-xs cursor-pointer`}
             >
               {isAcknowledging ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -264,9 +291,9 @@ export default function EventDetail() {
               variant="outline"
               size="sm"
               onClick={() => setCreateCaseOpen(true)}
-              className="flex-1 h-9 text-xs border-border hover:bg-muted font-medium text-foreground gap-1.5 cursor-pointer"
+              className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} border-border hover:bg-muted font-medium text-foreground gap-2 cursor-pointer`}
             >
-              <Briefcase className="size-4" />
+              <Briefcase className="size-4 text-amber-500" />
               <span>Create Case</span>
             </Button>
           </>
@@ -275,7 +302,7 @@ export default function EventDetail() {
           <Button
             size="sm"
             onClick={() => setCreateCaseOpen(true)}
-            className="flex-1 h-9 text-xs bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-1.5 shadow-xs cursor-pointer"
+            className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-2 shadow-xs cursor-pointer`}
           >
             <Briefcase className="size-4" />
             <span>Create Case</span>

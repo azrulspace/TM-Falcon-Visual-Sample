@@ -26,6 +26,7 @@ import { AssetChip } from '@/components/common/AssetChip';
 import { RelativeTime } from '@/components/common/RelativeTime';
 import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useUiMode } from '@/hooks/useUiMode';
 import { cn, formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 
@@ -53,6 +54,10 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
   const navigate = useNavigate();
   const { acknowledgeEvent } = useEvents();
   const { addToast } = useToast();
+  const { resolvedMode, orientation } = useUiMode();
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
+  const isTabletLandscape = isTablet && orientation === 'landscape';
 
   const handleCopyLink = (e: React.MouseEvent, eventId: string) => {
     e.stopPropagation();
@@ -62,7 +67,16 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div
+      className={cn(
+        'grid gap-4',
+        isTabletPortrait
+          ? 'grid-cols-2'
+          : isTabletLandscape
+          ? 'grid-cols-3'
+          : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+      )}
+    >
       {events.map((evt) => {
         const isSelected = selectedIds.has(evt.id);
         const isActive = activeEventId === evt.id;
@@ -100,18 +114,22 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
 
               {/* Selection Checkbox (Top Left) */}
               <div
-                className="absolute top-2 left-2 z-10 p-1 rounded-md bg-black/40 backdrop-blur-xs flex items-center justify-center"
+                className={cn(
+                  "absolute top-1 left-1 z-10 flex items-center justify-center cursor-pointer",
+                  isTablet ? "size-11" : "size-8 p-1"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleSelect(evt.id);
                 }}
               >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onToggleSelect(evt.id)}
-                  aria-label={`Select event ${formatId(evt.id)}`}
-                  className="border-white/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                />
+                <div className="p-1 rounded-md bg-black/50 backdrop-blur-xs flex items-center justify-center">
+                  <Checkbox
+                    checked={isSelected}
+                    aria-label={`Select event ${formatId(evt.id)}`}
+                    className="border-white/70 data-[state=checked]:bg-primary data-[state=checked]:border-primary pointer-events-none"
+                  />
+                </div>
               </div>
 
               {/* Badges on Top Right */}
@@ -158,16 +176,19 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
                 className="flex items-center justify-between pt-2 border-t border-border mt-1"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {evt.state === 'New' && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => acknowledgeEvent(evt.id)}
-                      className="h-6 px-1.5 text-[11px] gap-1 text-emerald-600 dark:text-emerald-400 border-border"
+                      className={cn(
+                        "gap-1 text-emerald-600 dark:text-emerald-400 border-border font-medium cursor-pointer",
+                        isTablet ? "h-[44px] px-3 text-xs" : "h-7 px-2 text-[11px]"
+                      )}
                       title="Acknowledge event"
                     >
-                      <Check className="size-3" />
+                      <Check className="size-3.5" />
                       <span>Ack</span>
                     </Button>
                   )}
@@ -175,10 +196,13 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onOpenCreateCaseDialog(evt.id)}
-                    className="h-6 px-1.5 text-[11px] gap-1 text-primary border-border"
+                    className={cn(
+                      "gap-1 text-primary border-border font-medium cursor-pointer",
+                      isTablet ? "h-[44px] px-3 text-xs" : "h-7 px-2 text-[11px]"
+                    )}
                     title="Create case"
                   >
-                    <Briefcase className="size-3" />
+                    <Briefcase className="size-3.5" />
                     <span>Case</span>
                   </Button>
                 </div>
@@ -188,35 +212,56 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate(`/events/${evt.id}`)}
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                    className={cn(
+                      "text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center p-0",
+                      isTablet ? "size-11" : "size-7"
+                    )}
                     title="Open full event detail"
                   >
-                    <ExternalLink className="size-3" />
+                    <ExternalLink className={isTablet ? "size-4" : "size-3.5"} />
                   </Button>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger render={
-                      <button className="h-6 w-6 rounded hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
-                        <MoreHorizontal className="size-3" />
+                      <button
+                        className={cn(
+                          "rounded hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer",
+                          isTablet ? "size-11" : "size-7"
+                        )}
+                        aria-label="More options"
+                      >
+                        <MoreHorizontal className={isTablet ? "size-5" : "size-4"} />
                       </button>
                     } />
-                    <DropdownMenuContent align="end" className="w-44 text-xs">
-                      <DropdownMenuItem onClick={() => navigate(`/events/${evt.id}`)}>
-                        <ExternalLink className="size-3.5 mr-2" />
-                        Open detail page
+                    <DropdownMenuContent align="end" className="w-48 text-xs z-50">
+                      <DropdownMenuItem
+                        onClick={() => navigate(`/events/${evt.id}`)}
+                        className={cn("cursor-pointer gap-2", isTablet && "min-h-[48px]")}
+                      >
+                        <ExternalLink className="size-3.5 mr-1" />
+                        <span>Open detail page</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onOpenAssignDialog(evt.id)}>
-                        <UserCheck className="size-3.5 mr-2" />
-                        Assign analyst
+                      <DropdownMenuItem
+                        onClick={() => onOpenAssignDialog(evt.id)}
+                        className={cn("cursor-pointer gap-2", isTablet && "min-h-[48px]")}
+                      >
+                        <UserCheck className="size-3.5 mr-1" />
+                        <span>Assign analyst</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onOpenDismissDialog(evt.id)}>
-                        <XCircle className="size-3.5 mr-2" />
-                        Dismiss (false positive)
+                      <DropdownMenuItem
+                        onClick={() => onOpenDismissDialog(evt.id)}
+                        className={cn("cursor-pointer gap-2", isTablet && "min-h-[48px]")}
+                      >
+                        <XCircle className="size-3.5 mr-1" />
+                        <span>Dismiss (false positive)</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={(e) => handleCopyLink(e, evt.id)}>
-                        <Copy className="size-3.5 mr-2" />
-                        Copy event link
+                      <DropdownMenuItem
+                        onClick={(e) => handleCopyLink(e, evt.id)}
+                        className={cn("cursor-pointer gap-2", isTablet && "min-h-[48px]")}
+                      >
+                        <Copy className="size-3.5 mr-1" />
+                        <span>Copy event link</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

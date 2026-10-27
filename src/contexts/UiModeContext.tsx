@@ -23,6 +23,8 @@ export interface UiModeContextValue {
   modeSetting: UiModeSetting;
   setModeSetting: (setting: UiModeSetting) => void;
   resolvedMode: ResolvedUiMode;
+  isTablet: boolean;
+  isDesktop: boolean;
   orientation: ScreenOrientation;
   isCoarse: boolean;
   viewportWidth: number;
@@ -148,12 +150,17 @@ export const UiModeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setPreviewFrame(null);
   }, []);
 
+  const isTablet = resolvedMode === 'tablet';
+  const isDesktop = resolvedMode === 'desktop';
+
   return (
     <UiModeContext.Provider
       value={{
         modeSetting,
         setModeSetting,
         resolvedMode,
+        isTablet,
+        isDesktop,
         orientation,
         isCoarse,
         viewportWidth,
