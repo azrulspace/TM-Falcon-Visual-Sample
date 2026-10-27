@@ -153,7 +153,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       aria-label={`${typeChip} ${id} details`}
       style={style}
       className={`pointer-events-auto absolute z-40 ${
-        isTabletLandscape ? 'w-[340px]' : 'w-[360px]'
+        isTabletLandscape ? 'w-[340px]' : 'w-[320px] sm:w-[380px]'
       } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
     >
       {/* Visual Tail pointing to marker */}

@@ -7,7 +7,7 @@ import type { LayerVisibility } from '@/components/overview/LayerRail';
 import { useOverview } from '@/contexts/OverviewContext';
 import { computePopupPlacement, type PlacementResult } from '@/lib/popupPlacement';
 import { MapPopupShell } from '@/components/overview/popups/MapPopupShell';
-import { EventPopupContent } from '@/components/overview/popups/EventPopupContent';
+import { EventPopupContent, EventPopupFooter } from '@/components/overview/popups/EventPopupContent';
 import { DevicePopupContent } from '@/components/overview/popups/DevicePopupContent';
 import { PolePopupContent } from '@/components/overview/popups/PolePopupContent';
 import { CableSpanPopupContent } from '@/components/overview/popups/CableSpanPopupContent';
@@ -1119,6 +1119,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 {activePopup.data.status || 'Open'}
               </span>
             ) : null
+          }
+          footerActions={
+            activePopup.type === 'event' ? (
+              <EventPopupFooter entity={activePopup.data} onClose={closePopup} />
+            ) : undefined
           }
         >
           {activePopup.type === 'event' && (
