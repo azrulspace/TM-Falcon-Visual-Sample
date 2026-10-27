@@ -12,11 +12,15 @@ import {
   ChevronDown,
   Menu,
   Laptop,
+  Tablet,
+  Sparkles,
 } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { useAppContext } from '../contexts/AppContext';
 import { useOverview } from '../contexts/OverviewContext';
+import { useUiMode } from '@/hooks/useUiMode';
+import { TabletModeToggle } from '@/components/common/TabletModeToggle';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -36,6 +40,7 @@ import { navigationConfig, type NavItem } from '@/config/navigation';
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
   const overview = useOverview();
+  const { modeSetting, setModeSetting, resolvedMode } = useUiMode();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -506,6 +511,38 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">UI Mode</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('auto')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-3.5" />
+                      <span>Auto ({resolvedMode})</span>
+                    </div>
+                    {modeSetting === 'auto' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('tablet')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tablet className="size-3.5" />
+                      <span>Tablet Mode</span>
+                    </div>
+                    {modeSetting === 'tablet' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('desktop')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Laptop className="size-3.5" />
+                      <span>Desktop Mode</span>
+                    </div>
+                    {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
                     <LogOut className="mr-2 size-3.5" />
                     <span>Log out</span>
@@ -527,6 +564,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <Moon className="size-4" />
                 )}
               </button>
+
+              {/* Tablet Mode Header Toggle Icon Button */}
+              <TabletModeToggle />
             </div>
         </header>
 

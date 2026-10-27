@@ -13,8 +13,9 @@ import { devices } from '@/data/devices';
 import { events } from '@/data/events';
 import { cases } from '@/data/cases';
 import { segments } from '@/data/segments';
-import { AlertCircle, Briefcase, Camera, Cable, Compass } from 'lucide-react';
+import { AlertCircle, Briefcase, Camera, Cable, Compass, Tablet, Laptop, Sparkles } from 'lucide-react';
 import { getFlattenedNavRoutes } from '@/config/navigation';
+import { useUiMode } from '@/hooks/useUiMode';
 
 interface GlobalSearchCommandProps {
   open: boolean;
@@ -29,6 +30,7 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
 }) => {
   const navigate = useNavigate();
   const navRoutes = getFlattenedNavRoutes();
+  const { setModeSetting, resolvedMode } = useUiMode();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -60,6 +62,59 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
       <CommandInput placeholder="Search navigation, poles, spans, devices, events and cases... (Esc to close)" />
       <CommandList>
         <CommandEmpty>No matching infrastructure assets or events found.</CommandEmpty>
+
+        <CommandGroup heading="System & Display Modes">
+          <CommandItem
+            value="Switch to tablet mode touch layout"
+            onSelect={() => {
+              setModeSetting('tablet');
+              onOpenChange(false);
+            }}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Tablet className="size-4 text-primary shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-foreground">Switch to tablet mode</span>
+              <span className="text-[11px] text-muted-foreground">
+                Touch-optimized 44px targets, bottom sheets, tablet navigation
+              </span>
+            </div>
+          </CommandItem>
+          <CommandItem
+            value="Switch to desktop mode density"
+            onSelect={() => {
+              setModeSetting('desktop');
+              onOpenChange(false);
+            }}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Laptop className="size-4 text-primary shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-foreground">Switch to desktop mode</span>
+              <span className="text-[11px] text-muted-foreground">
+                High-density layout, full tables, hover menus
+              </span>
+            </div>
+          </CommandItem>
+          <CommandItem
+            value="Switch to auto mode responsive"
+            onSelect={() => {
+              setModeSetting('auto');
+              onOpenChange(false);
+            }}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <Sparkles className="size-4 text-primary shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-foreground">Switch to auto UI mode</span>
+              <span className="text-[11px] text-muted-foreground">
+                Detects touch screens and viewport automatically (currently: {resolvedMode})
+              </span>
+            </div>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
 
         <CommandGroup heading="Navigation & Workflows">
           {navRoutes.map((item) => {

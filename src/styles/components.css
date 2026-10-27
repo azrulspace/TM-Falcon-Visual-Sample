@@ -130,3 +130,101 @@ select.input_field{appearance:none;cursor:pointer}
 .toast_error .toast_icon{color:var(--text_error)}
 
 @media (prefers-reduced-motion:reduce){.btn,.toggle,.toggle::after{transition:none}.btn_spinner{animation-duration:2s}}
+
+/* ========================================================
+   Tablet Mode Touch Rules & Tokens (Spec 3.3 & 4)
+   ======================================================== */
+html[data-ui-mode="tablet"] {
+  --touch_target_min: 44px;
+}
+
+/* 44px minimum touch targets for buttons, inputs, switches, and selects */
+html[data-ui-mode="tablet"] .btn,
+html[data-ui-mode="tablet"] .btn_sm,
+html[data-ui-mode="tablet"] .btn_md,
+html[data-ui-mode="tablet"] [data-slot="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+html[data-ui-mode="tablet"] .btn_icon_only,
+html[data-ui-mode="tablet"] [data-slot="button"].size-7,
+html[data-ui-mode="tablet"] [data-slot="button"].size-8,
+html[data-ui-mode="tablet"] [data-slot="button"].size-9 {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-ui-mode="tablet"] .input,
+html[data-ui-mode="tablet"] .input_sm,
+html[data-ui-mode="tablet"] select,
+html[data-ui-mode="tablet"] input[type="text"],
+html[data-ui-mode="tablet"] input[type="search"],
+html[data-ui-mode="tablet"] input[type="password"] {
+  min-height: 44px;
+}
+
+/* Checkbox and radio touch target wrapper */
+html[data-ui-mode="tablet"] .check,
+html[data-ui-mode="tablet"] .radio {
+  width: 22px;
+  height: 22px;
+}
+
+html[data-ui-mode="tablet"] .choice {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Tabs and Segmented Control touch height */
+html[data-ui-mode="tablet"] [role="tab"],
+html[data-ui-mode="tablet"] [data-slot="tabs-trigger"] {
+  min-height: 44px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Menu items touch sizing */
+html[data-ui-mode="tablet"] [role="menuitem"],
+html[data-ui-mode="tablet"] [role="option"] {
+  min-height: 44px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Table row height 56px to 64px in tablet mode */
+html[data-ui-mode="tablet"] tbody tr {
+  min-height: 56px;
+  height: 60px;
+}
+
+/* Spacing between adjacent interactive targets */
+html[data-ui-mode="tablet"] .touch-gap-2 {
+  gap: 8px;
+}
+
+/* Active pressed state for touch feedback (replaces hover-only) */
+html[data-ui-mode="tablet"] button:active,
+html[data-ui-mode="tablet"] [role="button"]:active {
+  transform: scale(0.975);
+  opacity: 0.92;
+  transition: transform 0.08s ease-out, opacity 0.08s ease-out;
+}
+
+/* Glass overlay blur capping at 8px max for tablet GPU efficiency */
+html[data-ui-mode="tablet"] .backdrop-blur-md,
+html[data-ui-mode="tablet"] .backdrop-blur-lg,
+html[data-ui-mode="tablet"] .backdrop-blur-xl {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Enhanced focus ring for touch/keyboard */
+html[data-ui-mode="tablet"] *:focus-visible {
+  outline: 2px solid var(--border_brand, #5547C9) !important;
+  outline-offset: 2px !important;
+}
+
