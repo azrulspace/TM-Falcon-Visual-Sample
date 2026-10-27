@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MapCanvas } from '@/components/MapCanvas';
 import { TimeBar } from '@/components/overview/TimeBar';
-import { IncidentsPanel } from '@/components/overview/IncidentsPanel';
+import { FloatingIconStack } from '@/components/overview/FloatingIconStack';
 import { MapLayersToolbar } from '@/components/overview/MapLayersToolbar';
 import { MapScaleZoom } from '@/components/overview/MapScaleZoom';
 import { NetworkSummaryRow } from '@/components/overview/NetworkSummaryRow';
@@ -115,12 +115,9 @@ export default function Overview() {
 
         {/* Floating Overlays Container with 24px margins (Section 4.1) */}
         <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-6">
-          {/* Top Row: Right Floating Panel ("Incidents & attention (4)", 279px, expanding to 360px inspector) */}
+          {/* Top Row: Right Floating Icon Stack (Needs attention and Assets & devices) */}
           <div className="flex justify-end w-full">
-            <IncidentsPanel
-              selectedId={selectedId}
-              onSelectItem={handleSelectItem}
-            />
+            <FloatingIconStack />
           </div>
 
           {/* Bottom Row: Left Map Layers Toolbar (444x68) and Right Scale & Zoom (194x25 + 126x60) */}
