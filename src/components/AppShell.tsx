@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -267,138 +268,142 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             {/* Location Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] text-xs font-medium text-slate-800 dark:text-[#ecf0f5] transition-colors cursor-pointer select-none"
-                    aria-label="Select location"
-                  >
-                    <MapPin className="size-3.5 text-slate-400 dark:text-[#a3adbd] shrink-0" />
-                    <span className="truncate max-w-[150px] sm:max-w-none">{selectedLocation}</span>
-                    <ChevronDown className="size-3 text-slate-400 dark:text-[#a3adbd] shrink-0" />
-                  </button>
-                }
-              />
+                className="flex items-center gap-2 h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] text-xs font-medium text-slate-800 dark:text-[#ecf0f5] transition-colors cursor-pointer select-none"
+                aria-label="Select location"
+              >
+                <MapPin className="size-3.5 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+                <span className="truncate max-w-[150px] sm:max-w-none">{selectedLocation}</span>
+                <ChevronDown className="size-3 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Monitoring Region
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {locations.map((loc) => (
-                  <DropdownMenuItem
-                    key={loc}
-                    onClick={() => setSelectedLocation(loc)}
-                    className="cursor-pointer flex items-center justify-between text-xs"
-                  >
-                    <span>{loc}</span>
-                    {selectedLocation === loc && <span className="text-primary text-[10px] font-bold">✓</span>}
-                  </DropdownMenuItem>
-                ))}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Monitoring Region
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {locations.map((loc) => (
+                    <DropdownMenuItem
+                      key={loc}
+                      onClick={() => setSelectedLocation(loc)}
+                      className="cursor-pointer flex items-center justify-between text-xs"
+                    >
+                      <span>{loc}</span>
+                      {selectedLocation === loc && <span className="text-primary text-[10px] font-bold">✓</span>}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {/* User Profile Avatar with dropdown (appearance, admin, tablet mode, logout) */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors focus-visible:outline-none cursor-pointer select-none"
-                    aria-label="User account menu"
-                  >
-                    <div className="size-8 rounded-full bg-[#581c87] dark:bg-[#6b21a8] text-white flex items-center justify-center text-xs font-semibold shadow-xs">
-                      A
-                    </div>
-                    <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
-                  </button>
-                }
-              />
+                className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors focus-visible:outline-none cursor-pointer select-none"
+                aria-label="User account menu"
+              >
+                <div className="size-8 rounded-full bg-[#581c87] dark:bg-[#6b21a8] text-white flex items-center justify-center text-xs font-semibold shadow-xs">
+                  A
+                </div>
+                <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</span>
-                    <span className="text-[11px] text-muted-foreground">TM Operations • Network Command</span>
-                  </div>
-                </DropdownMenuLabel>
+                <div className="px-2 py-1.5 border-b border-border">
+                  <div className="text-xs font-semibold">{accountLabel || 'Ahmad Syukri'}</div>
+                  <div className="text-[11px] text-muted-foreground">TM Operations • Network Command</div>
+                </div>
+
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
+                    <span>Administration Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
+                    <span>Reports & Audits</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
-                  <span>Administration Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
-                  <span>Reports & Audits</span>
-                </DropdownMenuItem>
+
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">Appearance</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (theme !== 'light') toggleTheme();
+                    }}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sun className="size-3.5" />
+                      <span>Light Theme</span>
+                    </div>
+                    {theme === 'light' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (theme !== 'dark') toggleTheme();
+                    }}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Moon className="size-3.5" />
+                      <span>Dark Theme</span>
+                    </div>
+                    {theme === 'dark' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => toggleTheme()}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Laptop className="size-3.5" />
+                      <span>Toggle (Shift+T)</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">Appearance</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (theme !== 'light') toggleTheme();
-                  }}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Sun className="size-3.5" />
-                    <span>Light Theme</span>
-                  </div>
-                  {theme === 'light' && <span className="text-[10px] text-primary">✓</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (theme !== 'dark') toggleTheme();
-                  }}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Moon className="size-3.5" />
-                    <span>Dark Theme</span>
-                  </div>
-                  {theme === 'dark' && <span className="text-[10px] text-primary">✓</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => toggleTheme()}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Laptop className="size-3.5" />
-                    <span>Toggle (Shift+T)</span>
-                  </div>
-                </DropdownMenuItem>
+
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">UI Mode</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('auto')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-3.5" />
+                      <span>Auto ({resolvedMode})</span>
+                    </div>
+                    {modeSetting === 'auto' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('tablet')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tablet className="size-3.5" />
+                      <span>Tablet Mode</span>
+                    </div>
+                    {modeSetting === 'tablet' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setModeSetting('desktop')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Laptop className="size-3.5" />
+                      <span>Desktop Mode</span>
+                    </div>
+                    {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider">UI Mode</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => setModeSetting('auto')}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="size-3.5" />
-                    <span>Auto ({resolvedMode})</span>
-                  </div>
-                  {modeSetting === 'auto' && <span className="text-[10px] text-primary">✓</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setModeSetting('tablet')}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Tablet className="size-3.5" />
-                    <span>Tablet Mode</span>
-                  </div>
-                  {modeSetting === 'tablet' && <span className="text-[10px] text-primary">✓</span>}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setModeSetting('desktop')}
-                  className="cursor-pointer text-xs flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <Laptop className="size-3.5" />
-                    <span>Desktop Mode</span>
-                  </div>
-                  {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 size-3.5" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
+
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-xs text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 size-3.5" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
