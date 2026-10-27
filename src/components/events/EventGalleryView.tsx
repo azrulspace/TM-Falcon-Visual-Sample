@@ -9,6 +9,7 @@ import {
   UserCheck,
   XCircle,
   Camera,
+  Film,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -134,6 +135,11 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
 
               {/* Badges on Top Right */}
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                {(evt as any).clipStatus === 'ready' && (
+                  <div className="p-1 rounded bg-black/70 backdrop-blur-xs text-emerald-400 border border-emerald-500/30" title="Clip ready">
+                    <Film className="size-3 fill-emerald-400/20" />
+                  </div>
+                )}
                 <PriorityBadge priority={evt.priority} size="sm" />
               </div>
 
@@ -254,6 +260,19 @@ export const EventGalleryView: React.FC<EventGalleryViewProps> = ({
                       >
                         <XCircle className="size-3.5 mr-1" />
                         <span>Dismiss (false positive)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          addToast(
+                            'info',
+                            `Requested on-demand clip for ${formatId(evt.id)} from device.`,
+                            'Clip requested'
+                          );
+                        }}
+                        className={cn("cursor-pointer gap-2", isTablet && "min-h-[48px]")}
+                      >
+                        <Film className="size-3.5 mr-1 text-primary" />
+                        <span>Request clip</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem

@@ -345,6 +345,11 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                             loading="lazy"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                          {(event as any).clipStatus === 'ready' && (
+                            <div className="absolute bottom-1 right-1 bg-black/75 backdrop-blur-xs p-0.5 rounded text-emerald-400 border border-emerald-500/30" title="Recorded clip available">
+                              <Film className="size-2.5 fill-emerald-400/20" />
+                            </div>
+                          )}
                         </div>
 
                         {/* ID in mono as link & type icon */}
@@ -659,6 +664,11 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
+                {(event as any).clipStatus === 'ready' && (
+                  <div className="absolute bottom-1 right-1 bg-black/75 backdrop-blur-xs p-0.5 rounded text-emerald-400 border border-emerald-500/30" title="Recorded clip available">
+                    <Film className="size-2.5 fill-emerald-400/20" />
+                  </div>
+                )}
               </div>
 
               {/* Details */}
