@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Circle, PlayCircle, Clock, UserX, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiMode } from '@/hooks/useUiMode';
 import { getCaseKpiCounts } from '@/data/caseSelectors';
 import type { FalconCase } from '@/types/cases';
 
@@ -17,6 +18,9 @@ export const CaseKpiStrip: React.FC<CaseKpiStripProps> = ({
   activeKpi,
   onSelectKpi,
 }) => {
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
+
   // Computed only from real fields (Section 6.3)
   const kpis = useMemo(() => {
     return getCaseKpiCounts(cases);
@@ -69,8 +73,45 @@ export const CaseKpiStrip: React.FC<CaseKpiStripProps> = ({
     },
   ];
 
+  if (isPortrait) {
+    return (
+      <div className="grid grid-cols-2 gap-2 mb-4 select-none">
+        {cells.map((cell) => {
+          const isActive = activeKpi === cell.key;
+          return (
+            <button
+              key={cell.key}
+              type="button"
+              onClick={() => onSelectKpi(isActive ? null : cell.key)}
+              className={cn(
+                'flex flex-col justify-center p-3 rounded-xl border border-border/80 bg-card/60 shadow-xs text-left transition-all cursor-pointer min-h-[64px]',
+                isActive ? cell.activeClass : 'hover:bg-muted/40'
+              )}
+              title={`Filter by ${cell.label}`}
+            >
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="font-medium truncate">{cell.label}</span>
+                {cell.icon}
+              </div>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-xl font-bold text-foreground tracking-tight tabular-nums">
+                  {cell.value}
+                </span>
+                {cell.sublabel && (
+                  <span className="text-[10px] text-muted-foreground font-mono truncate">
+                    {cell.sublabel}
+                  </span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div className="h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0">
+    <div className={`h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0 ${isTablet ? 'h-[80px]' : ''}`}>
       {cells.map((cell) => {
         const isActive = activeKpi === cell.key;
         return (
@@ -80,7 +121,8 @@ export const CaseKpiStrip: React.FC<CaseKpiStripProps> = ({
             onClick={() => onSelectKpi(isActive ? null : cell.key)}
             className={cn(
               'flex flex-col justify-center px-4 h-full text-left transition-all cursor-pointer group shrink-0 min-w-[160px] lg:min-w-0 lg:shrink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary',
-              isActive ? cell.activeClass : 'hover:bg-muted/40'
+              isActive ? cell.activeClass : 'hover:bg-muted/40',
+              isTablet && 'min-h-[44px]'
             )}
             title={`Filter by ${cell.label}`}
           >

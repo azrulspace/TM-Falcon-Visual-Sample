@@ -5,6 +5,8 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 import { AssignPopover } from './AssignPopover';
 import type { AssigneeType } from '@/types/cases';
 
@@ -27,6 +29,7 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
   onExportSelected,
   onClear,
 }) => {
+  const { isTablet } = useUiMode();
   const [isAssignOpen, setIsAssignOpen] = useState(false);
 
   if (selectedCount === 0) return null;
@@ -35,9 +38,15 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
     <div
       role="region"
       aria-label="Bulk actions toolbar"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-bottom-4 duration-200"
+      className={cn(
+        "fixed left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-bottom-4 duration-200",
+        isTablet ? "bottom-8" : "bottom-6"
+      )}
     >
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-4 py-2.5 rounded-full bg-card/95 dark:bg-card/90 backdrop-blur-md border border-border shadow-2xl text-card-foreground">
+      <div className={cn(
+        "flex flex-wrap items-center gap-2 sm:gap-3 rounded-full bg-card/95 dark:bg-card/90 backdrop-blur-md border border-border shadow-2xl text-card-foreground",
+        isTablet ? "px-5 py-3" : "px-4 py-2.5"
+      )}>
         {/* Count indicator */}
         <div className="flex items-center gap-2 pr-2 border-r border-border">
           <span className="flex items-center justify-center size-6 rounded-full bg-primary text-primary-foreground text-xs font-bold tabular-nums">
@@ -72,10 +81,13 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-primary/10 hover:text-primary cursor-pointer"
+                className={cn(
+                  "gap-1.5 border-border hover:bg-primary/10 hover:text-primary cursor-pointer",
+                  isTablet ? "h-11 px-4 text-sm" : "h-8 px-2.5 text-xs"
+                )}
                 title="Assign selected cases"
               >
-                <UserPlus className="size-3.5 text-primary" />
+                <UserPlus className="size-4 text-primary" />
                 <span>Assign</span>
               </Button>
             }
@@ -86,10 +98,13 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
             variant="outline"
             size="sm"
             onClick={onExportSelected}
-            className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-muted/80 cursor-pointer"
+            className={cn(
+              "gap-1.5 border-border hover:bg-muted/80 cursor-pointer",
+              isTablet ? "h-11 px-4 text-sm" : "h-8 px-2.5 text-xs"
+            )}
             title="Export selected cases as CSV"
           >
-            <Download className="size-3.5 text-muted-foreground" />
+            <Download className="size-4 text-muted-foreground" />
             <span>Export selected</span>
           </Button>
         </div>
@@ -100,7 +115,10 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClear}
-            className="size-7 p-0 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
+            className={cn(
+              "p-0 rounded-full hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer",
+              isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "size-7"
+            )}
             title="Clear selection"
             aria-label="Clear selection"
           >

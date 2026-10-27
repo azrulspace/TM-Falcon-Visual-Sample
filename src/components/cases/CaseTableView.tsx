@@ -32,6 +32,7 @@ import { RelativeTime } from '@/components/common/RelativeTime';
 import { AssignPopover } from './AssignPopover';
 import { useCases } from '@/contexts/CasesContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useUiMode } from '@/contexts/UiModeContext';
 import { cn } from '@/lib/utils';
 import { getCaseAge, type CaseSortKey, type SortDirection } from '@/data/caseSelectors';
 import { getServerNow } from '@/lib/dateTime';
@@ -118,6 +119,8 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
   const navigate = useNavigate();
   const { assignCase } = useCases();
   const { addToast } = useToast();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
   const now = getServerNow();
 
   // Active popover state for individual rows
@@ -213,18 +216,23 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
     <div className="space-y-3">
       {/* Table Container */}
       <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-        {/* Desktop & Tablet Table (>=1024px) */}
-        <div className="hidden lg:block overflow-x-auto">
+        {/* Desktop & Tablet Table */}
+        <div className={cn("overflow-x-auto", isPortrait ? "hidden" : "block")}>
           <table className="w-full text-left border-collapse">
             <thead className="bg-muted/40 sticky top-0 z-10 border-b border-border text-muted-foreground">
               <tr>
-                {/* Checkbox column */}
-                <th className="w-10 py-2.5 px-3">
-                  <Checkbox
-                    checked={isAllPageSelected ? true : isSomePageSelected ? 'indeterminate' : false}
-                    onCheckedChange={(checked) => onSelectAllPage(!!checked, pageIds)}
-                    aria-label="Select all cases on page"
-                  />
+                {/* Checkbox column with 44px hit-area */}
+                <th className="w-12 py-2 px-2">
+                  <div
+                    className="size-11 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={isAllPageSelected ? true : isSomePageSelected ? 'indeterminate' : false}
+                      onCheckedChange={(checked) => onSelectAllPage(!!checked, pageIds)}
+                      aria-label="Select all cases on page"
+                    />
+                  </div>
                 </th>
 
                 {/* Case Column */}
@@ -242,13 +250,13 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                   Source event
                 </th>
 
-                {/* Asset Column (hidden on 1280-1439px where it merges under Source event) */}
-                <th className="hidden 2xl:table-cell text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 min-w-[100px]">
+                {/* Asset Column (hidden on tablet or <1536px where it merges under Source event) */}
+                <th className={cn("text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 min-w-[100px]", isTablet ? "hidden" : "hidden 2xl:table-cell")}>
                   Asset
                 </th>
 
-                {/* Device Column (hidden on 1280-1439px where it merges under Source event) */}
-                <th className="hidden 2xl:table-cell text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 min-w-[100px]">
+                {/* Device Column (hidden on tablet or <1536px where it merges under Source event) */}
+                <th className={cn("text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2.5 px-3 min-w-[100px]", isTablet ? "hidden" : "hidden 2xl:table-cell")}>
                   Device
                 </th>
 
@@ -306,19 +314,25 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                     onClick={() => navigate(`/cases/${c.id}`)}
                     className={cn(
                       'hover:bg-muted/30 cursor-pointer transition-colors group',
+                      isTablet ? 'h-16' : 'h-14',
                       isSelected && 'bg-primary/5 hover:bg-primary/10'
                     )}
                   >
-                    {/* Checkbox */}
+                    {/* Checkbox with 44px hit-area */}
                     <td
-                      className="py-3 px-3 w-10"
+                      className="py-1 px-1 w-12"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => onToggleSelect(c.id)}
-                        aria-label={`Select case ${c.id}`}
-                      />
+                      <div
+                        className="size-11 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+                        onClick={() => onToggleSelect(c.id)}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => onToggleSelect(c.id)}
+                          aria-label={`Select case ${c.id}`}
+                        />
+                      </div>
                     </td>
 
                     {/* Case ID and short title */}
@@ -337,7 +351,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                       </div>
                     </td>
 
-                    {/* Source event (with merged Asset & Device at 1280-1439px) */}
+                    {/* Source event (with merged Asset & Device at 1280-1439px or tablet) */}
                     <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex flex-col gap-1">
                         <Link
@@ -346,8 +360,8 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                         >
                           {c.sourceEventId}
                         </Link>
-                        {/* Merged Asset & Device visible on xl but hidden on 2xl */}
-                        <div className="hidden xl:flex 2xl:hidden items-center gap-1.5 flex-wrap">
+                        {/* Merged Asset & Device visible on tablet or xl */}
+                        <div className={cn("items-center gap-1.5 flex-wrap", isTablet ? "flex" : "hidden xl:flex 2xl:hidden")}>
                           {c.sourceEvent?.asset && (
                             <AssetChip assetId={c.sourceEvent.asset} className="text-[11px] px-1.5 py-0" />
                           )}
@@ -358,8 +372,8 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                       </div>
                     </td>
 
-                    {/* Asset (2xl+ only) */}
-                    <td className="hidden 2xl:table-cell py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                    {/* Asset (2xl+ only on desktop) */}
+                    <td className={cn("py-3 px-3", isTablet ? "hidden" : "hidden 2xl:table-cell")} onClick={(e) => e.stopPropagation()}>
                       {c.sourceEvent?.asset ? (
                         <AssetChip assetId={c.sourceEvent.asset} />
                       ) : (
@@ -367,8 +381,8 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                       )}
                     </td>
 
-                    {/* Device (2xl+ only) */}
-                    <td className="hidden 2xl:table-cell py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                    {/* Device (2xl+ only on desktop) */}
+                    <td className={cn("py-3 px-3", isTablet ? "hidden" : "hidden 2xl:table-cell")} onClick={(e) => e.stopPropagation()}>
                       {c.sourceEvent?.device ? (
                         <DeviceChip deviceId={c.sourceEvent.device} />
                       ) : (
@@ -430,17 +444,20 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                                className={cn(
+                                  "p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground",
+                                  isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "size-7"
+                                )}
                                 aria-label={`Actions for case ${c.id}`}
                               >
                                 <MoreHorizontal className="size-4" />
                               </Button>
                             }
                           />
-                          <DropdownMenuContent align="end" className="w-44 bg-popover border border-border shadow-xl z-50 text-xs">
+                          <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-xl z-50 text-xs">
                             <DropdownMenuItem
                               onClick={() => navigate(`/cases/${c.id}`)}
-                              className="gap-2 cursor-pointer"
+                              className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
                             >
                               <ExternalLink className="size-3.5 text-muted-foreground" />
                               <span>View case</span>
@@ -448,7 +465,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
 
                             <DropdownMenuItem
                               onClick={() => navigate(`/events/${c.sourceEventId}`)}
-                              className="gap-2 cursor-pointer"
+                              className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
                             >
                               <ExternalLink className="size-3.5 text-muted-foreground" />
                               <span>View source event</span>
@@ -456,7 +473,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
 
                             <DropdownMenuItem
                               onClick={() => setRowAssignId(c.id)}
-                              className="gap-2 cursor-pointer"
+                              className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
                             >
                               <UserPlus className="size-3.5 text-muted-foreground" />
                               <span>Assign...</span>
@@ -466,7 +483,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
 
                             <DropdownMenuItem
                               onClick={(e) => handleCopyLink(c.id, e)}
-                              className="gap-2 cursor-pointer"
+                              className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
                             >
                               <Copy className="size-3.5 text-muted-foreground" />
                               <span>Copy link</span>
@@ -492,8 +509,8 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
           </table>
         </div>
 
-        {/* Compact List View (<1024px responsive rule from Section 10) */}
-        <div className="block lg:hidden divide-y divide-border">
+        {/* Compact List View (Portrait Tablet mode & Phone viewports) */}
+        <div className={cn("divide-y divide-border", isPortrait ? "block" : "block lg:hidden")}>
           {pageCases.map((c) => {
             const isSelected = selectedIds.has(c.id);
             return (
@@ -505,7 +522,14 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                   isSelected && 'bg-primary/5'
                 )}
               >
-                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                {/* 44px Checkbox Hit Area */}
+                <div
+                  className="size-11 min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 -mt-1 cursor-pointer shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect(c.id);
+                  }}
+                >
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => onToggleSelect(c.id)}
@@ -515,7 +539,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
 
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
                       <Link
                         to={`/cases/${c.id}`}
                         onClick={(e) => e.stopPropagation()}
@@ -525,9 +549,66 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                       </Link>
                       <CaseStatusBadge status={c.status} size="sm" />
                     </div>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                      <RelativeTime date={c.createdAt} showTooltip />
-                    </span>
+
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-[11px] text-muted-foreground whitespace-nowrap mr-1">
+                        <RelativeTime date={c.createdAt} showTooltip />
+                      </span>
+
+                      {/* Card Overflow Menu with 44px hit-area */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground",
+                                isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "size-8"
+                              )}
+                              aria-label={`Actions for case ${c.id}`}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-xl z-50 text-xs">
+                          <DropdownMenuItem
+                            onClick={() => navigate(`/cases/${c.id}`)}
+                            className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
+                          >
+                            <ExternalLink className="size-3.5 text-muted-foreground" />
+                            <span>View case</span>
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => navigate(`/events/${c.sourceEventId}`)}
+                            className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
+                          >
+                            <ExternalLink className="size-3.5 text-muted-foreground" />
+                            <span>View source event</span>
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => setRowAssignId(c.id)}
+                            className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
+                          >
+                            <UserPlus className="size-3.5 text-muted-foreground" />
+                            <span>Assign...</span>
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            onClick={(e) => handleCopyLink(c.id, e)}
+                            className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
+                          >
+                            <Copy className="size-3.5 text-muted-foreground" />
+                            <span>Copy link</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   <p className="text-xs text-foreground font-medium truncate">
@@ -542,6 +623,12 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                     >
                       {c.sourceEventId}
                     </Link>
+                    {c.sourceEvent?.device && (
+                      <DeviceChip deviceId={c.sourceEvent.device} className="text-[11px] px-1.5 py-0" />
+                    )}
+                    {c.sourceEvent?.asset && (
+                      <AssetChip assetId={c.sourceEvent.asset} className="text-[11px] px-1.5 py-0" />
+                    )}
                     <AssigneeCell assignee={c.assignee} assigneeType={c.assigneeType} />
                   </div>
                 </div>
@@ -579,7 +666,10 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                 setRowsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="h-7 text-xs bg-card border border-border rounded-md px-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              className={cn(
+                "bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer",
+                isTablet ? "h-11 px-2.5 text-sm" : "h-7 text-xs px-1.5"
+              )}
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -597,7 +687,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={validCurrentPage <= 1}
-              className="size-7 p-0 border-border"
+              className={cn("border-border", isTablet ? "size-11 min-w-[44px] min-h-[44px] p-0" : "size-7 p-0")}
               aria-label="Previous page"
             >
               <ChevronLeft className="size-4" />
@@ -607,7 +697,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
               size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={validCurrentPage >= totalPages}
-              className="size-7 p-0 border-border"
+              className={cn("border-border", isTablet ? "size-11 min-w-[44px] min-h-[44px] p-0" : "size-7")}
               aria-label="Next page"
             >
               <ChevronRight className="size-4" />

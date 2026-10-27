@@ -25,6 +25,8 @@ import { CaseStatusBadge } from '@/components/common/CaseStatusBadge';
 import { AssignPopover } from '../AssignPopover';
 import { useCases } from '@/contexts/CasesContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useUiMode } from '@/contexts/UiModeContext';
+import { cn } from '@/lib/utils';
 import { exportCasesToCsv } from '@/data/caseSelectors';
 import { getServerNow } from '@/lib/dateTime';
 import type { FalconCase, AssigneeType } from '@/types/cases';
@@ -41,6 +43,8 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
   const navigate = useNavigate();
   const { assignCase, startWork, sendForReview, closeCase, reopenCase } = useCases();
   const { addToast } = useToast();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
 
   const [isPending, setIsPending] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
@@ -122,6 +126,15 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
   const isUnassigned = !caseData.assignee || caseData.assignee.toLowerCase() === 'unassigned';
 
   const renderPrimaryAction = () => {
+    const primaryBtnClass = cn(
+      "font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer",
+      isTablet ? "h-11 px-4 text-sm gap-2" : "gap-2 text-xs h-8 px-3"
+    );
+    const reopenBtnClass = cn(
+      "font-semibold border-border hover:bg-muted text-foreground cursor-pointer",
+      isTablet ? "h-11 px-4 text-sm gap-2" : "gap-2 text-xs h-8 px-3"
+    );
+
     if (isUnassigned) {
       return (
         <AssignPopover
@@ -131,13 +144,13 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
           onAssign={handleAssignSelect}
           trigger={
             <Button
-              className="gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
+              className={primaryBtnClass}
               disabled={isPending}
             >
               {isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                <UserPlus className="size-3.5" />
+                <UserPlus className="size-4" />
               )}
               <span>Assign</span>
             </Button>
@@ -151,12 +164,12 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
         <Button
           onClick={handlePrimaryAction}
           disabled={isPending}
-          className="gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
+          className={primaryBtnClass}
         >
           {isPending ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Play className="size-3.5 fill-current" />
+            <Play className="size-4 fill-current" />
           )}
           <span>Start work</span>
         </Button>
@@ -168,12 +181,12 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
         <Button
           onClick={handlePrimaryAction}
           disabled={isPending}
-          className="gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
+          className={primaryBtnClass}
         >
           {isPending ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Send className="size-3.5" />
+            <Send className="size-4" />
           )}
           <span>Send for review</span>
         </Button>
@@ -185,12 +198,12 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
         <Button
           onClick={handlePrimaryAction}
           disabled={isPending}
-          className="gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
+          className={primaryBtnClass}
         >
           {isPending ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <CheckCircle className="size-3.5" />
+            <CheckCircle className="size-4" />
           )}
           <span>Close case</span>
         </Button>
@@ -203,12 +216,12 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
           variant="outline"
           onClick={handlePrimaryAction}
           disabled={isPending}
-          className="gap-2 text-xs font-semibold border-border hover:bg-muted text-foreground cursor-pointer"
+          className={reopenBtnClass}
         >
           {isPending ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <RotateCcw className="size-3.5" />
+            <RotateCcw className="size-4" />
           )}
           <span>Reopen case</span>
         </Button>
@@ -236,19 +249,19 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
           <span className="font-mono font-semibold text-foreground">{caseData.id}</span>
         </div>
 
-        {/* Desktop Secondary Buttons */}
+        {/* Desktop & Landscape Tablet Secondary Buttons */}
         <div className="hidden sm:flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleBack}
-            className="text-xs h-8 px-2.5 border-border hover:bg-muted"
+            className={cn("border-border hover:bg-muted", isTablet ? "h-11 px-4 text-sm" : "text-xs h-8 px-2.5")}
           >
             <span>Back to Cases</span>
           </Button>
 
-          {/* Primary Action Button */}
-          {renderPrimaryAction()}
+          {/* Primary Action Button (in header for desktop and landscape tablet) */}
+          {!isPortrait && renderPrimaryAction()}
 
           {/* Overflow Menu */}
           <DropdownMenu>
@@ -257,20 +270,23 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="size-8 p-0 border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                  className={cn(
+                    "p-0 border-border hover:bg-muted text-muted-foreground hover:text-foreground",
+                    isTablet ? "size-11 min-w-[44px] min-h-[44px]" : "size-8"
+                  )}
                   aria-label="More case actions"
                 >
                   <MoreHorizontal className="size-4" />
                 </Button>
               }
             />
-            <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-xl z-50 text-xs">
-              <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
+            <DropdownMenuContent align="end" className="w-52 bg-popover border border-border shadow-xl z-50 text-xs">
+              <DropdownMenuItem onClick={handleCopyLink} className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}>
                 <Copy className="size-3.5 text-muted-foreground" />
                 <span>Copy link</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={handleExport} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={handleExport} className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}>
                 <Download className="size-3.5 text-muted-foreground" />
                 <span>Export case (CSV)</span>
               </DropdownMenuItem>
@@ -279,7 +295,7 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
 
               <DropdownMenuItem
                 onClick={() => navigate(`/events/${caseData.sourceEventId}`)}
-                className="gap-2 cursor-pointer"
+                className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
               >
                 <ExternalLink className="size-3.5 text-muted-foreground" />
                 <span>View source event</span>
@@ -312,15 +328,18 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Action Bar (<768px from Section 7.3) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-40 flex items-center justify-between gap-2 shadow-2xl">
+      {/* Mobile & Portrait Tablet Sticky Bottom Action Bar */}
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-40 flex items-center justify-between gap-3 shadow-2xl",
+        isPortrait ? "flex" : "flex sm:hidden"
+      )}>
         <Button
           variant="outline"
           size="sm"
           onClick={handleBack}
-          className="text-xs h-9 px-3 border-border"
+          className={cn("border-border", isTablet ? "h-11 px-4 text-sm" : "text-xs h-9 px-3")}
         >
-          <ArrowLeft className="size-3.5 mr-1" />
+          <ArrowLeft className="size-4 mr-1" />
           <span>Back</span>
         </Button>
 

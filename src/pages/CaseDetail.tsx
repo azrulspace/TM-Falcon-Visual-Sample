@@ -16,6 +16,7 @@ import { CaseActivityTab } from '@/components/cases/detail/tabs/CaseActivityTab'
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiMode } from '@/contexts/UiModeContext';
 import { joinCaseWithEvent, createEventMap } from '@/data/caseSelectors';
 
 export type CaseDetailTab =
@@ -44,6 +45,8 @@ export default function CaseDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { getCaseById } = useCases();
   const { events } = useEvents();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
 
   // Tab state synced with URL query param `?tab=...` (Section 7.4)
   const initialTab = (searchParams.get('tab') as CaseDetailTab) || 'overview';
@@ -101,7 +104,9 @@ export default function CaseDetail() {
         />
 
         {/* 7.2 Workflow Tracker */}
-        <CaseWorkflowTracker caseData={caseData} />
+        <div className="overflow-x-auto scrollbar-none pb-1">
+          <CaseWorkflowTracker caseData={caseData} />
+        </div>
 
         {/* 7.4 Tabs Bar */}
         <div className="border-b border-border">
@@ -114,7 +119,8 @@ export default function CaseDetail() {
                   type="button"
                   onClick={() => handleTabChange(tab.key)}
                   className={cn(
-                    'px-3.5 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer',
+                    'border-b-2 transition-colors whitespace-nowrap cursor-pointer',
+                    isTablet ? 'px-5 py-3 text-sm min-h-[44px]' : 'px-3.5 py-2.5 text-xs font-medium',
                     isActive
                       ? 'border-primary text-primary font-semibold'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
@@ -127,10 +133,13 @@ export default function CaseDetail() {
           </nav>
         </div>
 
-        {/* 7.3 Two Column Layout (>=1280px: 8 cols main / 4 cols side) */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          {/* Main Column (8 of 12) */}
-          <div className="xl:col-span-8 space-y-6">
+        {/* 7.3 Two Column Layout (Landscape: ~60% main / ~40% side, Portrait: 1 column) */}
+        <div className={cn(
+          "gap-6 items-start",
+          isPortrait ? "flex flex-col" : "grid grid-cols-1 md:grid-cols-12 xl:grid-cols-12"
+        )}>
+          {/* Main Column */}
+          <div className={cn("space-y-6 w-full", !isPortrait && "md:col-span-7 xl:col-span-8")}>
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
@@ -164,8 +173,8 @@ export default function CaseDetail() {
             )}
           </div>
 
-          {/* Side Column (4 of 12) */}
-          <div className="xl:col-span-4 space-y-6">
+          {/* Side Column */}
+          <div className={cn("space-y-6 w-full", !isPortrait && "md:col-span-5 xl:col-span-4")}>
             {/* Case Details Card */}
             <CaseDetailsCard caseData={caseData} />
 

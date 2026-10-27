@@ -36,6 +36,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet';
+import { useUiMode } from '@/hooks/useUiMode';
 
 export type CaseTabKey = 'all' | 'open' | 'in_progress' | 'in_review' | 'closed';
 
@@ -52,6 +53,8 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
   statusCounts,
   totalFilteredCount,
 }) => {
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
   const { savedViews, saveView, renameSavedView, deleteSavedView, setDefaultView } = useCases();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -340,7 +343,8 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
                 type="button"
                 onClick={() => handleTabChange(tab.key)}
                 className={cn(
-                  'flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium transition-colors whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary',
+                  'flex items-center rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary',
+                  isTablet ? 'h-[44px] px-3.5 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5',
                   isActive
                     ? 'bg-card text-foreground font-semibold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
@@ -369,11 +373,11 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-2.5 text-xs gap-1.5 border-border hover:bg-muted font-medium"
+                  className={`${isTablet ? 'h-[44px] px-3.5 text-sm gap-2' : 'h-8 px-2.5 text-xs gap-1.5'} border-border hover:bg-muted font-medium cursor-pointer`}
                 >
-                  <Bookmark className="size-3.5 text-muted-foreground" />
+                  <Bookmark className={isTablet ? 'size-4 text-muted-foreground' : 'size-3.5 text-muted-foreground'} />
                   <span>Views</span>
-                  <ChevronDown className="size-3 opacity-60" />
+                  <ChevronDown className="size-3.5 opacity-60" />
                 </Button>
               }
             />
@@ -520,14 +524,17 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
 
           {/* Search Input (Section 6.5) */}
           <div className="relative w-full sm:w-64 lg:w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Search className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none", isTablet ? "size-4" : "size-3.5")} />
             <input
               ref={searchInputRef}
               type="text"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder="Search by ID, event, asset, device, owner..."
-              className="w-full h-8 pl-8 pr-7 text-xs bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors"
+              className={cn(
+                "w-full pr-7 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors",
+                isTablet ? "h-[44px] pl-9 text-sm" : "h-8 pl-8 text-xs"
+              )}
             />
             {localSearch ? (
               <button
@@ -537,10 +544,10 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
                   setFilters((prev) => ({ ...prev, search: undefined }));
                   searchInputRef.current?.focus();
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
+                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isTablet ? 'size-6' : 'size-4'} text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center`}
                 title="Clear search"
               >
-                <X className="size-3" />
+                <X className={isTablet ? 'size-4' : 'size-3'} />
               </button>
             ) : (
               <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[10px] font-mono rounded bg-muted text-muted-foreground border border-border pointer-events-none">
@@ -552,20 +559,20 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
       </div>
 
       {/* Middle row: Desktop Filter Chips Strip (Section 6.5) */}
-      <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      <div className={cn(isPortrait ? 'hidden' : 'hidden md:flex', "items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar")}>
         <span className="text-muted-foreground flex items-center gap-1 shrink-0 font-medium mr-1">
           <Filter className="size-3" />
           <span>Filter:</span>
         </span>
 
         {/* 1. Open only Switch Toggle (Section 6.5) */}
-        <label className="h-7 px-2.5 rounded-full border border-border bg-card flex items-center gap-2 cursor-pointer hover:bg-muted/40 transition-colors shrink-0">
+        <label className={cn("rounded-full border border-border bg-card flex items-center gap-2 cursor-pointer hover:bg-muted/40 transition-colors shrink-0", isTablet ? "h-[44px] px-3.5" : "h-7 px-2.5")}>
           <Switch
             checked={!!filters.openOnly}
             onCheckedChange={handleToggleOpenOnly}
             className="scale-75 origin-left"
           />
-          <span className={cn('text-xs font-medium', filters.openOnly ? 'text-primary font-semibold' : 'text-muted-foreground')}>
+          <span className={cn(isTablet ? 'text-sm font-medium' : 'text-xs font-medium', filters.openOnly ? 'text-primary font-semibold' : 'text-muted-foreground')}>
             Open only
           </span>
         </label>
@@ -577,7 +584,8 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
               <button
                 type="button"
                 className={cn(
-                  'h-7 px-2.5 rounded-full border text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                  'rounded-full border font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
+                  isTablet ? 'h-[44px] px-3.5 text-sm' : 'h-7 px-2.5 text-xs',
                   filters.status && filters.status.length > 0
                     ? 'bg-primary/10 border-primary text-primary font-semibold'
                     : 'bg-card border-border text-muted-foreground hover:text-foreground'
@@ -959,22 +967,23 @@ export const CaseQueueToolbar: React.FC<CaseQueueToolbarProps> = ({
         </div>
       )}
 
-      {/* Mobile Filter Button (< 768px) (Section 10) */}
-      <div className="flex md:hidden items-center gap-2">
+      {/* Mobile/Portrait Filter Button */}
+      <div className={cn(isPortrait ? 'flex' : 'flex md:hidden', "items-center gap-2")}>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setMobileFilterSheetOpen(true)}
           className={cn(
-            'h-7 px-2.5 rounded-full text-xs font-medium flex items-center gap-1.5 shrink-0 cursor-pointer',
+            'rounded-full font-medium flex items-center gap-2 shrink-0 cursor-pointer',
+            isTablet ? 'h-[44px] px-4 text-sm' : 'h-7 px-2.5 text-xs',
             activePills.length > 0
               ? 'border-primary text-primary bg-primary/10'
               : 'border-border text-muted-foreground hover:text-foreground'
           )}
         >
-          <Filter className="size-3" />
+          <Filter className={isTablet ? 'size-4' : 'size-3'} />
           <span>Filters{activePills.length > 0 ? ` (${activePills.length})` : ''}</span>
-          <ChevronDown className="size-3 opacity-60" />
+          <ChevronDown className="size-3.5 opacity-60" />
         </Button>
       </div>
 
