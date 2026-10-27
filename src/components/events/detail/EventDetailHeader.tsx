@@ -43,6 +43,7 @@ export interface EventDetailHeaderProps {
   onOpenResolve?: () => void;
   onOpenVendorData?: () => void;
   onWatchLive?: () => void;
+  updatedNotice?: { time: string; changes: string[] } | null;
 }
 
 export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
@@ -52,6 +53,7 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
   onOpenCreateCase,
   onOpenVendorData,
   onWatchLive,
+  updatedNotice,
 }) => {
   const { isTablet } = useUiMode();
   const navigate = useNavigate();
@@ -177,6 +179,27 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
             <PriorityBadge priority={priority} size="default" />
             {/* Status Badge only if capability exists */}
             {supportsStatus && <StatusBadge status={status} size="default" />}
+            {/* Transient Updated Chip (Section 6.5) */}
+            {updatedNotice && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <div className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 text-[11px] font-mono flex items-center gap-1.5 animate-in fade-in transition-opacity cursor-help">
+                      <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+                      <span>Updated at {updatedNotice.time}</span>
+                    </div>
+                  }
+                />
+                <TooltipContent side="bottom" className="text-xs">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-foreground">Recent changes:</span>
+                    {updatedNotice.changes.map((c, i) => (
+                      <span key={i} className="text-muted-foreground">• {c}</span>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
 

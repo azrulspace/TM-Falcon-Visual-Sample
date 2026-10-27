@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { EventDetailHeader } from '@/components/events/detail/EventDetailHeader';
 import { EvidenceViewer } from '@/components/evidence/EvidenceViewer';
@@ -18,7 +18,7 @@ import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { Button } from '@/components/ui/button';
-import { Briefcase, ArrowLeft, SearchX, Video } from 'lucide-react';
+import { Briefcase, ArrowLeft, Video, AlertTriangle } from 'lucide-react';
 import { devices } from '@/data/devices';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { formatId } from '@/lib/utils';
@@ -61,6 +61,45 @@ export default function EventDetail() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxFrame, setLightboxFrame] = useState(0);
   const [isAcknowledging, setIsAcknowledging] = useState(false);
+
+  // Live update and conflict handling (Section 6.5)
+  const [updatedNotice, setUpdatedNotice] = useState<{ time: string; changes: string[] } | null>(null);
+  const [conflictNotice, setConflictNotice] = useState<string | null>(null);
+  const prevEventRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!event) return;
+    if (prevEventRef.current && prevEventRef.current.id === event.id) {
+      const changes: string[] = [];
+      const prev = prevEventRef.current;
+      if (prev.priority !== event.priority) changes.push(`Priority changed to ${event.priority}`);
+      if (prev.caseId !== (event as any).caseId) {
+        changes.push((event as any).caseId ? `Case ${(event as any).caseId} attached` : 'Case detached');
+      }
+      if (prev.status !== (event as any).status && prev.state !== (event as any).state) {
+        changes.push('Status updated');
+      }
+      if ((event as any).evidence?.version && prev.evidence?.version !== (event as any).evidence?.version) {
+        changes.push('Clip updated');
+      }
+      if (changes.length > 0) {
+        const nowStr = new Date().toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setUpdatedNotice({ time: nowStr, changes });
+        const timer = setTimeout(() => {
+          setUpdatedNotice(null);
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    }
+    prevEventRef.current = {
+      id: event.id,
+      priority: event.priority,
+      caseId: (event as any).caseId,
+      status: (event as any).status,
+      state: (event as any).state,
+      evidence: (event as any).evidence,
+    };
+  }, [event]);
 
   // Position control navigation
   const handlePrev = useCallback(() => {
@@ -179,22 +218,22 @@ export default function EventDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6 text-center select-none">
         <div className="size-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-          <SearchX className="size-8" />
+          <AlertTriangle className="size-8 text-amber-500" />
         </div>
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-foreground">Event Dossier Not Found</h2>
+          <h2 className="text-xl font-bold text-foreground">This event is no longer available</h2>
           <p className="text-xs text-muted-foreground max-w-sm">
-            Event ID <span className="font-mono font-semibold">{id}</span> does not exist in the active telemetry store.
+            The event may have been deleted, archived, or is no longer accessible with your current permissions.
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => navigate('/events')}
-          className="border-border text-xs gap-1.5"
+          className="border-border text-xs gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Return to Event Inbox</span>
+          <span>Back to Event inbox</span>
         </Button>
       </div>
     );
@@ -218,6 +257,14 @@ export default function EventDetail() {
     addToast('info', `Connecting to ${formatId(rawDeviceId)} live camera stream...`);
   };
 
+  const handleOpenCreateCase = () => {
+    if (event.caseId) {
+      setConflictNotice('This event was updated. An operational case is already attached.');
+      return;
+    }
+    setCreateCaseOpen(true);
+  };
+
   return (
     <div className={`flex flex-col min-h-screen bg-background text-foreground antialiased ${isPortrait ? 'pb-24' : 'pb-20 sm:pb-8'}`}>
       <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-[1920px] w-full mx-auto">
@@ -226,12 +273,43 @@ export default function EventDetail() {
           event={event as any}
           isAcknowledging={isAcknowledging}
           onAcknowledge={handleAcknowledge}
-          onOpenCreateCase={() => setCreateCaseOpen(true)}
+          onOpenCreateCase={handleOpenCreateCase}
           onOpenAssign={() => setAssignOpen(true)}
           onOpenResolve={() => setResolveOpen(true)}
           onOpenVendorData={() => setVendorDataOpen(true)}
           onWatchLive={handleWatchLive}
+          updatedNotice={updatedNotice}
         />
+
+        {/* Optimistic Concurrency Conflict Banner (Section 6.5) */}
+        {conflictNotice && (
+          <div className="flex items-center justify-between p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-4 shrink-0 text-amber-500" />
+              <span className="font-medium text-foreground">{conflictNotice} Review the changes.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setConflictNotice(null)}
+                className="h-7 px-2.5 text-xs border-border hover:bg-muted cursor-pointer"
+              >
+                Dismiss
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setConflictNotice(null);
+                  window.location.reload();
+                }}
+                className="h-7 px-2.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer"
+              >
+                Reload
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* 2. Responsive Layout */}
         {isPortrait ? (
