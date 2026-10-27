@@ -34,7 +34,7 @@ import { GlobalSearchCommand } from './GlobalSearchCommand';
 import { navigationConfig, type NavItem } from '@/config/navigation';
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
-  const { accountLabel, setAccountLabel } = useAppContext();
+  const { accountLabel, setAccountLabel, previewClipStatus, setPreviewClipStatus } = useAppContext();
   const { modeSetting, setModeSetting, resolvedMode, orientation, viewportWidth } = useUiMode();
   const location = useLocation();
   const navigate = useNavigate();
@@ -393,6 +393,79 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       <span>Desktop Mode</span>
                     </div>
                     {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator />
+
+                {/* Developer Flag: Preview Clip States (Section 4.3) */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+                    <span>Preview Clip States</span>
+                    {previewClipStatus && <span className="text-[9px] font-mono text-amber-500 font-bold">PREVIEW</span>}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus(null)}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Real data (no forced state)</span>
+                    {previewClipStatus === null && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('not_requested')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Not requested</span>
+                    {previewClipStatus === 'not_requested' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('requested')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Requested (waiting)</span>
+                    {previewClipStatus === 'requested' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('uploading')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Uploading (progress)</span>
+                    {previewClipStatus === 'uploading' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('ready')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Ready (video player)</span>
+                    {previewClipStatus === 'ready' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('failed')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Failed (camera error)</span>
+                    {previewClipStatus === 'failed' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('expired')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Expired</span>
+                    {previewClipStatus === 'expired' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('device_offline')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Device offline</span>
+                    {previewClipStatus === 'device_offline' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPreviewClipStatus('no_permission')}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>No permission</span>
+                    {previewClipStatus === 'no_permission' && <span className="text-[10px] text-primary">✓</span>}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
 
