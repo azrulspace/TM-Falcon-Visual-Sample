@@ -78,9 +78,21 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   // ResizeObserver for dynamic viewport invalidation (Section 8.7)
   useEffect(() => {
     if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setContainerSize({
+            width: rect.width,
+            height: rect.height,
+          });
+        }
+      }
+    };
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.contentRect) {
+        if (entry.contentRect && entry.contentRect.width > 0) {
           setContainerSize({
             width: entry.contentRect.width,
             height: entry.contentRect.height,
@@ -89,7 +101,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       }
     });
     observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', updateSize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', updateSize);
+    };
   }, []);
 
   // Smooth Fly-to with overlay padding (Section 8.6) and cluster expansion
@@ -283,10 +302,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   };
 
   // Real GIS tile grid calculation around Kuching (z=12, x=3303, y=2030)
+  // Generous grid spanning 11 columns and 10 rows to cover any viewport without gaps
   const tiles = useMemo(() => {
     const list: { tx: number; ty: number; x: number; y: number }[] = [];
-    const cols = [3301, 3302, 3303, 3304, 3305];
-    const rows = [2028, 2029, 2030, 2031, 2032];
+    const cols = [3298, 3299, 3300, 3301, 3302, 3303, 3304, 3305, 3306, 3307, 3308];
+    const rows = [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034];
 
     rows.forEach((ty) => {
       cols.forEach((tx) => {
@@ -365,10 +385,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       onWheel={handleWheel}
       className={`w-full h-full relative overflow-hidden select-none bg-[#08101C] cursor-grab active:cursor-grabbing ${className}`}
     >
-      {/* SVG Vector & Tile Map Canvas */}
+      {/* SVG Vector & Tile Map Canvas (Fills area with zero letterbox gaps) */}
       <svg
         ref={svgRef}
         viewBox="0 0 1000 700"
+        preserveAspectRatio="xMidYMid slice"
         className="w-full h-full object-cover origin-center transition-transform duration-300 ease-out"
         style={{
           transform: `scale(${scale}) translate(${pan.x}px, ${pan.y}px)`,
@@ -419,8 +440,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           </radialGradient>
         </defs>
 
-        {/* 1. Base Fallback Background */}
-        <rect width="1000" height="700" fill={basemap === 'satellite' ? '#070f1a' : basemap === 'dark' ? '#090e17' : '#e2e8f0'} />
+        {/* 1. Base Fallback Background (Spanning past all viewports) */}
+        <rect x="-2000" y="-2000" width="5000" height="5000" fill={basemap === 'satellite' ? '#070f1a' : basemap === 'dark' ? '#090e17' : '#e2e8f0'} />
 
         {/* 2. Real GIS Tile Imagery Layer (Esri World Imagery / Esri Dark Gray / OSM) */}
         <g className="tiles-layer transition-opacity duration-300">
