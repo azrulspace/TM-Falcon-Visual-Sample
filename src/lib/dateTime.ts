@@ -257,3 +257,64 @@ export function formatEventDate(dateInput: string | number | Date | null | undef
     timeZone: 'Asia/Kuala_Lumpur',
   }).format(date);
 }
+
+/**
+ * Live clock display format matching staging:
+ * e.g. "Tue, 27 Oct 2026, 2:49:50 pm MYT"
+ */
+export function formatStagingLiveClock(dateInput?: string | number | Date | null): string {
+  const date = dateInput ? (parseDate(dateInput) ?? new Date()) : new Date();
+  const formatted = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kuala_Lumpur',
+  }).format(date);
+  return `${formatted} MYT`;
+}
+
+/**
+ * Timeline window start label format matching staging:
+ * e.g. "27 Oct, 1:49 pm"
+ */
+export function formatTimelineWindowStart(dateInput: string | number | Date | null | undefined): string {
+  if (!dateInput) return '—';
+  const date = parseDate(dateInput);
+  if (!date) return '—';
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kuala_Lumpur',
+  }).format(date);
+}
+
+/**
+ * Case opened detail format for timeline tooltips matching staging:
+ * e.g. "Tue, 27 Oct 2026, 2:49 pm"
+ */
+export function formatCaseOpenedDate(dateInput: string | number | Date | null | undefined): string {
+  if (!dateInput) return '—';
+  const date = parseDate(dateInput);
+  if (!date) return '—';
+
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kuala_Lumpur',
+  }).format(date);
+}
+

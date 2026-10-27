@@ -1,18 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Clock, AudioLines, CalendarDays, ChevronDown, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  Clock,
+  AudioLines,
+  CalendarDays,
+  ChevronDown,
+  RotateCcw,
+  Check,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useOverview } from '@/contexts/OverviewContext';
+import { initialCases } from '@/data/cases';
+import type { FalconCase, CaseStatus } from '@/types/cases';
+import {
+  formatStagingLiveClock,
+  formatTimelineWindowStart,
+  formatCaseOpenedDate,
+  parseDate,
+  getServerNow,
+} from '@/lib/dateTime';
 
-interface TimeBarProps {
+export interface TimeBarProps {
   timeMode: 'Active now' | 'History';
   onTimeModeChange: (mode: 'Active now' | 'History') => void;
   historyRange: string;
   onHistoryRangeChange: (range: string) => void;
   onScrubTime?: (val: number) => void;
+  className?: string;
 }
 
 export const TimeBar: React.FC<TimeBarProps> = ({
@@ -21,38 +47,99 @@ export const TimeBar: React.FC<TimeBarProps> = ({
   historyRange,
   onHistoryRangeChange,
   onScrubTime,
+  className = '',
 }) => {
-  const [scrubberPos, setScrubberPos] = useState<number>(75); // ~75% corresponds to the "Now" mark in Figma (x: 629 of 640)
-  const [liveClock, setLiveClock] = useState('');
+  const { selectEntity, liveState, setLiveState, lastUpdatedTime, refreshNow } = useOverview();
+  const [now, setNow] = useState<Date>(() => getServerNow());
+  const [scrubberPos, setScrubberPos] = useState<number>(75);
   const [isDragging, setIsDragging] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // Ticking 1-second clock in Asia/Kuala_Lumpur
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const datePart = now.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-      const timePart = now.toLocaleTimeString('en-GB', {
-        timeZone: 'Asia/Kuala_Lumpur',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-      setLiveClock(`KLT ${datePart} ${timePart}`);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Filter cases according to active mode
+  const activeCases = useMemo(() => {
+    return initialCases.filter((c) => {
+      if (!c.createdAt) return false;
+      const parsed = parseDate(c.createdAt);
+      if (!parsed) return false;
+      if (timeMode === 'Active now') {
+        return c.status !== 'Closed';
+      }
+      return true; // History mode considers all cases
+    });
+  }, [timeMode]);
+
+  // Window calculation matching staging
+  // 1 hour in ms: 3,600,000
+  const ONE_HOUR_MS = 3600000;
+  const nowMs = now.getTime();
+
+  // In Active now mode:
+  // Window start is at least 1 hour ago or earliest active case within reasonable live scope (e.g. up to 24h)
+  const caseTimestamps = useMemo(() => {
+    return activeCases.map((c) => parseDate(c.createdAt)?.getTime() || nowMs);
+  }, [activeCases, nowMs]);
+
+  // Reasonable live window: default 2 hours before now or up to earliest case within 12 hours
+  const liveWindowStart = useMemo(() => {
+    const twelveHoursAgo = nowMs - 12 * ONE_HOUR_MS;
+    const recentCaseTimestamps = caseTimestamps.filter((t) => t >= twelveHoursAgo);
+    if (recentCaseTimestamps.length > 0) {
+      return Math.min(nowMs - ONE_HOUR_MS, ...recentCaseTimestamps);
+    }
+    return nowMs - ONE_HOUR_MS;
+  }, [nowMs, caseTimestamps, ONE_HOUR_MS]);
+
+  const windowStart = timeMode === 'History' ? nowMs - 24 * ONE_HOUR_MS : liveWindowStart;
+  const windowEnd = nowMs;
+  const windowDuration = Math.max(windowEnd - windowStart, 1000);
+
+  // Partition cases into visible on timeline vs older than window start
+  const { visibleCases, olderCases } = useMemo(() => {
+    const visible: { caseItem: FalconCase; posPercent: number; timeMs: number }[] = [];
+    const older: FalconCase[] = [];
+
+    activeCases.forEach((c) => {
+      const t = parseDate(c.createdAt)?.getTime();
+      if (!t) return;
+      if (t < windowStart) {
+        older.push(c);
+      } else {
+        const pct = 2 + 96 * Math.min(Math.max((t - windowStart) / windowDuration, 0), 1);
+        visible.push({ caseItem: c, posPercent: pct, timeMs: t });
+      }
+    });
+
+    return { visibleCases: visible, olderCases: older };
+  }, [activeCases, windowStart, windowDuration]);
+
+  // Status badge background color
+  const getStatusColor = (status: CaseStatus) => {
+    switch (status) {
+      case 'Open':
+        return 'bg-amber-500 dark:bg-amber-400';
+      case 'In progress':
+        return 'bg-sky-500 dark:bg-sky-400';
+      case 'In review':
+        return 'bg-primary';
+      case 'Closed':
+      default:
+        return 'bg-muted-foreground';
+    }
+  };
+
+  // Scrubber drag handler
   const handleTimelineScrub = (clientX: number) => {
     if (!timelineRef.current) return;
     const rect = timelineRef.current.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const percent = Math.max(2, Math.min(98, ((clientX - rect.left) / rect.width) * 100));
     setScrubberPos(percent);
     if (onScrubTime) onScrubTime(percent);
   };
@@ -82,91 +169,87 @@ export const TimeBar: React.FC<TimeBarProps> = ({
     };
   }, [isDragging]);
 
-  // Keyboard navigation for scrubber: Left/Right arrows in History mode
+  // Keyboard navigation for scrubber in History mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (timeMode !== 'History') return;
       if (e.key === 'ArrowLeft') {
-        setScrubberPos((prev) => Math.max(0, prev - 4));
+        setScrubberPos((prev) => Math.max(2, prev - 4));
       } else if (e.key === 'ArrowRight') {
-        setScrubberPos((prev) => Math.min(100, prev + 4));
+        setScrubberPos((prev) => Math.min(98, prev + 4));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [timeMode]);
 
-  // Exact tick positions from Figma node 138:13888 (across 640px axis)
-  const ticks = [
-    { pos: 26, isMajor: false },
-    { pos: 53, isMajor: false },
-    { pos: 80, isMajor: true },
-    { pos: 106, isMajor: false },
-    { pos: 133, isMajor: false },
-    { pos: 186, isMajor: false },
-    { pos: 213, isMajor: false },
-    { pos: 240, isMajor: true },
-    { pos: 266, isMajor: false },
-    { pos: 293, isMajor: false },
-    { pos: 346, isMajor: false },
-    { pos: 373, isMajor: false },
-    { pos: 400, isMajor: true },
-    { pos: 426, isMajor: false },
-    { pos: 453, isMajor: false },
-    { pos: 506, isMajor: false },
-    { pos: 533, isMajor: false },
-    { pos: 560, isMajor: true },
-    { pos: 586, isMajor: false },
-    { pos: 613, isMajor: false },
-  ];
+  // Handle case dot click: select case entity on map
+  const handleSelectCase = (caseItem: FalconCase) => {
+    selectEntity('case', caseItem.id, { fly: true, source: 'panel' });
+  };
 
-  // Event dots across the timeline (white, blue, amber, red) matching Figma 138:13914
-  const eventDots = [
-    { pos: 74, color: '#38bdf8', label: '07:15 Nominal poll' },
-    { pos: 176, color: '#38bdf8', label: '08:14 DEV-003 Last data' },
-    { pos: 253, color: '#ffffff', label: '10:31 Heartbeat nominal' },
-    { pos: 343, color: '#38bdf8', label: '12:00 Routine check' },
-    { pos: 432, color: '#38bdf8', label: '13:45 Sensor sync' },
-    { pos: 496, color: '#ffa114', label: '14:40 DEV-011 Power loss' },
-    { pos: 535, color: '#ffa114', label: '15:15 DEV-004 Signal loss' },
-    { pos: 573, color: '#e33f50', label: '15:45 Incident triage' },
-    { pos: 624, color: '#e33f50', label: 'Now: Active incidents' },
-  ];
+  // Center caption text matching staging
+  const captionText = useMemo(() => {
+    if (timeMode === 'History') {
+      const count = activeCases.length;
+      return `Cases opened in this period. ${count === 0 ? 'No cases opened in this period.' : `${count} case${count === 1 ? '' : 's'} opened.`}`;
+    }
+    const count = activeCases.length;
+    if (count === 0) {
+      return 'Active cases by opening time. No active cases.';
+    }
+    return `Active cases by opening time. ${count} active case${count === 1 ? '' : 's'}.`;
+  }, [timeMode, activeCases.length]);
 
   return (
     <footer
-      className="w-full h-[72px] shrink-0 px-6 flex items-center justify-between gap-4 select-none dark:bg-[#10151c] bg-white border-t dark:border-[#2a323d] border-slate-200 z-30 transition-colors"
-      data-node-id="138:13866"
-      data-name="Footer - Time navigation and live clock"
+      className={`w-full h-[56px] shrink-0 px-4 md:px-6 flex items-center justify-between gap-3 select-none dark:bg-[#10151c] bg-white border-t dark:border-[#2a323d] border-slate-200 z-30 transition-colors ${className}`}
+      data-testid="docked-time-bar"
+      role="region"
       aria-label="Time navigation and live clock"
     >
-      {/* Left: Time range label + Mode Switch (Active now / History) */}
-      <div className="flex items-center gap-4 shrink-0">
-        <span className="text-[12px] font-normal dark:text-[#a3adbd] text-slate-500 whitespace-nowrap">
-          Time range
-        </span>
+      {/* ================= LEFT CONTROLS ================= */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Tooltip on "Cases" label */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span className="text-xs font-medium text-muted-foreground select-none cursor-help hover:text-foreground transition-colors">
+                Cases
+              </span>
+            }
+          />
+          <TooltipContent side="top" className="text-xs">
+            The timeline shows active cases by the time they were opened.
+          </TooltipContent>
+        </Tooltip>
 
-        <div className="bg-slate-100 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200 p-0.5 flex h-[38px] items-center rounded-lg overflow-hidden shrink-0">
-          {/* Active now button (109px wide in Figma) */}
+        {/* Mode Segmented Control: Active now vs History */}
+        <div className="bg-slate-100 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200 p-0.5 flex h-[34px] items-center rounded-lg overflow-hidden shrink-0">
+          {/* Active now button */}
           <button
+            type="button"
             onClick={() => onTimeModeChange('Active now')}
-            className={`flex items-center justify-center gap-1.5 h-[32px] w-[109px] rounded-md text-xs transition-all cursor-pointer ${
+            aria-pressed={timeMode === 'Active now'}
+            className={`flex items-center justify-center gap-1.5 h-[28px] px-3 rounded-md text-xs transition-all cursor-pointer ${
               timeMode === 'Active now'
-                ? 'bg-[#2563eb] font-semibold text-white shadow-xs'
-                : 'text-slate-600 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef]'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <AudioLines className="size-3.5 shrink-0" />
             <span>Active now</span>
           </button>
 
-          {/* History button (88px wide in Figma) */}
+          {/* History button */}
           <button
+            type="button"
             onClick={() => onTimeModeChange('History')}
-            className={`flex items-center justify-center gap-1.5 h-[32px] w-[88px] rounded-md text-xs transition-all cursor-pointer ${
+            aria-pressed={timeMode === 'History'}
+            className={`flex items-center justify-center gap-1.5 h-[28px] px-3 rounded-md text-xs transition-all cursor-pointer ${
               timeMode === 'History'
-                ? 'bg-[#2563eb] font-semibold text-white shadow-xs'
-                : 'text-slate-600 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef]'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Clock className="size-3.5 shrink-0" />
@@ -174,114 +257,223 @@ export const TimeBar: React.FC<TimeBarProps> = ({
           </button>
         </div>
 
-        {/* Back to Live button in History mode */}
+        {/* History mode range dropdown and Back to Live button */}
         {timeMode === 'History' && (
-          <button
-            onClick={() => onTimeModeChange('Active now')}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-md bg-[#2563eb]/20 hover:bg-[#2563eb]/30 text-sky-400 transition-colors"
-          >
-            <RotateCcw className="size-3" />
-            <span>Back to live</span>
-          </button>
+          <div className="flex items-center gap-2 animate-in fade-in-50 duration-150">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button className="border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between h-[30px] px-2.5 rounded-md text-xs text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none cursor-pointer">
+                    <CalendarDays className="size-3 text-muted-foreground mr-1.5 shrink-0" />
+                    <span className="truncate">{historyRange}</span>
+                    <ChevronDown className="size-3 text-muted-foreground ml-1.5 shrink-0" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent align="start" className="w-40 bg-popover border border-border text-xs z-50">
+                {['Last 24 hours', 'Last 7 days', 'Last 30 days', 'Custom Range...'].map((range) => (
+                  <DropdownMenuItem
+                    key={range}
+                    onClick={() => onHistoryRangeChange(range)}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <span>{range}</span>
+                    {historyRange === range && <Check className="size-3 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <button
+              type="button"
+              onClick={() => onTimeModeChange('Active now')}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer"
+              title="Return to live real-time state"
+            >
+              <RotateCcw className="size-3" />
+              <span>Back to live</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Center: Event timeline (672px max-width, 36px high in Figma 138:13887) */}
-      <div className="flex-1 flex justify-center max-w-[672px] h-[36px] relative px-4">
+      {/* ================= CENTER TIMELINE ================= */}
+      <div className="flex-1 flex flex-col justify-center max-w-[700px] h-full relative px-2 md:px-4">
+        {/* Caption Centered Above Track */}
+        <div className="w-full text-center text-[10.5px] text-muted-foreground truncate mb-1">
+          {captionText}
+        </div>
+
+        {/* Track Line Container */}
         <div
           ref={timelineRef}
           onMouseDown={handleMouseDown}
-          className={`w-full h-full relative flex items-center ${
+          className={`w-full h-[20px] relative flex items-center ${
             timeMode === 'History' ? 'cursor-ew-resize' : 'cursor-default'
           }`}
         >
-          {/* 1px Timeline horizontal axis */}
-          <div className="absolute left-0 right-0 top-[18px] h-[2px] dark:bg-[#2a323d] bg-slate-300 rounded-full" />
+          {/* Base Horizontal Track Axis */}
+          <div className="absolute left-[2%] right-[2%] top-1/2 -translate-y-1/2 h-px bg-border/80 dark:bg-border" />
 
-          {/* Time ticks from Figma 138:13890 */}
-          {ticks.map((t, idx) => (
-            <div
+          {/* 25 Small Ticks Across Track */}
+          {Array.from({ length: 25 }, (_, idx) => (
+            <span
               key={idx}
-              style={{ left: `${(t.pos / 640) * 100}%` }}
-              className={`absolute -translate-x-1/2 dark:bg-[#475569] bg-slate-400 w-px ${
-                t.isMajor ? 'h-[10px] top-[14px]' : 'h-[6px] top-[16px]'
+              style={{ left: `${2 + 96 * (idx / 24)}%` }}
+              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-px bg-border/80 pointer-events-none ${
+                idx === 0 || idx === 12 || idx === 24 ? 'h-2 bg-muted-foreground/60' : 'h-1.5'
               }`}
             />
           ))}
 
-          {/* Event dots from Figma 138:13914 */}
-          {eventDots.map((d, idx) => (
-            <div
-              key={idx}
-              title={d.label}
-              className="absolute top-[16px] -translate-x-1/2 size-[6px] rounded-full hover:scale-150 transition-transform shadow-xs"
-              style={{
-                left: `${(d.pos / 640) * 100}%`,
-                backgroundColor: d.color,
-              }}
+          {/* "N older" chip at far left if active cases exist before window start */}
+          {olderCases.length > 0 && timeMode === 'Active now' && (
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <button
+                    type="button"
+                    className="absolute left-0 -top-1.5 -translate-x-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border border-amber-500/40 cursor-pointer z-20"
+                    title={`${olderCases.length} older active cases before timeline start`}
+                  >
+                    +{olderCases.length} older
+                  </button>
+                }
+              />
+              <PopoverContent side="top" align="start" className="w-64 p-2.5 bg-popover border border-border text-xs z-50">
+                <span className="font-semibold text-foreground block mb-1">Older Active Cases</span>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {olderCases.map((oc) => (
+                    <button
+                      key={oc.id}
+                      type="button"
+                      onClick={() => handleSelectCase(oc)}
+                      className="w-full flex items-center justify-between p-1.5 rounded hover:bg-muted text-left cursor-pointer transition-colors"
+                    >
+                      <span className="font-mono font-medium text-primary">{oc.id}</span>
+                      <span className="text-[10px] text-muted-foreground">{oc.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {/* Case Dots on Timeline */}
+          {visibleCases.map(({ caseItem, posPercent }) => {
+            const statusClass = getStatusColor(caseItem.status);
+            return (
+              <Tooltip key={caseItem.id}>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCase(caseItem)}
+                      style={{ left: `${posPercent}%` }}
+                      aria-label={`${caseItem.id}, ${caseItem.status}, opened ${formatCaseOpenedDate(caseItem.createdAt)}`}
+                      className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2.5 rounded-full ring-2 ring-background transition-transform outline-none hover:scale-150 focus-visible:scale-150 cursor-pointer shadow-xs z-10 ${statusClass}`}
+                    />
+                  }
+                />
+                <TooltipContent side="top" className="text-xs p-2 max-w-xs space-y-0.5">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    <span className={`size-1.5 rounded-full ${statusClass}`} />
+                    <span>{caseItem.id} · {caseItem.status}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{caseItem.title}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono">
+                    Opened {formatCaseOpenedDate(caseItem.createdAt)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+
+          {/* White "Now" Dot Marker at Right (Active now mode) */}
+          {timeMode === 'Active now' && (
+            <span
+              style={{ left: '98%' }}
+              className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2.5 rounded-full bg-foreground shadow-xs z-10"
             />
-          ))}
+          )}
 
-          {/* "Now" Marker Indicator (x: 629px / 640px = ~98% of active span) */}
-          <div
-            style={{
-              left: timeMode === 'History' ? `${scrubberPos}%` : '75%',
-            }}
-            className="absolute top-0 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10 transition-all duration-75"
-          >
-            <span className="text-[10px] font-semibold dark:text-slate-400 text-slate-600 leading-none mb-1 select-none">
-              {timeMode === 'History' ? `-${Math.round(24 * (1 - scrubberPos / 100))}h` : 'Now'}
-            </span>
-            <div className="w-[1.5px] h-[16px] bg-[#2563eb] rounded-full shadow-xs" />
-          </div>
-
-          {/* Draggable thumb in History mode */}
+          {/* Draggable Scrubber Thumb (History mode) */}
           {timeMode === 'History' && (
             <div
               style={{ left: `${scrubberPos}%` }}
-              className="absolute top-[18px] -translate-y-1/2 -translate-x-1/2 z-20"
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-auto"
             >
-              <div className="size-3.5 rounded-full bg-[#2563eb] border-2 border-white shadow-lg ring-2 ring-[#2563eb]/50 cursor-grab active:cursor-grabbing hover:scale-125 transition-transform" />
+              <div className="size-3.5 rounded-full bg-primary border-2 border-white shadow-lg ring-2 ring-primary/40 cursor-grab active:cursor-grabbing hover:scale-125 transition-transform" />
             </div>
           )}
         </div>
+
+        {/* Labels Under Track: Window Start (Left) & Now (Right) */}
+        <div className="flex items-center justify-between w-full px-[2%] text-[9.5px] font-mono text-muted-foreground tabular-nums -mt-0.5">
+          <span>{formatTimelineWindowStart(windowStart)}</span>
+          <span>{timeMode === 'History' ? `-${Math.round(24 * (1 - scrubberPos / 100))}h` : 'Now'}</span>
+        </div>
       </div>
 
-      {/* Right: Date Range Selector + Live Clock matching Figma 138:13928 */}
-      <div className="flex items-center gap-4 shrink-0">
+      {/* ================= RIGHT CONTROLS ================= */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Live Pill with Telemetry Dropdown Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <button className="border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between h-[32px] w-[144px] px-3 rounded-lg text-xs dark:text-[#e2e7ef] text-slate-800 hover:dark:bg-[#1a232e] hover:bg-slate-50 transition-colors focus-visible:outline-none cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="size-3.5 text-slate-400 dark:text-[#a3adbd] shrink-0" />
-                  <span className="truncate">{historyRange}</span>
-                </div>
-                <ChevronDown className="size-3 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer"
+                title="Telemetry connection status"
+              >
+                <span className="relative flex size-2">
+                  {liveState === 'live' ? (
+                    <>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full size-2 bg-emerald-500" />
+                    </>
+                  ) : (
+                    <span className="relative inline-flex rounded-full size-2 bg-amber-500" />
+                  )}
+                </span>
+                <span className="text-[11px] font-semibold text-foreground">
+                  {liveState === 'live' ? 'Live' : 'Paused'}
+                </span>
               </button>
             }
           />
-          <DropdownMenuContent align="end" className="w-44 bg-popover border border-border text-xs z-50">
-            <DropdownMenuItem onClick={() => onHistoryRangeChange('Last 24 hours')} className="cursor-pointer">
-              Last 24 hours
+          <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
+            <DropdownMenuLabel className="text-xs font-semibold flex items-center justify-between">
+              <span>Telemetry Feed</span>
+              <span className="text-[10px] font-normal text-muted-foreground">{lastUpdatedTime}</span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setLiveState('live')}
+              className={`cursor-pointer ${liveState === 'live' ? 'text-emerald-500 font-bold' : ''}`}
+            >
+              <span className="size-2 rounded-full bg-emerald-500 mr-2 inline-block" />
+              <span>Live stream active</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onHistoryRangeChange('Last 7 days')} className="cursor-pointer">
-              Last 7 days
+            <DropdownMenuItem
+              onClick={() => setLiveState('paused')}
+              className={`cursor-pointer ${liveState === 'paused' ? 'text-amber-500 font-bold' : ''}`}
+            >
+              <span className="size-2 rounded-full bg-amber-500 mr-2 inline-block" />
+              <span>Pause telemetry stream</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onHistoryRangeChange('Last 30 days')} className="cursor-pointer">
-              Last 30 days
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onHistoryRangeChange('Custom Range')} className="cursor-pointer">
-              Custom Range...
+            <DropdownMenuItem onClick={refreshNow} className="cursor-pointer">
+              <RotateCcw className="size-3 mr-2" />
+              <span>Refresh data now</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="h-[20px] w-px dark:bg-[#2a323d] bg-slate-200 shrink-0" />
+        <div className="h-4 w-px bg-border shrink-0" />
 
-        {/* Live Clock Text */}
-        <p className="text-[11px] font-normal dark:text-[#a3adbd] text-slate-500 font-mono tabular-nums whitespace-nowrap">
-          {liveClock || 'KLT 20 Oct 2026 07:19:47'}
+        {/* Live Staging Ticking Clock (e.g. "Tue, 27 Oct 2026, 2:49:50 pm MYT") */}
+        <p className="text-xs font-mono tabular-nums text-foreground/90 whitespace-nowrap">
+          {formatStagingLiveClock(now)}
         </p>
       </div>
     </footer>
