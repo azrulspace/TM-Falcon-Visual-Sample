@@ -1,7 +1,12 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { EventDetailHeader } from '@/components/events/detail/EventDetailHeader';
-import { EvidenceStudioCard } from '@/components/events/detail/EvidenceStudioCard';
+import { EvidenceViewer } from '@/components/evidence/EvidenceViewer';
+import { LocationCard } from '@/components/events/detail/LocationCard';
+import { KeyFactsCard } from '@/components/events/detail/KeyFactsCard';
+import { DetectionSpecificationCard } from '@/components/events/detail/DetectionSpecificationCard';
+import { VendorDataCard } from '@/components/events/detail/VendorDataCard';
+import { AlertHistoryCard } from '@/components/events/detail/AlertHistoryCard';
 import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
 import { CreateCaseDialog } from '@/components/events/dialogs/CreateCaseDialog';
 import { DismissEventDialog } from '@/components/events/dialogs/DismissEventDialog';
@@ -13,12 +18,10 @@ import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { Button } from '@/components/ui/button';
-import { Check, Briefcase, ArrowLeft, SearchX, Loader2 } from 'lucide-react';
-import { LocationCard } from '@/components/events/detail/LocationCard';
-import { KeyFactsCard } from '@/components/events/detail/KeyFactsCard';
-import { DetectionSpecificationCard } from '@/components/events/detail/DetectionSpecificationCard';
-import { AlertHistoryCard } from '@/components/events/detail/AlertHistoryCard';
-
+import { Briefcase, ArrowLeft, SearchX, Video } from 'lucide-react';
+import { devices } from '@/data/devices';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
+import { formatId } from '@/lib/utils';
 import { useUiMode } from '@/hooks/useUiMode';
 
 export default function EventDetail() {
@@ -91,7 +94,6 @@ export default function EventDetail() {
   }, [event, isAcknowledging, hookAcknowledge, acknowledgeEvent, addToast]);
 
   // Keyboard navigation: J/K, Enter, Esc, E, C, ?
-  // Shortcuts are active only when focus is outside inputs, selects, textareas, and dialogs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -139,7 +141,7 @@ export default function EventDetail() {
         return;
       }
 
-      // E: Acknowledge event (only when status is New)
+      // E: Acknowledge event
       if (e.key === 'e' || e.key === 'E') {
         const currentStatus = (event as any)?.status || (event as any)?.state;
         if (currentStatus === 'New') {
@@ -198,12 +200,28 @@ export default function EventDetail() {
     );
   }
 
-  const isUnack = (event as any).status === 'New' || (event as any).state === 'New';
+  // Derived properties for EvidenceViewer and Device status
+  const rawDeviceId = (event as any).device || (event as any).sourceDevice?.id || 'DEV-001';
+  const devRecord = devices.find(
+    (d) => d.id === rawDeviceId || formatId(d.id) === formatId(rawDeviceId)
+  );
+  const isDeviceOnline = devRecord ? devRecord.status === 'online' : true;
+  const capturedAbsolute = formatAbsoluteMYT((event as any).captured || (event as any).capturedAt);
+  const channelLabel = (event as any).vendorData?.channel || 'CCTV-01';
+  const ruleLabel = (event as any).detectionRule || (event as any).detection || 'CCTV-01-Motion Detection';
+  const frames = (event as any).evidence?.frames || [(event as any).snapshotUrl || '/monkey-fiber.jpg'];
+
+  const hasAlertHistory = Boolean((event as any).hasAlertHistory);
+
+  const handleWatchLive = () => {
+    if (!isDeviceOnline) return;
+    addToast('info', `Connecting to ${formatId(rawDeviceId)} live camera stream...`);
+  };
 
   return (
     <div className={`flex flex-col min-h-screen bg-background text-foreground antialiased ${isPortrait ? 'pb-24' : 'pb-20 sm:pb-8'}`}>
       <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-[1920px] w-full mx-auto">
-        {/* 1. Header (Breadcrumb, Title, Stepper, Dynamic SLA, Action Hierarchy) */}
+        {/* 1. Header (Breadcrumb, Title, Chips, Create case, Watch live, Overflow menu) */}
         <EventDetailHeader
           event={event as any}
           isAcknowledging={isAcknowledging}
@@ -212,18 +230,27 @@ export default function EventDetail() {
           onOpenAssign={() => setAssignOpen(true)}
           onOpenResolve={() => setResolveOpen(true)}
           onOpenVendorData={() => setVendorDataOpen(true)}
+          onWatchLive={handleWatchLive}
         />
 
         {/* 2. Responsive Layout */}
         {isPortrait ? (
-          /* Portrait Tablet Order: Evidence, Key Facts, Location (collapsible), Detection Spec, Alert History */
+          /* Portrait Tablet Order: Evidence, Key Facts, Location (collapsible), Detection Spec, Vendor Data */
           <div className="flex flex-col gap-6">
-            <EvidenceStudioCard
-              event={event as any}
+            <EvidenceViewer
+              eventId={event.id}
+              snapshots={frames}
+              capturedTimeMYT={capturedAbsolute}
+              channelName={channelLabel}
+              detectionRule={ruleLabel}
+              deviceIsOnline={isDeviceOnline}
+              deviceSupportsVideo={true}
+              hasPermission={true}
               onOpenLightbox={(frameIndex) => {
                 setLightboxFrame(frameIndex);
                 setLightboxOpen(true);
               }}
+              onWatchLive={handleWatchLive}
             />
 
             <KeyFactsCard
@@ -236,21 +263,32 @@ export default function EventDetail() {
 
             <DetectionSpecificationCard event={event as any} />
 
-            <AlertHistoryCard event={event as any} />
+            <VendorDataCard event={event as any} />
+
+            {hasAlertHistory && <AlertHistoryCard event={event as any} />}
           </div>
         ) : (
-          /* Landscape & Desktop: 2-Column Grid (~60% and ~40%) */
+          /* Landscape & Desktop: 2-Column Grid (~60% and ~40%) matching Staging Screenshots 3 & 4 */
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
             {/* Main Column (60% on tablet, 66% on desktop) */}
             <div className="md:col-span-7 xl:col-span-8 flex flex-col gap-6">
-              <EvidenceStudioCard
-                event={event as any}
+              <EvidenceViewer
+                eventId={event.id}
+                snapshots={frames}
+                capturedTimeMYT={capturedAbsolute}
+                channelName={channelLabel}
+                detectionRule={ruleLabel}
+                deviceIsOnline={isDeviceOnline}
+                deviceSupportsVideo={true}
+                hasPermission={true}
                 onOpenLightbox={(frameIndex) => {
                   setLightboxFrame(frameIndex);
                   setLightboxOpen(true);
                 }}
+                onWatchLive={handleWatchLive}
               />
               <DetectionSpecificationCard event={event as any} />
+              <VendorDataCard event={event as any} />
             </div>
 
             {/* Side Column (40% on tablet, 33% on desktop) */}
@@ -261,7 +299,7 @@ export default function EventDetail() {
                 onOpenCreateCase={() => setCreateCaseOpen(true)}
                 onOpenAssign={() => setAssignOpen(true)}
               />
-              <AlertHistoryCard event={event as any} />
+              {hasAlertHistory && <AlertHistoryCard event={event as any} />}
             </div>
           </div>
         )}
@@ -269,45 +307,27 @@ export default function EventDetail() {
 
       {/* Sticky Bottom Action Bar (<768px mobile or Portrait Tablet) */}
       <div className={`fixed bottom-0 inset-x-0 z-30 ${isPortrait ? 'flex' : 'flex md:hidden'} p-3 bg-card/95 backdrop-blur-md border-t border-border items-center justify-between gap-3 shadow-lg`}>
-        {isUnack ? (
-          <>
-            {/* Primary Action when New: Acknowledge */}
-            <Button
-              size="sm"
-              disabled={isAcknowledging}
-              onClick={handleAcknowledge}
-              className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-2 shadow-xs cursor-pointer`}
-            >
-              {isAcknowledging ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              <span>{isAcknowledging ? 'Acknowledging...' : 'Acknowledge'}</span>
-            </Button>
+        {/* Primary Action: Create Case */}
+        <Button
+          size="sm"
+          onClick={() => setCreateCaseOpen(true)}
+          className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-xs cursor-pointer`}
+        >
+          <Briefcase className="size-4" />
+          <span>Create Case</span>
+        </Button>
 
-            {/* Secondary Action when New: Create Case */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCreateCaseOpen(true)}
-              className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} border-border hover:bg-muted font-medium text-foreground gap-2 cursor-pointer`}
-            >
-              <Briefcase className="size-4 text-amber-500" />
-              <span>Create Case</span>
-            </Button>
-          </>
-        ) : (
-          /* Primary Action when Acknowledged: Create Case */
-          <Button
-            size="sm"
-            onClick={() => setCreateCaseOpen(true)}
-            className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-[#1D4ED8] dark:bg-primary hover:bg-[#1D4ED8]/90 dark:hover:bg-primary/90 text-white font-semibold gap-2 shadow-xs cursor-pointer`}
-          >
-            <Briefcase className="size-4" />
-            <span>Create Case</span>
-          </Button>
-        )}
+        {/* Secondary Action: Watch live */}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!isDeviceOnline}
+          onClick={handleWatchLive}
+          className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} border-border hover:bg-muted font-medium text-foreground gap-2 cursor-pointer disabled:opacity-40`}
+        >
+          <Video className="size-4" />
+          <span>Watch live</span>
+        </Button>
       </div>
 
       {/* Action Dialogs */}

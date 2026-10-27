@@ -7,7 +7,6 @@ import {
   Minus,
   RotateCcw,
   ExternalLink,
-  Layers,
   ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,10 +39,11 @@ export const LocationCard: React.FC<LocationCardProps> = ({
   });
 
   const deviceId = (event as any).device || (event as any).sourceDevice?.id || null;
-  const assetId = (event as any).asset || (event as any).affectedAsset?.id || null;
-  const poles = (event as any).affectedAsset?.connectingAssets || (event as any).poles || ['AST_006', 'AST_007'];
+  const assetId = (event as any).asset || (event as any).affectedAsset?.id || 'CBL-001';
+  const poles = (event as any).affectedAsset?.connectingAssets || (event as any).poles || ['AST-001', 'AST-002'];
+  const referencePole = poles && poles.length >= 2 ? formatId(poles[1]) : (poles && poles.length > 0 ? formatId(poles[0]) : 'AST-002');
 
-  // Resolve truthful GPS coordinates from event or device record (No coordinate estimation / hallucination)
+  // Resolve truthful GPS coordinates from event or device record (No coordinate estimation)
   const deviceRecord = deviceId
     ? devices.find((d) => d.id === deviceId || d.id === deviceId.replace('-', '_'))
     : null;
@@ -59,21 +59,22 @@ export const LocationCard: React.FC<LocationCardProps> = ({
     }
   }
 
-  // Fallback anchor for EVT-0258 if not populated
+  // Fallback anchor for EVT-0101 / EVT-0258 if not populated
   if (lat === null || lng === null) {
-    lat = 2.90870;
-    lng = 101.47260;
+    lat = 2.909453;
+    lng = 101.469941;
   }
 
-  const coordText = `${lat.toFixed(5)}° N, ${lng.toFixed(5)}° E`;
+  // Staging precision: 6 decimals
+  const gpsFormatted = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
   const handleCopyCoords = () => {
-    navigator.clipboard.writeText(`${lat!.toFixed(5)}, ${lng!.toFixed(5)}`);
+    navigator.clipboard.writeText(gpsFormatted);
     addToast('info', 'Coordinates copied to clipboard');
   };
 
   const handleOpenOnOverview = () => {
-    navigate(`/overview?selected=${deviceId ? deviceId.replace('-', '_') : assetId}`);
+    navigate(`/overview?selected=${event.id || (deviceId ? deviceId.replace('-', '_') : assetId)}`);
   };
 
   const handleResetZoom = () => {
@@ -85,8 +86,8 @@ export const LocationCard: React.FC<LocationCardProps> = ({
       {/* 1. Card Header */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 select-none",
-          (isPortrait || isTablet) && "cursor-pointer"
+          'flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 select-none',
+          (isPortrait || isTablet) && 'cursor-pointer'
         )}
         onClick={() => {
           if (isPortrait) setIsExpanded((prev) => !prev);
@@ -94,7 +95,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
       >
         <div className="flex items-center gap-2">
           <MapPin className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Infrastructure Location</h3>
+          <h3 className="text-sm font-semibold text-foreground">Infrastructure location</h3>
           {isPortrait && (
             <span className="text-[11px] font-mono text-muted-foreground ml-1">
               ({isExpanded ? 'tap to collapse' : 'tap to expand'})
@@ -109,8 +110,8 @@ export const LocationCard: React.FC<LocationCardProps> = ({
             size="sm"
             onClick={() => setIsExpanded((prev) => !prev)}
             className={cn(
-              "text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer",
-              isTablet ? "h-[44px] px-3 min-w-[44px]" : "h-7 px-2 md:hidden"
+              'text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer',
+              isTablet ? 'h-[44px] px-3 min-w-[44px]' : 'h-7 px-2 md:hidden'
             )}
             title="Toggle map view"
           >
@@ -123,18 +124,18 @@ export const LocationCard: React.FC<LocationCardProps> = ({
             size="sm"
             onClick={handleOpenOnOverview}
             className={cn(
-              "gap-1 border-border text-primary hover:bg-primary/10 cursor-pointer font-medium",
-              isTablet ? "h-[44px] px-3 text-xs" : "h-7 px-2 text-xs"
+              'gap-1 border-border text-foreground hover:bg-muted cursor-pointer font-medium',
+              isTablet ? 'h-[44px] px-3 text-xs' : 'h-7 px-2 text-xs'
             )}
             title="Open selected asset on global Overview map"
           >
             <ExternalLink className="size-3.5" />
-            <span>Open in Overview</span>
+            <span>Overview map</span>
           </Button>
         </div>
       </div>
 
-      {/* 2. Mini Satellite Map Canvas Viewport */}
+      {/* 2. Mini Map Viewport */}
       {isExpanded && (
         <div className="relative w-full h-64 bg-slate-950 overflow-hidden transition-all duration-300">
           <MapCanvas
@@ -154,51 +155,43 @@ export const LocationCard: React.FC<LocationCardProps> = ({
             className="w-full h-full"
           />
 
-          {/* Map Overlay Badge: CBL-005 (AST-006 to AST-007) */}
-          <div className="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-xs text-white text-[11px] font-mono flex items-center gap-1.5 shadow-md border border-white/10 select-none">
-            <Layers className="size-3 text-primary" />
-            <span>
-              {formatId(assetId || 'CBL-005')} ({poles && poles.length >= 2 ? `${formatId(poles[0])} to ${formatId(poles[1])}` : 'Span'})
-            </span>
-          </div>
-
           {/* Mini Zoom & Reset Controls */}
           <div className="absolute bottom-6 right-2 z-10 flex flex-col gap-1.5">
             <button
               type="button"
               onClick={() => setZoomSignal((s) => s + 1)}
               className={cn(
-                "rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer",
-                isTablet ? "size-11" : "size-7"
+                'rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer',
+                isTablet ? 'size-11' : 'size-7'
               )}
               title="Zoom in"
               aria-label="Zoom in"
             >
-              <Plus className={isTablet ? "size-5" : "size-3.5"} />
+              <Plus className={isTablet ? 'size-5' : 'size-3.5'} />
             </button>
             <button
               type="button"
               onClick={() => setZoomSignal((s) => s - 1)}
               className={cn(
-                "rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer",
-                isTablet ? "size-11" : "size-7"
+                'rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer',
+                isTablet ? 'size-11' : 'size-7'
               )}
               title="Zoom out"
               aria-label="Zoom out"
             >
-              <Minus className={isTablet ? "size-5" : "size-3.5"} />
+              <Minus className={isTablet ? 'size-5' : 'size-3.5'} />
             </button>
             <button
               type="button"
               onClick={handleResetZoom}
               className={cn(
-                "rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer",
-                isTablet ? "size-11" : "size-7"
+                'rounded bg-black/80 hover:bg-black/95 text-white flex items-center justify-center backdrop-blur-xs shadow-md border border-white/20 active:scale-95 transition-all cursor-pointer',
+                isTablet ? 'size-11' : 'size-7'
               )}
               title="Reset zoom"
               aria-label="Reset zoom"
             >
-              <RotateCcw className={isTablet ? "size-4" : "size-3"} />
+              <RotateCcw className={isTablet ? 'size-4' : 'size-3'} />
             </button>
           </div>
 
@@ -209,26 +202,32 @@ export const LocationCard: React.FC<LocationCardProps> = ({
         </div>
       )}
 
-      {/* 3. Footer Coordinates & Details */}
-      <div className="p-3 bg-muted/20 border-t border-border flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-          <span>GPS:</span>
-          <span className="text-foreground font-semibold tabular-nums">{coordText}</span>
+      {/* 3. Block below the map: span ID, Reference pole, GPS with Copy button (Section 6.3 & Staging Screenshot 3) */}
+      <div className="p-4 bg-muted/20 border-t border-border flex flex-col gap-1.5 text-xs font-mono">
+        <div className="font-semibold text-foreground text-xs">
+          {formatId(assetId)}
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopyCoords}
-          className={cn(
-            "gap-1 text-muted-foreground hover:text-foreground cursor-pointer",
-            isTablet ? "h-[44px] px-3 text-xs" : "h-6 px-1.5 text-[11px]"
-          )}
-          title="Copy coordinates"
-        >
-          <Copy className="size-3.5" />
-          <span>Copy</span>
-        </Button>
+        <div className="text-muted-foreground text-xs font-sans">
+          Reference pole: <span className="font-mono text-foreground font-medium">{referencePole}</span>
+        </div>
+        <div className="flex items-center justify-between pt-0.5">
+          <span className="text-muted-foreground text-xs">
+            GPS: <span className="font-mono text-foreground font-medium">{gpsFormatted}</span>
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopyCoords}
+            className={cn(
+              'gap-1 text-muted-foreground hover:text-foreground cursor-pointer shrink-0',
+              isTablet ? 'h-[44px] px-3 text-xs' : 'h-6 px-1.5 text-[11px]'
+            )}
+            title="Copy coordinates"
+          >
+            <Copy className="size-3.5" />
+            <span>Copy</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

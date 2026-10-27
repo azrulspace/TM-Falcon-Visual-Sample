@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapCanvas } from '@/components/MapCanvas';
 import { TimeBar } from '@/components/overview/TimeBar';
 import { FloatingIconStack } from '@/components/overview/FloatingIconStack';
@@ -83,6 +84,29 @@ export default function Overview() {
     },
     [selectEntity]
   );
+
+  const [searchParams] = useSearchParams();
+
+  // Restore selection when navigating back from Event Detail
+  useEffect(() => {
+    const selectedParam = searchParams.get('selected');
+    if (selectedParam) {
+      handleSelectItem(selectedParam);
+    } else {
+      const returnToMap = sessionStorage.getItem('falcon_return_to_map');
+      if (returnToMap) {
+        try {
+          const parsed = JSON.parse(returnToMap);
+          if (parsed.entityId) {
+            handleSelectItem(parsed.entityId);
+          }
+        } catch {
+          // ignore parsing error
+        }
+        sessionStorage.removeItem('falcon_return_to_map');
+      }
+    }
+  }, [searchParams, handleSelectItem]);
 
   // Keyboard navigation: Escape key clears selection
   useEffect(() => {
