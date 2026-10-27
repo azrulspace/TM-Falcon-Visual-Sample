@@ -4,6 +4,9 @@ import { devices } from '@/data/devices';
 import { events } from '@/data/events';
 import { formatId } from '@/lib/utils';
 import type { LayerVisibility } from '@/components/overview/LayerRail';
+import { useOverview } from '@/contexts/OverviewContext';
+import { computePopupPlacement, type PlacementResult } from '@/lib/popupPlacement';
+import { MapPopupShell } from '@/components/overview/popups/MapPopupShell';
 
 export interface MapCanvasProps {
   selectedId: string | null;
@@ -47,11 +50,25 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     lat: 1.5535,
     lon: 110.3421,
   });
+  const {
+    activePopup,
+    closePopup,
+    selectEntity,
+    selectedEntity,
+    resolvedEntity,
+    activePanel,
+    flyToSignal,
+    toastNotification,
+    setToastNotification,
+  } = useOverview();
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 1440, height: 900 });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const mouseStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // ResizeObserver for dynamic viewport invalidation (Section 8.7)
   useEffect(() => {
@@ -70,28 +87,125 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Smooth Fly-to with overlay padding (Section 8.6)
-  // Ensures target is centered in the visible area to the left of the 400px panel
+  // Smooth Fly-to with overlay padding (Section 8.6) and cluster expansion
   useEffect(() => {
-    if (!selectedId) return;
+    let targetCoords: { x: number; y: number } | null = null;
 
-    // Resolve target marker from selectedId (could be device ID, event ID, or span)
-    let targetMarker = mapMarkers.find((m) => m.id === selectedId);
-    if (!targetMarker) {
-      const evt = events.find((e) => e.id === selectedId);
-      if (evt?.device) {
-        targetMarker = mapMarkers.find((m) => m.id === evt.device);
+    if (flyToSignal && flyToSignal.coordinates) {
+      targetCoords = flyToSignal.coordinates;
+    } else if (resolvedEntity && resolvedEntity.coordinates) {
+      targetCoords = { x: resolvedEntity.coordinates.x, y: resolvedEntity.coordinates.y };
+    } else if (selectedId) {
+      const m = mapMarkers.find((mk) => mk.id === selectedId);
+      if (m) targetCoords = { x: m.x, y: m.y };
+      else {
+        const evt = events.find((e) => e.id === selectedId);
+        if (evt?.device) {
+          const dm = mapMarkers.find((mk) => mk.id === evt.device);
+          if (dm) targetCoords = { x: dm.x, y: dm.y };
+        }
       }
     }
 
-    if (targetMarker) {
-      // Offset center slightly to the left (~360px on SVG viewBox) so the right 400px panel doesn't occlude it
-      const targetX = (360 - targetMarker.x) * 0.65;
-      const targetY = (350 - targetMarker.y) * 0.65;
-      setPan({ x: targetX, y: targetY });
-      setScale(1.45);
+    if (!targetCoords) return;
+
+    // Check cluster expansion level (Section 5)
+    const isNearCluster = mapClusters.some((c) => {
+      const dx = c.x - targetCoords!.x;
+      const dy = c.y - targetCoords!.y;
+      return Math.sqrt(dx * dx + dy * dy) < 45;
+    });
+
+    const targetScale = isNearCluster ? 1.8 : 1.45;
+    // Offset center slightly to the left (~360px on SVG viewBox) so the right panel doesn't occlude it
+    const targetX = (360 - targetCoords.x) * 0.65;
+    const targetY = (350 - targetCoords.y) * 0.65;
+    setPan({ x: targetX, y: targetY });
+    setScale(targetScale);
+  }, [flyToSignal, resolvedEntity, selectedId]);
+
+  // Convert SVG marker coordinates to viewport container pixel coordinates
+  const getMarkerScreenCoords = useCallback((svgX: number, svgY: number) => {
+    const svg = svgRef.current;
+    const container = containerRef.current;
+    if (!svg || !container) return null;
+    try {
+      const pt = svg.createSVGPoint();
+      pt.x = svgX;
+      pt.y = svgY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return null;
+      const screenPt = pt.matrixTransform(ctm);
+      const containerRect = container.getBoundingClientRect();
+      return {
+        x: screenPt.x - containerRect.left,
+        y: screenPt.y - containerRect.top,
+      };
+    } catch {
+      return null;
     }
-  }, [selectedId]);
+  }, []);
+
+  const [popupPlacement, setPopupPlacement] = useState<PlacementResult | null>(null);
+
+  // Compute collision-aware popup placement
+  useEffect(() => {
+    if (!activePopup) {
+      setPopupPlacement(null);
+      return;
+    }
+
+    const insets = {
+      top: 16,
+      right: activePanel ? 320 : 64,
+      bottom: 104,
+      left: 16,
+    };
+
+    if (activePopup.unlocated || !activePopup.data.coordinates) {
+      setPopupPlacement(
+        computePopupPlacement({
+          marker: { x: -1, y: -1 },
+          popupSize: { width: 360, height: 380 },
+          containerSize,
+          insets,
+        })
+      );
+      return;
+    }
+
+    const coords = activePopup.data.coordinates;
+    const screen = getMarkerScreenCoords(coords.x, coords.y);
+    if (!screen) {
+      setPopupPlacement(
+        computePopupPlacement({
+          marker: { x: containerSize.width / 2, y: containerSize.height / 2 },
+          popupSize: { width: 360, height: 380 },
+          containerSize,
+          insets,
+        })
+      );
+      return;
+    }
+
+    setPopupPlacement(
+      computePopupPlacement({
+        marker: screen,
+        popupSize: { width: 360, height: 380 },
+        containerSize,
+        insets,
+      })
+    );
+  }, [activePopup, pan, scale, containerSize, activePanel, getMarkerScreenCoords]);
+
+  // Auto-dismiss layer toast notification after 3.5 seconds
+  useEffect(() => {
+    if (!toastNotification) return;
+    const timer = setTimeout(() => {
+      setToastNotification(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toastNotification, setToastNotification]);
 
   // Zoom handlers
   const handleZoomIn = useCallback(() => setScale((s) => Math.min(s + 0.35, 2.8)), []);
@@ -110,11 +224,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     }
   }, [zoomOutSignal, handleZoomOut]);
 
-  // Mouse pan handlers
+  // Mouse pan and empty-map click handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only primary click
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    mouseStartPos.current = { x: e.clientX, y: e.clientY };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -138,7 +253,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     }
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    setIsDragging(false);
+    // If click didn't drag (< 6px), and target was map canvas/image/rect, close popup
+    const dist = Math.hypot(e.clientX - mouseStartPos.current.x, e.clientY - mouseStartPos.current.y);
+    if (dist < 6) {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'svg' ||
+        target.tagName === 'rect' ||
+        target.tagName === 'image' ||
+        target.classList?.contains('tiles-layer')
+      ) {
+        closePopup();
+      }
+    }
+  };
 
   // Wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -208,15 +338,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     });
   }, []);
 
-  // Check if a cable span route is selected
+  // Check if a cable span route is selected or related to active entity
   const activeSelectedSpanId = useMemo(() => {
+    if (resolvedEntity?.relatedSpanId) return resolvedEntity.relatedSpanId;
+    if (selectedEntity?.type === 'span') return selectedEntity.id;
     if (!selectedId) return null;
-    if (selectedId.startsWith('CBL_SPN_')) return selectedId;
-    if (selectedId === 'EVT_0128' || selectedId === 'DEV_002' || selectedId === 'AST_003') {
+    if (selectedId.startsWith('CBL_SPN_') || selectedId.startsWith('CBL-')) return selectedId;
+    if (selectedId === 'EVT_0128' || selectedId === 'DEV_002' || selectedId === 'AST_003' || selectedId === 'DEV_004') {
       return 'CBL_SPN_041';
     }
     return null;
-  }, [selectedId]);
+  }, [resolvedEntity, selectedEntity, selectedId]);
 
   return (
     <div
@@ -230,6 +362,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     >
       {/* SVG Vector & Tile Map Canvas */}
       <svg
+        ref={svgRef}
         viewBox="0 0 1000 700"
         className="w-full h-full object-cover origin-center transition-transform duration-300 ease-out"
         style={{
@@ -487,47 +620,83 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         {/* Amber warning triangles for network warnings (vegetation / cable sag) */}
         {activeLayers.events && [
           [392, 279], [492, 183], [597, 492]
-        ].map(([wx, wy], idx) => (
-          <g key={`hazard-warn-${idx}`} transform={`translate(${wx}, ${wy})`} className="cursor-pointer transition-transform hover:scale-125">
-            <circle r="11" fill="rgba(245, 158, 11, 0.25)" />
-            <polygon points="0,-7 7,5 -7,5" fill="#f59e0b" stroke="#ffffff" strokeWidth="0.8" />
-            <text y="3.5" textAnchor="middle" fill="#000000" fontSize="7.5" fontWeight="bold">!</text>
-          </g>
-        ))}
+        ].map(([wx, wy], idx) => {
+          const evtId = idx === 0 ? 'EVT-0010' : idx === 1 ? 'EVT-0128' : 'EVT-0004';
+          const isEvtSelected = selectedEntity?.type === 'event' && selectedEntity.id === evtId;
+          return (
+            <g
+              key={`hazard-warn-${idx}`}
+              transform={`translate(${wx}, ${wy})`}
+              className="cursor-pointer transition-transform hover:scale-125"
+              onClick={(e) => {
+                e.stopPropagation();
+                selectEntity('event', evtId, { fly: true, source: 'map' });
+              }}
+            >
+              {isEvtSelected && (
+                <circle r="16" fill="none" stroke="#00d2ff" strokeWidth="2" className="animate-pulse" />
+              )}
+              <circle r="11" fill="rgba(245, 158, 11, 0.25)" />
+              <polygon points="0,-7 7,5 -7,5" fill="#f59e0b" stroke="#ffffff" strokeWidth="0.8" />
+              <text y="3.5" textAnchor="middle" fill="#000000" fontSize="7.5" fontWeight="bold">!</text>
+            </g>
+          );
+        })}
 
         {/* 42 Utility Poles (Small white dots with dark outline) */}
         {activeLayers.poles &&
-          mapPoles.map(([px, py], idx) => (
-            <circle
-              key={idx}
-              cx={px}
-              cy={py}
-              r="2.5"
-              fill="#FFFFFF"
-              stroke="#0f172a"
-              strokeWidth="0.8"
-              opacity="0.95"
-            />
-          ))}
+          mapPoles.map(([px, py], idx) => {
+            const poleId = `AST-${String(idx + 1).padStart(3, '0')}`;
+            const isPoleSelected =
+              selectedEntity?.type === 'pole' &&
+              (selectedEntity.id === poleId || selectedEntity.rawId === `AST_${String(idx + 1).padStart(3, '0')}`);
+            return (
+              <g
+                key={idx}
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectEntity('pole', poleId, { fly: true, source: 'map' });
+                }}
+              >
+                {isPoleSelected && (
+                  <circle cx={px} cy={py} r="8" fill="none" stroke="#00d2ff" strokeWidth="2" className="animate-pulse" />
+                )}
+                <circle cx={px} cy={py} r="2.5" fill="#FFFFFF" stroke="#0f172a" strokeWidth="0.8" opacity="0.95" />
+              </g>
+            );
+          })}
 
         {/* 6 CCTV Surveillance Cameras (Dark navy body with thin blue ring and video icon) */}
         {activeLayers.cctv &&
-          mapCameras.map((cam) => (
-            <g
-              key={cam.id}
-              transform={`translate(${cam.x}, ${cam.y})`}
-              className="cursor-pointer transition-transform hover:scale-125"
-              onClick={() => onMarkerClick(cam.id)}
-            >
-              <title>{cam.name}</title>
-              <circle r="11" fill="rgba(56, 189, 248, 0.25)" />
-              <circle r="8.5" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
-              <path
-                d="M -3.5 -2.5 L 1.5 -2.5 L 1.5 2.5 L -3.5 2.5 Z M 1.5 -1 L 4 -2.5 L 4 2.5 L 1.5 1 Z"
-                fill="#ffffff"
-              />
-            </g>
-          ))}
+          mapCameras.map((cam) => {
+            const isCamSelected =
+              selectedEntity &&
+              (selectedEntity.id === cam.id || selectedEntity.rawId === cam.id || formatId(selectedEntity.id) === formatId(cam.id));
+            return (
+              <g
+                key={cam.id}
+                transform={`translate(${cam.x}, ${cam.y})`}
+                className="cursor-pointer transition-transform hover:scale-125"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkerClick(cam.id);
+                  selectEntity('device', cam.id, { fly: true, source: 'map' });
+                }}
+              >
+                <title>{cam.name}</title>
+                {isCamSelected && (
+                  <circle r="15" fill="none" stroke="#00d2ff" strokeWidth="2" className="animate-pulse" />
+                )}
+                <circle r="11" fill="rgba(56, 189, 248, 0.25)" />
+                <circle r="8.5" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.2" />
+                <path
+                  d="M -3.5 -2.5 L 1.5 -2.5 L 1.5 2.5 L -3.5 2.5 Z M 1.5 -1 L 4 -2.5 L 4 2.5 L 1.5 1 Z"
+                  fill="#ffffff"
+                />
+              </g>
+            );
+          })}
 
         {/* Clustered Event Badges at low zoom */}
         {activeLayers.events &&
@@ -569,7 +738,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         {/* Devices & Markers (Figma Section 4.10: 81x26 pill for incident devices & DEV-002 warning) */}
         {activeLayers.devices &&
           enrichedMarkers.map((m) => {
-            const isSelected = selectedId === m.id || (selectedId === 'EVT_0128' && m.id === 'DEV_002');
+            const isSelected =
+              selectedId === m.id ||
+              (selectedEntity &&
+                (selectedEntity.rawId === m.id ||
+                  selectedEntity.id === formatId(m.id) ||
+                  (resolvedEntity?.device &&
+                    (resolvedEntity.device.id === m.id || formatId(resolvedEntity.device.id) === formatId(m.id))))) ||
+              (selectedId === 'EVT_0128' && m.id === 'DEV_002');
 
             // Incident devices & warning DEV-002 render as pills
             if (m.isOffline || m.isStale || m.id === 'DEV_002') {
@@ -583,7 +759,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                   key={m.id}
                   transform={`translate(${m.x}, ${m.y})`}
                   className="cursor-pointer transition-all duration-150 hover:scale-110 select-none"
-                  onClick={() => onMarkerClick(m.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkerClick(m.id);
+                    selectEntity('device', m.id, { fly: true, source: 'map' });
+                  }}
                   onMouseEnter={(e) => {
                     const rect = containerRef.current?.getBoundingClientRect();
                     if (rect) {
@@ -675,7 +855,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 key={m.id}
                 transform={`translate(${m.x}, ${m.y})`}
                 className="cursor-pointer transition-transform hover:scale-130"
-                onClick={() => onMarkerClick(m.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkerClick(m.id);
+                  selectEntity('device', m.id, { fly: true, source: 'map' });
+                }}
                 onMouseEnter={(e) => {
                   const rect = containerRef.current?.getBoundingClientRect();
                   if (rect) {
@@ -789,6 +973,88 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         </div>
       )}
 
+      {/* Anchored Floating Collision-Aware Popup (Section 5 & 6) */}
+      {activePopup && popupPlacement && (
+        <MapPopupShell
+          side={popupPlacement.side}
+          tailOffset={popupPlacement.tailOffset}
+          typeChip={activePopup.type.toUpperCase()}
+          typeColor={
+            activePopup.type === 'event'
+              ? 'purple'
+              : activePopup.type === 'device'
+              ? 'blue'
+              : activePopup.type === 'pole'
+              ? 'emerald'
+              : 'amber'
+          }
+          id={activePopup.id}
+          title={activePopup.data.title}
+          unlocated={activePopup.unlocated}
+          onClose={closePopup}
+          style={{
+            left: `${popupPlacement.x}px`,
+            top: `${popupPlacement.y}px`,
+          }}
+          badge={
+            activePopup.type === 'event' && activePopup.data.event?.priority ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                {activePopup.data.event.priority} priority
+              </span>
+            ) : activePopup.type === 'device' ? (
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                  activePopup.data.deviceStatus === 'offline'
+                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                    : activePopup.data.deviceStatus === 'stale'
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                }`}
+              >
+                {activePopup.data.deviceStatus || 'Online'}
+              </span>
+            ) : null
+          }
+        >
+          <div className="space-y-3">
+            {activePopup.data.subtitle && (
+              <p className="text-xs text-muted-foreground">{activePopup.data.subtitle}</p>
+            )}
+
+            {/* Quick Facts Summary */}
+            <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/15 border dark:border-[#2a323d] border-slate-200 text-xs">
+              <div>
+                <span className="text-[10px] text-muted-foreground block">Classification</span>
+                <span className="font-semibold text-foreground capitalize">{activePopup.type}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-muted-foreground block">Identifier</span>
+                <span className="font-mono font-medium text-primary">{activePopup.id}</span>
+              </div>
+              {activePopup.data.deviceSerial && (
+                <div className="col-span-2">
+                  <span className="text-[10px] text-muted-foreground block">Serial Number</span>
+                  <span className="font-mono text-muted-foreground">{activePopup.data.deviceSerial}</span>
+                </div>
+              )}
+              {activePopup.data.relatedSpanId && (
+                <div className="col-span-2">
+                  <span className="text-[10px] text-muted-foreground block">Related Span</span>
+                  <span className="font-mono text-sky-400">{activePopup.data.relatedSpanId}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </MapPopupShell>
+      )}
+
+      {/* Layer Auto-On Toast Notification */}
+      {toastNotification && (
+        <div className="absolute top-6 left-6 z-50 bg-[#141b23]/95 border border-primary/40 text-foreground px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
+          <span className="size-2 rounded-full bg-primary animate-pulse" />
+          <span>{toastNotification}</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,6 +12,7 @@ export default function Overview() {
   const {
     selectedId,
     setSelectedId,
+    selectEntity,
     timeMode,
     setTimeMode,
     historyRange,
@@ -65,14 +66,22 @@ export default function Overview() {
   const [zoomInSignal, setZoomInSignal] = useState<number>(0);
   const [zoomOutSignal, setZoomOutSignal] = useState<number>(0);
 
-  // Handle selecting an item from the incident card, search, or map marker
+  // Handle selecting an item from panel, search, or map marker
   const handleSelectItem = useCallback(
     (id: string | null) => {
-      // Normalize format DEV-004 <-> DEV_004
-      const normalized = id ? id.replace(/-/g, '_') : null;
-      setSelectedId(normalized);
+      if (!id) {
+        selectEntity('device', null);
+        return;
+      }
+      let type: 'event' | 'device' | 'pole' | 'span' | 'case' = 'device';
+      const upper = id.toUpperCase();
+      if (upper.startsWith('EVT')) type = 'event';
+      else if (upper.startsWith('AST') || upper.startsWith('POL')) type = 'pole';
+      else if (upper.startsWith('CBL') || upper.startsWith('SEG')) type = 'span';
+      else if (upper.startsWith('CAS')) type = 'case';
+      selectEntity(type, id, { fly: true, source: 'panel' });
     },
-    [setSelectedId]
+    [selectEntity]
   );
 
   // Keyboard navigation: Escape key clears selection
