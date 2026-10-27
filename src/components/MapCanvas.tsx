@@ -7,6 +7,11 @@ import type { LayerVisibility } from '@/components/overview/LayerRail';
 import { useOverview } from '@/contexts/OverviewContext';
 import { computePopupPlacement, type PlacementResult } from '@/lib/popupPlacement';
 import { MapPopupShell } from '@/components/overview/popups/MapPopupShell';
+import { EventPopupContent } from '@/components/overview/popups/EventPopupContent';
+import { DevicePopupContent } from '@/components/overview/popups/DevicePopupContent';
+import { PolePopupContent } from '@/components/overview/popups/PolePopupContent';
+import { CableSpanPopupContent } from '@/components/overview/popups/CableSpanPopupContent';
+import { CasePopupContent } from '@/components/overview/popups/CasePopupContent';
 
 export interface MapCanvasProps {
   selectedId: string | null;
@@ -986,10 +991,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               ? 'blue'
               : activePopup.type === 'pole'
               ? 'emerald'
+              : activePopup.type === 'case'
+              ? 'purple'
               : 'amber'
           }
           id={activePopup.id}
-          title={activePopup.data.title}
           unlocated={activePopup.unlocated}
           onClose={closePopup}
           style={{
@@ -1013,38 +1019,36 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               >
                 {activePopup.data.deviceStatus || 'Online'}
               </span>
+            ) : activePopup.type === 'pole' ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase">
+                Active
+              </span>
+            ) : activePopup.type === 'span' ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30 uppercase">
+                Active
+              </span>
+            ) : activePopup.type === 'case' ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                {activePopup.data.status || 'Open'}
+              </span>
             ) : null
           }
         >
-          <div className="space-y-3">
-            {activePopup.data.subtitle && (
-              <p className="text-xs text-muted-foreground">{activePopup.data.subtitle}</p>
-            )}
-
-            {/* Quick Facts Summary */}
-            <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/15 border dark:border-[#2a323d] border-slate-200 text-xs">
-              <div>
-                <span className="text-[10px] text-muted-foreground block">Classification</span>
-                <span className="font-semibold text-foreground capitalize">{activePopup.type}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-muted-foreground block">Identifier</span>
-                <span className="font-mono font-medium text-primary">{activePopup.id}</span>
-              </div>
-              {activePopup.data.deviceSerial && (
-                <div className="col-span-2">
-                  <span className="text-[10px] text-muted-foreground block">Serial Number</span>
-                  <span className="font-mono text-muted-foreground">{activePopup.data.deviceSerial}</span>
-                </div>
-              )}
-              {activePopup.data.relatedSpanId && (
-                <div className="col-span-2">
-                  <span className="text-[10px] text-muted-foreground block">Related Span</span>
-                  <span className="font-mono text-sky-400">{activePopup.data.relatedSpanId}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          {activePopup.type === 'event' && (
+            <EventPopupContent entity={activePopup.data} onClose={closePopup} />
+          )}
+          {activePopup.type === 'device' && (
+            <DevicePopupContent entity={activePopup.data} onClose={closePopup} />
+          )}
+          {activePopup.type === 'pole' && (
+            <PolePopupContent entity={activePopup.data} onClose={closePopup} />
+          )}
+          {activePopup.type === 'span' && (
+            <CableSpanPopupContent entity={activePopup.data} onClose={closePopup} />
+          )}
+          {activePopup.type === 'case' && (
+            <CasePopupContent entity={activePopup.data} onClose={closePopup} />
+          )}
         </MapPopupShell>
       )}
 

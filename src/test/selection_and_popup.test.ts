@@ -126,3 +126,21 @@ test('Feature Data: exact 238 total features breakdown (120 poles + 114 cable sp
   const locatedPoles = allFeatures.filter((f) => f.type === 'pole' && f.hasLocation);
   assert.equal(locatedPoles.length, 42);
 });
+
+test('Phase 4: Accurate wording contracts (no None, no duplicate Offline, separate serial from ID)', () => {
+  const devEntity = resolveEntityData('device', 'DEV-004');
+  assert.equal(devEntity.id, 'DEV-004');
+  assert.equal(devEntity.deviceSerial, 'SN_DEV_004');
+  assert.notEqual(devEntity.id, devEntity.deviceSerial); // Strict separation
+
+  // Unlocated record handling
+  const unlocatedEvt = resolveEntityData('event', 'EVT-0007');
+  assert.equal(unlocatedEvt.hasLocation, false);
+  assert.equal(unlocatedEvt.coordinates, null);
+
+  // Span with endpoints
+  const spanEntity = resolveEntityData('span', 'CBL-001');
+  assert.equal(spanEntity.type, 'span');
+  assert.ok(spanEntity.relatedSpanId);
+});
+

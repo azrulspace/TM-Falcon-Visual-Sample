@@ -30,7 +30,13 @@ export interface ResolvedEntityData {
   relatedSpanId?: string | null;
   deviceStatus?: 'online' | 'offline' | 'stale';
   deviceSerial?: string | null;
+  status?: string;
+  name?: string;
+  site?: string;
+  data?: Record<string, any>;
 }
+
+export type ResolvedEntity = ResolvedEntityData;
 
 export function parseSelectionFromUrl(search: string): { type: EntityType; id: string } | null {
   try {
@@ -130,6 +136,7 @@ export function resolveEntityData(type: EntityType, id: string): ResolvedEntityD
         // Check if explicitly unlocated (e.g. EVT-0007)
         if (eventMatch.id === 'EVT-0007' || normId === 'EVT-0007' || !coordinates) {
           hasLocation = false;
+          coordinates = null;
         }
       } else {
         hasLocation = false;
