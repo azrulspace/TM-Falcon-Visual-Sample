@@ -40,7 +40,7 @@ import { navigationConfig, type NavItem } from '@/config/navigation';
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel, setAccountLabel } = useAppContext();
   const overview = useOverview();
-  const { modeSetting, setModeSetting, resolvedMode } = useUiMode();
+  const { modeSetting, setModeSetting, resolvedMode, orientation, viewportWidth } = useUiMode();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -259,37 +259,88 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     }, 200);
   };
 
+  const isTablet = resolvedMode === 'tablet';
+  const isTabletPortrait = isTablet && orientation === 'portrait';
+  const isTabletLandscape = isTablet && orientation === 'landscape';
+
+  // Listen to visual viewport for virtual keyboard handling
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleVvResize = () => {
+      document.documentElement.style.setProperty('--vvh', `${vv.height}px`);
+    };
+    vv.addEventListener('resize', handleVvResize);
+    handleVvResize();
+    return () => vv.removeEventListener('resize', handleVvResize);
+  }, []);
+
+  // Tap outside to close rail flyout on touch/tablet
+  useEffect(() => {
+    if (!activeFlyoutItem) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.glass-panel') && !target.closest('aside')) {
+        setActiveFlyoutItem(null);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [activeFlyoutItem]);
+
   return (
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-[100dvh] w-full min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-background text-foreground">
         {/* Header matching Figma: 60px brand row */}
-        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between px-6 z-30 shrink-0 select-none gap-4 transition-colors">
+        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between px-4 sm:px-6 z-30 shrink-0 select-none gap-3 sm:gap-4 transition-colors">
           {/* Left: Mobile trigger, TM FALCON Logo + Brand Lockup */}
-            <div className="flex items-center gap-3.5 shrink-0">
-              {/* Mobile menu trigger */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Mobile / Portrait Menu trigger */}
+            {(isTabletPortrait || viewportWidth < 1024) && (
               <button
-                className="flex lg:hidden p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none"
+                className="flex p-2 rounded-lg hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none cursor-pointer"
                 onClick={() => setMobileNavOpen(true)}
                 aria-label="Open navigation menu"
               >
                 <Menu className="size-5" />
               </button>
+            )}
 
-              <Link to="/overview" className="flex items-center gap-3.5">
-                <Logo className="h-7 w-auto" markOnly={true} />
-                <div className="h-[37px] w-px bg-slate-200 dark:bg-[#2a323d]" />
-                <div className="flex flex-col select-none">
-                  <span className="text-[20px] font-bold text-slate-900 dark:text-[#e2e7ef] leading-tight tracking-tight">
-                    FALCON
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-[#a3adbd] leading-tight font-normal">
-                    Telecom Infrastructure Monitoring
-                  </span>
-                </div>
-              </Link>
+            <Link to="/overview" className="flex items-center gap-3">
+              <Logo className="h-7 w-auto" markOnly={true} />
+              {!isTabletPortrait && (
+                <>
+                  <div className="h-[32px] w-px bg-slate-200 dark:bg-[#2a323d]" />
+                  <div className="flex flex-col select-none">
+                    <span className="text-[20px] font-bold text-slate-900 dark:text-[#e2e7ef] leading-tight tracking-tight">
+                      FALCON
+                    </span>
+                    {!isTabletLandscape && (
+                      <span className="text-[10px] text-slate-500 dark:text-[#a3adbd] leading-tight font-normal">
+                        Telecom Infrastructure Monitoring
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </Link>
+          </div>
+
+          {/* Center: Global Search Input with shortcut badge '/' */}
+          {isTabletPortrait ? (
+            <div className="flex-1" />
+          ) : isTabletLandscape ? (
+            <div className="flex-1 flex justify-center">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex items-center gap-2 text-xs text-slate-500 dark:text-[#a3adbd] cursor-pointer hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors"
+                aria-label="Search navigation and assets"
+              >
+                <Search className="size-4" />
+                <span>Search (/)</span>
+              </button>
             </div>
-
-            {/* Center: Global Search Input with shortcut badge '/' (Figma exact match) */}
+          ) : (
             <div className="flex-1 flex justify-center max-w-sm mx-auto">
               <button
                 onClick={() => setSearchOpen(true)}
@@ -306,9 +357,20 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </div>
               </button>
             </div>
+          )}
 
-            {/* Right: Notifications, Live data dropdown, Clock, User Profile */}
-            <div className="flex items-center gap-2.5 shrink-0">
+          {/* Right: Notifications, Live data dropdown, Clock, User Profile */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Search icon button on Portrait Tablet */}
+            {isTabletPortrait && (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="size-9 rounded-md flex items-center justify-center hover:bg-black/5 dark:hover:bg-[#1e2632] text-slate-600 dark:text-[#a3adbd] cursor-pointer"
+                aria-label="Search"
+              >
+                <Search className="size-4.5" />
+              </button>
+            )}
               {/* Notifications Popover with unread indicator and list */}
               <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
                 <PopoverTrigger
@@ -374,7 +436,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <button className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors text-xs font-medium text-slate-800 dark:text-[#ecf0f5] select-none cursor-pointer">
+                    <button
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] transition-colors text-xs font-medium text-slate-800 dark:text-[#ecf0f5] select-none cursor-pointer ${
+                        isTabletPortrait ? 'size-9 justify-center p-0' : ''
+                      }`}
+                      aria-label="Telemetry status"
+                    >
                       <span className="relative flex size-2.5">
                         {overview.liveState === 'live' ? (
                           <>
@@ -385,10 +452,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                           <span className="relative inline-flex rounded-full size-2.5 bg-[#ffa114]" />
                         )}
                       </span>
-                      <span className="text-[11.4px]">
-                        {overview.liveState === 'live' ? 'Live data' : 'Updates paused'}
-                      </span>
-                      <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+                      {!isTabletPortrait && (!isTabletLandscape || viewportWidth >= 1180) && (
+                        <span className="text-[11.4px]">
+                          {overview.liveState === 'live' ? 'Live data' : 'Updates paused'}
+                        </span>
+                      )}
+                      {!isTabletPortrait && <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />}
                     </button>
                   }
                 />
@@ -432,13 +501,31 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
-
               {/* Real-time date/time display */}
-              <div className="flex flex-col text-left leading-[1.35] select-none pr-1">
-                <span className="text-[9.5px] text-slate-500 dark:text-[#bdc5d1]">{currentDate}</span>
-                <span className="text-[12.4px] font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums">{currentTime}</span>
-              </div>
+              {!isTabletPortrait && (
+                <>
+                  <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
+                  {isTabletLandscape ? (
+                    <Tooltip.Root>
+                      <Tooltip.Trigger asChild>
+                        <div className="flex items-center text-xs font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums px-1.5 cursor-default select-none">
+                          {currentTime}
+                        </div>
+                      </Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content side="bottom" sideOffset={8} className="bg-popover text-popover-foreground border border-border shadow-md px-2 py-1 rounded text-xs z-50 font-medium">
+                          {currentDate}
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  ) : (
+                    <div className="flex flex-col text-left leading-[1.35] select-none pr-1">
+                      <span className="text-[9.5px] text-slate-500 dark:text-[#bdc5d1]">{currentDate}</span>
+                      <span className="text-[12.4px] font-semibold text-slate-800 dark:text-[#ecf0f5] tracking-wide font-mono tabular-nums">{currentTime}</span>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div className="h-[30.5px] w-px bg-slate-200 dark:bg-[#29313b]" />
 
@@ -551,19 +638,21 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenu>
 
               {/* Explicit Theme Toggle Button matching Figma node 138:13096 / 138:14047 */}
-              <button
-                id="theme-toggle-button"
-                onClick={() => toggleTheme()}
-                className="flex items-center justify-center size-[36px] rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none cursor-pointer"
-                aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-                title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === 'dark' ? (
-                  <Sun className="size-4" />
-                ) : (
-                  <Moon className="size-4" />
-                )}
-              </button>
+              {!isTabletPortrait && (
+                <button
+                  id="theme-toggle-button"
+                  onClick={() => toggleTheme()}
+                  className="flex items-center justify-center size-[36px] rounded-md hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none cursor-pointer"
+                  aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+                  title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="size-4" />
+                  ) : (
+                    <Moon className="size-4" />
+                  )}
+                </button>
+              )}
 
               {/* Tablet Mode Header Toggle Icon Button */}
               <TabletModeToggle />
@@ -575,298 +664,356 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
         {/* Main Body with Sidebar + Viewport */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Desktop Left Sidebar (72px collapsed dock persistent across all pages including Overview) */}
-          <aside
-            style={{ width: sidebarMinimized ? '72px' : '264px' }}
-            className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 h-full max-h-full transition-all duration-200 z-30 select-none relative"
-            onMouseLeave={handleRailMouseLeave}
-          >
-            {/* Top expand/collapse toggle container matching Figma node 132:10631 */}
-            <div className="flex items-center justify-center p-3 border-b dark:border-[#2a323d]/60 border-slate-200 shrink-0">
-              <button
-                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none"
-                onClick={handleToggleSidebar}
-                aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                {sidebarMinimized ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-              </button>
-            </div>
+          {/* Left Sidebar: 80px fixed labeled rail in tablet landscape, hidden in portrait, 72/264px desktop */}
+          {!isTabletPortrait && (
+            <aside
+              style={{ width: isTabletLandscape ? '80px' : (sidebarMinimized ? '72px' : '264px') }}
+              className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 h-full max-h-full transition-all duration-200 z-30 select-none relative"
+              onMouseLeave={handleRailMouseLeave}
+            >
+              {/* Top expand/collapse toggle container (hidden on tablet landscape) */}
+              {!isTabletLandscape && (
+                <div className="flex items-center justify-center p-3 border-b dark:border-[#2a323d]/60 border-slate-200 shrink-0">
+                  <button
+                    className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-[#1e2632] text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] transition-colors focus-visible:outline-none"
+                    onClick={handleToggleSidebar}
+                    aria-label={sidebarMinimized ? "Expand sidebar" : "Collapse sidebar"}
+                  >
+                    {sidebarMinimized ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+                  </button>
+                </div>
+              )}
 
-            {/* Scrollable Nav Sections */}
-            <div className="flex flex-col gap-2 p-2 flex-1 overflow-y-auto overflow-x-hidden">
-              {navigationConfig.map((sec) => (
-                <div key={sec.id} className="flex flex-col gap-1">
-                  {!sidebarMinimized && (
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#778394] px-2.5 mt-2 mb-0.5">
-                      {sec.label}
-                    </div>
-                  )}
+              {/* Scrollable Nav Sections */}
+              <div className="flex flex-col gap-2 p-2 flex-1 overflow-y-auto overflow-x-hidden">
+                {navigationConfig.map((sec) => (
+                  <div key={sec.id} className="flex flex-col gap-1">
+                    {!sidebarMinimized && !isTabletLandscape && (
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#778394] px-2.5 mt-2 mb-0.5">
+                        {sec.label}
+                      </div>
+                    )}
 
-                  {sec.items.map((item) => {
-                    const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
-                    const isCasesRoute = (location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases';
-                    const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute;
-                    const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute;
-                    const hasChildren = item.children && item.children.length > 0;
-                    const isExpanded = openGroups[item.id] !== false; // default open
+                    {sec.items.map((item) => {
+                      const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
+                      const isCasesRoute = (location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases';
+                      const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute;
+                      const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute;
+                      const hasChildren = item.children && item.children.length > 0;
+                      const isExpanded = openGroups[item.id] !== false; // default open
 
-                    return (
-                      <div key={item.id} className="flex flex-col">
-                        <Tooltip.Root>
-                          <Tooltip.Trigger asChild>
-                            <div
-                              className={`flex items-center gap-2.5 h-[40px] px-[12px] rounded-[6px] cursor-pointer text-xs font-medium transition-all relative ${
-                                sidebarMinimized ? 'justify-center' : 'justify-between'
-                              } ${
-                                isLeafActive
-                                  ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
-                                  : isParentActive
-                                  ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
-                                  : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
-                              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary`}
-                              onClick={() => {
-                                if (hasChildren && !sidebarMinimized) {
-                                  toggleGroup(item.id);
+                      if (isTabletLandscape) {
+                        return (
+                          <div
+                            key={item.id}
+                            className={`flex flex-col items-center justify-center h-[56px] w-full px-1 py-1 rounded-[8px] cursor-pointer text-xs font-medium transition-all relative ${
+                              isLeafActive
+                                ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
+                                : isParentActive
+                                ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                            }`}
+                            onClick={(e) => {
+                              if (hasChildren) {
+                                if (activeFlyoutItem?.item.id === item.id) {
+                                  setActiveFlyoutItem(null);
                                 } else {
-                                  navigate(item.route);
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setActiveFlyoutItem({
+                                    item,
+                                    top: Math.max(8, Math.min(rect.top - 64, window.innerHeight - 380)),
+                                  });
                                 }
-                              }}
-                              onMouseEnter={(e) => {
-                                if (sidebarMinimized) handleRailMouseEnter(item, e);
-                              }}
-                              tabIndex={0}
-                              role="link"
-                              aria-current={isLeafActive ? 'page' : undefined}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  if (hasChildren && !sidebarMinimized) toggleGroup(item.id);
-                                  else navigate(item.route);
-                                } else if (e.key === 'ArrowRight' && sidebarMinimized && hasChildren) {
-                                  handleRailMouseEnter(item, e as any);
-                                }
-                              }}
-                            >
-                              {/* Active blue accent bar on left edge */}
-                              {isLeafActive && (
-                                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
-                              )}
-                              <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-blue-600 dark:text-[#60a5fa]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
-                              {!sidebarMinimized && <span className="truncate">{item.label}</span>}
+                              } else {
+                                setActiveFlyoutItem(null);
+                                navigate(item.route);
+                              }
+                            }}
+                          >
+                            {isLeafActive && (
+                              <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
+                            )}
+                            <item.icon className="size-5 shrink-0" />
+                            <span className="text-[11px] leading-tight text-center truncate max-w-[72px] mt-0.5">
+                              {item.label}
+                            </span>
+                            {item.badge !== undefined && (
+                              <span className="absolute top-1.5 right-2 size-2 rounded-full bg-destructive" />
+                            )}
+                          </div>
+                        );
+                      }
 
-                              {!sidebarMinimized && (
-                                <div className="flex items-center gap-1.5 shrink-0">
+                      return (
+                        <div key={item.id} className="flex flex-col">
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <div
+                                className={`flex items-center gap-2.5 h-[40px] px-[12px] rounded-[6px] cursor-pointer text-xs font-medium transition-all relative ${
+                                  sidebarMinimized ? 'justify-center' : 'justify-between'
+                                } ${
+                                  isLeafActive
+                                    ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
+                                    : isParentActive
+                                    ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                    : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary`}
+                                onClick={() => {
+                                  if (hasChildren && !sidebarMinimized) {
+                                    toggleGroup(item.id);
+                                  } else {
+                                    navigate(item.route);
+                                  }
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (sidebarMinimized) handleRailMouseEnter(item, e);
+                                }}
+                                tabIndex={0}
+                                role="link"
+                                aria-current={isLeafActive ? 'page' : undefined}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    if (hasChildren && !sidebarMinimized) toggleGroup(item.id);
+                                    else navigate(item.route);
+                                  } else if (e.key === 'ArrowRight' && sidebarMinimized && hasChildren) {
+                                    handleRailMouseEnter(item, e as any);
+                                  }
+                                }}
+                              >
+                                {/* Active blue accent bar on left edge */}
+                                {isLeafActive && (
+                                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
+                                )}
+                                <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-blue-600 dark:text-[#60a5fa]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
+                                {!sidebarMinimized && <span className="truncate">{item.label}</span>}
+
+                                {!sidebarMinimized && (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {item.badge !== undefined && (
+                                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive/20 text-destructive font-bold">
+                                        {item.badge}
+                                      </span>
+                                    )}
+                                    {hasChildren && (
+                                      <ChevronDown
+                                        className={`size-3 text-muted-foreground transition-transform duration-150 ${
+                                          isExpanded ? 'rotate-0' : '-rotate-90'
+                                        }`}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </Tooltip.Trigger>
+
+                            {/* Rail Tooltip on collapsed state */}
+                            {sidebarMinimized && (
+                              <Tooltip.Portal>
+                                <Tooltip.Content
+                                  side="right"
+                                  sideOffset={14}
+                                  className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
+                                >
+                                  <span>{item.label}</span>
                                   {item.badge !== undefined && (
-                                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive/20 text-destructive font-bold">
+                                    <span className="ml-1.5 px-1 rounded bg-destructive text-white text-[10px]">
                                       {item.badge}
                                     </span>
                                   )}
-                                  {hasChildren && (
-                                    <ChevronDown
-                                      className={`size-3 text-muted-foreground transition-transform duration-150 ${
-                                        isExpanded ? 'rotate-0' : '-rotate-90'
+                                </Tooltip.Content>
+                              </Tooltip.Portal>
+                            )}
+                          </Tooltip.Root>
+
+                          {/* Expanded Children Tree (Up to 3 levels) */}
+                          {!sidebarMinimized && hasChildren && isExpanded && (
+                            <div className="ml-4 pl-3 border-l border-[#2a323d] flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
+                              {item.children?.map((child) => {
+                                const isChildActive = location.pathname === child.route;
+                                const hasGrandChildren = child.children && child.children.length > 0;
+
+                                return (
+                                  <div key={child.id} className="flex flex-col">
+                                    <div
+                                      className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
+                                        isChildActive
+                                          ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold'
+                                          : 'text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]'
                                       }`}
-                                    />
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </Tooltip.Trigger>
+                                      onClick={() => navigate(child.route)}
+                                    >
+                                      <span className="truncate">{child.label}</span>
+                                      {child.badge !== undefined && (
+                                        <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-[#1c232e] text-[#a3adbd]">
+                                          {child.badge}
+                                        </span>
+                                      )}
+                                    </div>
 
-                          {/* Rail Tooltip on collapsed state */}
-                          {sidebarMinimized && (
-                            <Tooltip.Portal>
-                              <Tooltip.Content
-                                side="right"
-                                sideOffset={14}
-                                className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
-                              >
-                                <span>{item.label}</span>
-                                {item.badge !== undefined && (
-                                  <span className="ml-1.5 px-1 rounded bg-destructive text-white text-[10px]">
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </Tooltip.Content>
-                            </Tooltip.Portal>
-                          )}
-                        </Tooltip.Root>
-
-                        {/* Expanded Children Tree (Up to 3 levels) */}
-                        {!sidebarMinimized && hasChildren && isExpanded && (
-                          <div className="ml-4 pl-3 border-l border-[#2a323d] flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
-                            {item.children?.map((child) => {
-                              const isChildActive = location.pathname === child.route;
-                              const hasGrandChildren = child.children && child.children.length > 0;
-
-                              return (
-                                <div key={child.id} className="flex flex-col">
-                                  <div
-                                    className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
-                                      isChildActive
-                                        ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold'
-                                        : 'text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]'
-                                    }`}
-                                    onClick={() => navigate(child.route)}
-                                  >
-                                    <span className="truncate">{child.label}</span>
-                                    {child.badge !== undefined && (
-                                      <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-[#1c232e] text-[#a3adbd]">
-                                        {child.badge}
-                                      </span>
+                                    {/* 3rd Level Indentation */}
+                                    {hasGrandChildren && (
+                                      <div className="ml-3 pl-2 border-l border-[#2a323d]/60 flex flex-col gap-0.5 my-0.5">
+                                        {child.children?.map((grandChild) => {
+                                          const isGrandActive = location.pathname === grandChild.route;
+                                          return (
+                                            <div
+                                              key={grandChild.id}
+                                              className={`px-2 py-1 text-[11px] rounded cursor-pointer transition-colors flex items-center justify-between ${
+                                                isGrandActive
+                                                  ? 'text-primary font-semibold'
+                                                  : 'text-[#a3adbd] hover:text-[#e2e7ef]'
+                                              }`}
+                                              onClick={() => navigate(grandChild.route)}
+                                            >
+                                              <span className="truncate">{grandChild.label}</span>
+                                              {grandChild.badge !== undefined && (
+                                                <span className="text-[10px] font-mono text-[#a3adbd]">
+                                                  {grandChild.badge}
+                                                </span>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                                     )}
                                   </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
 
-                                  {/* 3rd Level Indentation */}
-                                  {hasGrandChildren && (
-                                    <div className="ml-3 pl-2 border-l border-[#2a323d]/60 flex flex-col gap-0.5 my-0.5">
-                                      {child.children?.map((grandChild) => {
-                                        const isGrandActive = location.pathname === grandChild.route;
-                                        return (
-                                          <div
-                                            key={grandChild.id}
-                                            className={`px-2 py-1 text-[11px] rounded cursor-pointer transition-colors flex items-center justify-between ${
-                                              isGrandActive
-                                                ? 'text-primary font-semibold'
-                                                : 'text-[#a3adbd] hover:text-[#e2e7ef]'
-                                            }`}
-                                            onClick={() => navigate(grandChild.route)}
-                                          >
-                                            <span className="truncate">{grandChild.label}</span>
-                                            {grandChild.badge !== undefined && (
-                                              <span className="text-[10px] font-mono text-[#a3adbd]">
-                                                {grandChild.badge}
-                                              </span>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+              {/* Collapsed Rail Flyout Panel anchored to rail dock */}
+              {(sidebarMinimized || isTabletLandscape) && activeFlyoutItem && (
+                <div
+                  style={{ top: `${activeFlyoutItem.top}px`, left: isTabletLandscape ? '80px' : '72px' }}
+                  className="absolute w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
+                  onMouseEnter={handleFlyoutMouseEnter}
+                  onMouseLeave={handleFlyoutMouseLeave}
+                >
+                  <div className="flex items-center gap-2 pb-2 mb-2 border-b border-border">
+                    <activeFlyoutItem.item.icon className="size-4 text-primary" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-foreground truncate">
+                        {activeFlyoutItem.item.label}
+                      </span>
+                      {activeFlyoutItem.item.description && (
+                        <span className="text-[10px] text-muted-foreground truncate">
+                          {activeFlyoutItem.item.description}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 max-h-80 overflow-y-auto">
+                    {activeFlyoutItem.item.children?.map((sub) => (
+                      <div key={sub.id} className="flex flex-col">
+                        <div
+                          onClick={() => {
+                            navigate(sub.route);
+                            setActiveFlyoutItem(null);
+                          }}
+                          className={`flex items-center justify-between min-h-[48px] h-12 px-3 rounded-lg text-xs cursor-pointer transition-colors ${
+                            location.pathname === sub.route
+                              ? 'bg-primary/10 text-primary font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className="truncate font-medium">{sub.label}</span>
+                          {sub.badge !== undefined && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white font-bold">
+                              {sub.badge}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* 3rd level inside flyout */}
+                        {sub.children && (
+                          <div className="ml-3 pl-2 border-l border-border/60 flex flex-col gap-1 my-1">
+                            {sub.children.map((leaf) => (
+                              <div
+                                key={leaf.id}
+                                onClick={() => {
+                                  navigate(leaf.route);
+                                  setActiveFlyoutItem(null);
+                                }}
+                                className={`min-h-[44px] h-11 px-3 py-1 rounded text-[11px] cursor-pointer transition-colors flex items-center justify-between ${
+                                  location.pathname === leaf.route
+                                    ? 'text-primary font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                <span className="truncate">{leaf.label}</span>
+                                {leaf.badge !== undefined && (
+                                  <span className="text-[10px] font-mono text-muted-foreground">
+                                    {leaf.badge}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {/* Collapsed Rail Flyout Panel anchored directly to 72px dock with hover intent bridge */}
-            {sidebarMinimized && activeFlyoutItem && (
-              <div
-                style={{ top: `${activeFlyoutItem.top}px` }}
-                className="absolute left-[72px] w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
-                onMouseEnter={handleFlyoutMouseEnter}
-                onMouseLeave={handleFlyoutMouseLeave}
-              >
-                <div className="flex items-center gap-2 pb-2 mb-2 border-b border-border">
-                  <activeFlyoutItem.item.icon className="size-4 text-primary" />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-foreground truncate">
-                      {activeFlyoutItem.item.label}
-                    </span>
-                    {activeFlyoutItem.item.description && (
-                      <span className="text-[10px] text-muted-foreground truncate">
-                        {activeFlyoutItem.item.description}
-                      </span>
-                    )}
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <div className="flex flex-col gap-1 max-h-80 overflow-y-auto">
-                  {activeFlyoutItem.item.children?.map((sub) => (
-                    <div key={sub.id} className="flex flex-col">
-                      <div
-                        onClick={() => {
-                          navigate(sub.route);
-                          setActiveFlyoutItem(null);
-                        }}
-                        className={`flex items-center justify-between px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-                          location.pathname === sub.route
-                            ? 'bg-primary/10 text-primary font-semibold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        <span className="truncate">{sub.label}</span>
-                        {sub.badge !== undefined && (
-                          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-destructive text-white font-bold">
-                            {sub.badge}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* 3rd level inside flyout */}
-                      {sub.children && (
-                        <div className="ml-3 pl-2 border-l border-border/60 flex flex-col gap-1 my-1">
-                          {sub.children.map((leaf) => (
-                            <div
-                              key={leaf.id}
-                              onClick={() => {
-                                navigate(leaf.route);
-                                setActiveFlyoutItem(null);
-                              }}
-                              className={`px-2 py-1 rounded text-[11px] cursor-pointer transition-colors flex items-center justify-between ${
-                                location.pathname === leaf.route
-                                  ? 'text-primary font-semibold'
-                                  : 'text-muted-foreground hover:text-foreground'
-                              }`}
-                            >
-                              <span className="truncate">{leaf.label}</span>
-                              {leaf.badge !== undefined && (
-                                <span className="text-[10px] font-mono text-muted-foreground">
-                                  {leaf.badge}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Bottom Log out button matching Figma node 132:10680 */}
-            <div className="p-3 border-t border-[#2a323d] mt-auto shrink-0">
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
+              {/* Bottom Log out button */}
+              <div className="p-3 border-t border-[#2a323d] mt-auto shrink-0">
+                {isTabletLandscape ? (
                   <div
-                    className={`flex items-center gap-3 px-3 h-10 rounded-md cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632] ${
-                      sidebarMinimized ? 'justify-center' : ''
-                    }`}
+                    className="flex flex-col items-center justify-center h-[56px] w-full rounded-lg cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]"
                     onClick={handleLogout}
-                    tabIndex={0}
                     role="button"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleLogout();
-                    }}
+                    tabIndex={0}
                   >
                     <LogOut className="size-5 shrink-0" />
-                    {!sidebarMinimized && <span className="truncate">Log out</span>}
+                    <span className="text-[11px] leading-tight text-center mt-0.5">Log out</span>
                   </div>
-                </Tooltip.Trigger>
-                {sidebarMinimized && (
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      side="right"
-                      sideOffset={14}
-                      className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
-                    >
-                      <span>Log out</span>
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
+                ) : (
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <div
+                        className={`flex items-center gap-3 px-3 h-10 rounded-md cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632] ${
+                          sidebarMinimized ? 'justify-center' : ''
+                        }`}
+                        onClick={handleLogout}
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleLogout();
+                        }}
+                      >
+                        <LogOut className="size-5 shrink-0" />
+                        {!sidebarMinimized && <span className="truncate">Log out</span>}
+                      </div>
+                    </Tooltip.Trigger>
+                    {sidebarMinimized && (
+                      <Tooltip.Portal>
+                        <Tooltip.Content
+                          side="right"
+                          sideOffset={14}
+                          className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
+                        >
+                          <span>Log out</span>
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    )}
+                  </Tooltip.Root>
                 )}
-              </Tooltip.Root>
-            </div>
-          </aside>
+              </div>
+            </aside>
+          )}
 
-          {/* Mobile Sheet Navigation (< 1024px) */}
+          {/* Mobile Sheet Navigation (< 1024px or Portrait Tablet) */}
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-            <SheetContent side="left" className="p-0 w-72 bg-sidebar border-r border-sidebar-border flex flex-col">
+            <SheetContent side="left" className="p-0 w-80 max-w-[85vw] bg-sidebar border-r border-sidebar-border flex flex-col">
               <SheetHeader className="p-4 border-b border-sidebar-border flex flex-row items-center justify-between">
                 <SheetTitle className="text-sm font-bold text-foreground">
                   <Logo className="h-6" />
@@ -885,57 +1032,57 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         (location.pathname.startsWith('/events') && item.id === 'event-inbox') ||
                         ((location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases');
                       return (
-                      <div key={item.id} className="space-y-1">
-                        <div
-                          onClick={() => {
-                            navigate(item.route);
-                            setMobileNavOpen(false);
-                          }}
-                          className={`flex items-center justify-between h-11 px-3 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                            isItemActive
-                              ? 'bg-primary/10 text-primary font-semibold'
-                              : 'text-foreground/80 hover:bg-muted/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <item.icon className="size-4.5 text-primary" />
-                            <span>{item.label}</span>
+                        <div key={item.id} className="space-y-1">
+                          <div
+                            onClick={() => {
+                              navigate(item.route);
+                              setMobileNavOpen(false);
+                            }}
+                            className={`flex items-center justify-between min-h-[48px] h-12 px-3.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+                              isItemActive
+                                ? 'bg-primary/10 text-primary font-semibold'
+                                : 'text-foreground/80 hover:bg-muted/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon className="size-5 text-primary" />
+                              <span>{item.label}</span>
+                            </div>
+                            {item.badge !== undefined && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-destructive text-white font-bold">
+                                {item.badge}
+                              </span>
+                            )}
                           </div>
-                          {item.badge !== undefined && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-destructive text-white font-bold">
-                              {item.badge}
-                            </span>
+
+                          {item.children && (
+                            <div className="ml-6 pl-3 border-l border-border/60 space-y-1">
+                              {item.children.map((child) => (
+                                <div
+                                  key={child.id}
+                                  onClick={() => {
+                                    navigate(child.route);
+                                    setMobileNavOpen(false);
+                                  }}
+                                  className={`flex items-center justify-between min-h-[44px] h-11 px-3 text-xs font-medium rounded-md cursor-pointer transition-colors ${
+                                    location.pathname === child.route
+                                      ? 'text-primary font-semibold bg-primary/5'
+                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                  }`}
+                                >
+                                  <span>{child.label}</span>
+                                  {child.badge !== undefined && (
+                                    <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
+                                      {child.badge}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-
-                        {item.children && (
-                          <div className="ml-6 pl-3 border-l border-border/60 space-y-1">
-                            {item.children.map((child) => (
-                              <div
-                                key={child.id}
-                                onClick={() => {
-                                  navigate(child.route);
-                                  setMobileNavOpen(false);
-                                }}
-                                className={`flex items-center justify-between h-9 px-2 text-xs font-medium rounded cursor-pointer transition-colors ${
-                                  location.pathname === child.route
-                                    ? 'text-primary font-semibold'
-                                    : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                              >
-                                <span>{child.label}</span>
-                                {child.badge !== undefined && (
-                                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
-                                    {child.badge}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -943,10 +1090,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <div className="p-3 border-t border-sidebar-border">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+                  className="w-full justify-start gap-2 min-h-[48px] h-12 text-xs text-muted-foreground hover:text-foreground"
                   onClick={handleLogout}
                 >
-                  <LogOut className="size-4" />
+                  <LogOut className="size-4.5" />
                   <span>Log out</span>
                 </Button>
               </div>
