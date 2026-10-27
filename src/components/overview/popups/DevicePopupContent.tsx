@@ -108,7 +108,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
           <button
             type="button"
             onClick={() => selectEntity('pole', poleId, { fly: true })}
-            className="font-mono font-semibold text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
+            className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
             title={`Select pole ${poleId}`}
           >
             <span>{poleId}</span>

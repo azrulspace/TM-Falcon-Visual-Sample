@@ -33,7 +33,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
       {/* 1. Header & Status */}
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <FolderOpen className="size-4 text-purple-400 shrink-0" />
+          <FolderOpen className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
           <h3 className="text-sm font-bold text-foreground leading-snug">
             {c?.title || entity.title || `Case ${entity.id}`}
           </h3>
@@ -44,7 +44,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
       <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block">Case ID</span>
-          <span className="font-mono font-medium text-purple-400">{entity.id}</span>
+          <span className="font-mono font-medium text-purple-600 dark:text-purple-400">{entity.id}</span>
         </div>
         <div>
           <span className="text-[10px] text-muted-foreground block flex items-center gap-1">

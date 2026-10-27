@@ -48,7 +48,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
     >
       {/* ================= SLOT 1: Needs Attention ================= */}
       {activePanel === 'attention' ? (
-        <div className="pointer-events-auto w-[300px] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
+        <div className="pointer-events-auto w-[300px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
           {renderAttentionPanel ? (
             renderAttentionPanel()
           ) : (
@@ -85,7 +85,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
 
       {/* ================= SLOT 2: Assets and Devices ================= */}
       {activePanel === 'assets' ? (
-        <div className="pointer-events-auto w-[300px] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
+        <div className="pointer-events-auto w-[300px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
           {renderAssetsPanel ? (
             renderAssetsPanel()
           ) : (

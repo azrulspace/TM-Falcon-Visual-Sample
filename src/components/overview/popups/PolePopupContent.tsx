@@ -85,7 +85,7 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
               key={span}
               type="button"
               onClick={() => selectEntity('span', span, { fly: false })}
-              className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/25 hover:bg-sky-500/20 cursor-pointer transition-colors"
+              className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 hover:bg-sky-500/20 cursor-pointer transition-colors"
             >
               {span}
             </button>
@@ -116,10 +116,10 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
                 <span
                   className={`text-[9.5px] font-semibold uppercase px-1.5 py-0.2 rounded font-mono ${
                     d.status === 'offline'
-                      ? 'bg-rose-500/15 text-rose-400'
+                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
                       : d.status === 'stale'
-                      ? 'bg-amber-500/15 text-amber-400'
-                      : 'bg-emerald-500/15 text-emerald-400'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
                   {d.status}

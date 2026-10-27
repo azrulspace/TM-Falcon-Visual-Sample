@@ -107,7 +107,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
           <button
             type="button"
             onClick={() => selectEntity('span', spanId, { fly: false })}
-            className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/25 hover:bg-sky-500/20 cursor-pointer transition-colors"
+            className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 hover:bg-sky-500/20 cursor-pointer transition-colors"
             title={`Select cable span ${spanId}`}
           >
             {spanId}
@@ -144,7 +144,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
                   onClick={() => onAcknowledge?.(entity.id)}
                   className="h-7 text-xs px-2.5 gap-1 border-slate-300 dark:border-[#2a323d] cursor-pointer"
                 >
-                  <CheckCircle2 className="size-3 text-emerald-400" />
+                  <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
                   <span>Acknowledge</span>
                 </Button>
               }

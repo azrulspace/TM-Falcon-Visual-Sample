@@ -64,9 +64,9 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
           <button
             type="button"
             onClick={() => selectEntity('pole', startPoleId, { fly: true })}
-            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-400 transition-colors cursor-pointer"
+            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-500 transition-colors cursor-pointer"
           >
-            <MapPin className="size-3 text-emerald-400 shrink-0" />
+            <MapPin className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-semibold text-foreground truncate">
               {startPoleId}
             </span>
@@ -78,9 +78,9 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
           <button
             type="button"
             onClick={() => selectEntity('pole', endPoleId, { fly: true })}
-            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-400 transition-colors cursor-pointer"
+            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-500 transition-colors cursor-pointer"
           >
-            <MapPin className="size-3 text-emerald-400 shrink-0" />
+            <MapPin className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-semibold text-foreground truncate">
               {endPoleId}
             </span>
