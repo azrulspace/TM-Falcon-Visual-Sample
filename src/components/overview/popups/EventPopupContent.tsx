@@ -3,7 +3,6 @@ import {
   Clock,
   Radio,
   Layers,
-  Camera,
   ExternalLink,
   CheckCircle2,
   FolderPlus,
@@ -15,6 +14,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { formatId } from '@/lib/utils';
 import { useOverview } from '@/contexts/OverviewContext';
 import type { ResolvedEntity } from '@/lib/selection';
+import { EvidenceViewer } from '@/components/evidence/EvidenceViewer';
 
 export interface EventPopupContentProps {
   entity: ResolvedEntity;
@@ -36,7 +36,6 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
   const rawDeviceId = evt?.device || '';
   const spanId = evt?.asset ? formatId(evt.asset) : entity.relatedSpanId || 'CBL-001';
   const detection = evt?.detection || evt?.ruleCode || 'Wildlife near line';
-  const snapshotUrl = evt?.snapshots?.[0] || null;
 
   return (
     <div className="space-y-3.5" data-testid="event-popup-content">
@@ -116,34 +115,13 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
         </div>
       </div>
 
-      {/* 3. Snapshot Evidence Frame (16:9 Aspect Ratio) */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-            <Camera className="size-3 text-muted-foreground" />
-            Evidence Snapshot
-          </span>
-          <span className="text-[10px] font-mono text-muted-foreground/70">Frame 1 of 1</span>
-        </div>
-        <div className="relative aspect-video w-full rounded-lg overflow-hidden border dark:border-[#2a323d] border-slate-200 bg-slate-900 flex items-center justify-center group shadow-inner">
-          {snapshotUrl ? (
-            <img
-              src={snapshotUrl}
-              alt={`Evidence for ${entity.id}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="text-center p-4">
-              <Camera className="size-6 text-slate-500 mx-auto mb-1 opacity-70" />
-              <span className="text-[11px] text-slate-400 block font-medium">Snapshot preview</span>
-              <span className="text-[9.5px] text-slate-500 block">RGB Edge Sensor • 1080p</span>
-            </div>
-          )}
-          <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-black/75 text-white/90 backdrop-blur-sm border border-white/10">
-            Snapshot
-          </span>
-        </div>
-      </div>
+      {/* 3. Evidence Viewer with On-Demand Clip State Machine */}
+      <EvidenceViewer
+        eventId={entity.id}
+        snapshots={evt?.snapshots || []}
+        capturedTimeMYT={evt?.captured || 'Oct 20, 2026, 4:28 PM MYT'}
+        compact
+      />
 
       {/* 4. Footer Actions (Open Event, Acknowledge, Create Case) */}
       <div className="pt-2 border-t dark:border-[#2a323d] border-slate-200 flex items-center justify-between gap-2">
