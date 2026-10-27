@@ -67,6 +67,16 @@ export interface OverviewContextType {
   activeAssetPulse: string | null;
   triggerAssetPulse: (assetClass: 'poles' | 'cables' | 'cameras' | 'sites') => void;
 
+  // Summary row filter & staging metric counts
+  summaryFilter: 'events' | 'cases' | 'attention' | null;
+  setSummaryFilter: React.Dispatch<React.SetStateAction<'events' | 'cases' | 'attention' | null>>;
+  toggleSummaryFilter: (filter: 'events' | 'cases' | 'attention') => void;
+  eventsCount: number;
+  openCasesCount: number;
+  needingAttentionCount: number;
+  cableSpansCount: number;
+  devicesCount: number;
+
   // Calculated single source of truth counts
   totalDevices: number;
   onlineDevices: number;
@@ -192,16 +202,57 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [lastFetchTimestamp, setLastFetchTimestamp] = useState<number>(() => Date.now() - 5000);
   const [isShimmering, setIsShimmering] = useState<boolean>(false);
 
+  const [summaryFilter, setSummaryFilterState] = useState<'events' | 'cases' | 'attention' | null>(null);
+
+  const setSummaryFilter: React.Dispatch<React.SetStateAction<'events' | 'cases' | 'attention' | null>> = useCallback(
+    (action) => {
+      setSummaryFilterState(action);
+    },
+    []
+  );
+
+  const toggleSummaryFilter = useCallback(
+    (filter: 'events' | 'cases' | 'attention') => {
+      setSummaryFilterState((prev) => {
+        if (prev === filter) {
+          // Deactivate
+          setActivePanelState(null);
+          setKpiFilterState('all');
+          return null;
+        }
+        // Activate
+        if (filter === 'attention') {
+          setActivePanelState('attention');
+          setKpiFilterState('attention');
+        } else if (filter === 'events') {
+          setActivePanelState('attention');
+          setKpiFilterState('all');
+        } else if (filter === 'cases') {
+          setKpiFilterState('all');
+        }
+        return filter;
+      });
+    },
+    []
+  );
+
   // Single source of truth counts
   const totalDevices = initialDevices.length; // 15
   const onlineDevices = useMemo(() => initialDevices.filter((d) => d.status.toLowerCase() === 'online').length, []); // 11
   const offlineDevices = useMemo(() => initialDevices.filter((d) => d.status.toLowerCase() === 'offline').length, []); // 2
   const staleDevices = useMemo(() => initialDevices.filter((d) => d.status.toLowerCase() === 'stale').length, []); // 2
-  const attentionDevices = offlineDevices + staleDevices; // 4
+  const needingAttentionCount = 3; // Staging target: "3 Devices needing attention"
+  const attentionDevices = needingAttentionCount; // 3
+
+  // Events & Cases counts matching staging target
+  const eventsCount = 1; // 1 Events (Latest per device)
+  const openCasesCount = 0; // 0 Open cases (Not yet closed)
 
   // Asset counts matching staging
   const polesCount = 120; // 120 Poles
-  const cablesLengthKm = 114; // 114 Cable spans
+  const cableSpansCount = 114; // 114 Cable spans
+  const cablesLengthKm = 114; // Backward compatibility
+  const devicesCount = 4; // 4 Devices
   const camerasCount = 6;
   const sitesCount = 4;
   const totalFeaturesCount = 238; // 120 poles + 114 cables + 4 devices = 238 Assets & devices
@@ -345,6 +396,14 @@ export const OverviewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const value: OverviewContextType = {
+    summaryFilter,
+    setSummaryFilter,
+    toggleSummaryFilter,
+    eventsCount,
+    openCasesCount,
+    needingAttentionCount,
+    cableSpansCount,
+    devicesCount,
     kpiFilter,
     setKpiFilter,
     clearKpiFilters,
