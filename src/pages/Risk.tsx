@@ -3,12 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { StatusBadge, EmptyState } from '../components/Shared';
 import { segments } from '../data/segments';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Minus, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useUiMode } from '@/contexts/UiModeContext';
 import { cn } from '@/lib/utils';
 import { RiskPageHeader } from '@/components/risk/RiskPageHeader';
 import { RiskKpiStrip, type RiskKpiKey } from '@/components/risk/RiskKpiStrip';
 import { RiskToolbar } from '@/components/risk/RiskToolbar';
+import { RiskMapCard } from '@/components/risk/RiskMapCard';
 import {
   filterRiskSegments,
   sortRiskSegments,
@@ -167,12 +168,6 @@ export default function Risk() {
     exportRiskSegmentsToCsv(sortedSegments);
   };
 
-  const getPriorityColor = (priority: string) => {
-    if (priority === 'High') return 'var(--bg_error_solid)';
-    if (priority === 'Medium') return 'var(--bg_warning_solid)';
-    return 'var(--bg_info_solid)';
-  };
-
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full overflow-y-auto">
       {/* 5.2 Page Header */}
@@ -221,121 +216,13 @@ export default function Risk() {
             'app_card p-0 flex flex-col overflow-hidden relative'
           )}
         >
-          <div className="flex-1 relative group overflow-auto" style={{ backgroundColor: 'var(--bg_map)' }}>
-            {currentTab === 'map' ? (
-              <>
-                <svg viewBox="0 0 1000 700" className="w-full h-full object-cover min-h-[500px]">
-                  {/* Background */}
-                  <rect width="1000" height="700" fill="var(--bg_map)" />
-                  <path d="M-50 750 Q 200 600 300 750 Z" fill="var(--bg_success_primary)" opacity="0.5" />
-
-                  {/* Blocks */}
-                  <rect x="50" y="50" width="300" height="200" rx="20" fill="var(--map_block)" />
-                  <rect x="400" y="50" width="550" height="200" rx="20" fill="var(--map_block)" />
-                  <rect x="50" y="300" width="300" height="350" rx="20" fill="var(--map_block)" />
-                  <rect x="400" y="300" width="250" height="350" rx="20" fill="var(--map_block)" />
-                  <rect x="700" y="300" width="250" height="350" rx="20" fill="var(--map_block)" />
-
-                  <path
-                    d="M 375 0 L 375 700 M 0 275 L 1000 275 M 675 275 L 675 700"
-                    stroke="var(--map_road)"
-                    strokeWidth="50"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 50 650 L 350 400 M 450 650 L 650 400"
-                    stroke="var(--map_road)"
-                    strokeWidth="16"
-                    strokeLinecap="round"
-                  />
-
-                  {/* Segments */}
-                  {sortedSegments.map((s) => {
-                    const isSelected = selectedSegmentId === s.id;
-                    const midPoint = s.path[Math.floor(s.path.length / 2)] || [500, 350];
-
-                    return (
-                      <g key={s.id} onClick={() => setSelectedSegmentId(s.id)} className="cursor-pointer">
-                        {isSelected && (
-                          <polyline
-                            points={s.path.map((p: number[]) => p.join(',')).join(' ')}
-                            fill="none"
-                            stroke="var(--border_brand)"
-                            strokeWidth="16"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.3"
-                          />
-                        )}
-                        <polyline
-                          points={s.path.map((p: number[]) => p.join(',')).join(' ')}
-                          fill="none"
-                          stroke={getPriorityColor(s.priority)}
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <g transform={`translate(${midPoint[0]}, ${midPoint[1]})`}>
-                          <rect
-                            x="-24"
-                            y="-10"
-                            width="48"
-                            height="20"
-                            rx="10"
-                            fill="var(--bg_primary)"
-                            stroke="var(--border_secondary)"
-                          />
-                          <text
-                            y="4"
-                            textAnchor="middle"
-                            fill="var(--text_primary)"
-                            fontSize="10"
-                            fontWeight="600"
-                          >
-                            {s.id}
-                          </text>
-                        </g>
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* Floating Map Controls */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col bg-elevated rounded-[8px] shadow-sm border border-secondary overflow-hidden">
-                  <button
-                    className={cn(
-                      'text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary flex items-center justify-center',
-                      isTablet ? 'size-11 min-w-[44px] min-h-[44px]' : 'p-2'
-                    )}
-                    aria-label="Zoom in"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button
-                    className={cn(
-                      'text-secondary hover:bg-secondary hover:text-primary transition-colors border-b border-secondary flex items-center justify-center',
-                      isTablet ? 'size-11 min-w-[44px] min-h-[44px]' : 'p-2'
-                    )}
-                    aria-label="Zoom out"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="absolute bottom-4 left-4 bg-elevated border border-secondary rounded-[10px] p-3 shadow-md flex flex-col gap-2 text_xs text-secondary">
-                  <div className="font-semibold mb-1">Priority</div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-2 rounded-full bg-error-solid"></div> High
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-2 rounded-full bg-warning-solid"></div> Medium
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-2 rounded-full bg-info-solid"></div> Low
-                  </div>
-                </div>
-              </>
-            ) : (
+          {currentTab === 'map' ? (
+            <RiskMapCard
+              segments={sortedSegments}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={setSelectedSegmentId}
+            />
+          ) : (
               <div className="flex flex-col h-full">
                 <div className="app_table_container flex-1 bg-primary overflow-x-auto">
                   <table className="app_table w-full min-w-[900px]">
@@ -461,7 +348,6 @@ export default function Risk() {
                 )}
               </div>
             )}
-          </div>
         </div>
 
         {currentTab === 'map' && (
