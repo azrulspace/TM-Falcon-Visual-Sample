@@ -182,6 +182,9 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               text: assignee ? `Assigned to ${assignee}` : 'Unassigned by operator',
               actor,
               timestamp: nowIso,
+              fieldChanges: [
+                { field: 'Assignee', from: c.assignee || 'Unassigned', to: assignee || 'Unassigned' },
+              ],
             };
             return {
               ...c,
@@ -262,6 +265,9 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               text: `Work started by ${actor}`,
               actor,
               timestamp: nowIso,
+              fieldChanges: [
+                { field: 'Status', from: c.status, to: 'In progress' },
+              ],
             };
             return {
               ...c,
@@ -293,6 +299,9 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               text: `Submitted for review by ${actor}`,
               actor,
               timestamp: nowIso,
+              fieldChanges: [
+                { field: 'Status', from: c.status, to: 'In review' },
+              ],
             };
             return {
               ...c,
@@ -328,6 +337,9 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               text: `Case closed and signed off by ${actor}`,
               actor,
               timestamp: nowIso,
+              fieldChanges: [
+                { field: 'Status', from: c.status, to: 'Closed' },
+              ],
             };
             return {
               ...c,
@@ -368,6 +380,9 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               text: `Case reopened by ${actor}`,
               actor,
               timestamp: nowIso,
+              fieldChanges: [
+                { field: 'Status', from: 'Closed', to: 'Open' },
+              ],
             };
             return {
               ...c,
