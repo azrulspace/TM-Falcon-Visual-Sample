@@ -279,7 +279,7 @@ export const EventPopupFooter: React.FC<EventPopupFooterProps> = ({
           size="sm"
           variant="outline"
           onClick={handleViewAsset}
-          className="h-8 px-3 text-xs font-medium border-border hover:bg-muted cursor-pointer"
+          className="h-8 px-3 text-xs font-medium bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground cursor-pointer"
         >
           View asset
         </Button>
@@ -294,15 +294,15 @@ export const EventPopupFooter: React.FC<EventPopupFooterProps> = ({
               variant="outline"
               disabled={!isDeviceOnline}
               onClick={() => onOpenLiveStream?.(deviceId)}
-              className="size-8 rounded-lg border-border hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 cursor-pointer"
-              aria-label={isDeviceOnline ? 'Watch live stream' : 'The device is offline'}
+              className="size-8 rounded-lg bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground disabled:opacity-40 cursor-pointer"
+              aria-label={isDeviceOnline ? 'Watch live stream' : 'Device is offline'}
             >
-              <Video className="size-4" />
+              <Video className="size-4 text-secondary-foreground group-hover/button:text-foreground" />
             </Button>
           }
         />
         <TooltipContent side="top" className="text-xs">
-          {isDeviceOnline ? 'Watch live' : 'The device is offline'}
+          {isDeviceOnline ? 'Watch live stream' : 'Device is offline'}
         </TooltipContent>
       </Tooltip>
     </div>

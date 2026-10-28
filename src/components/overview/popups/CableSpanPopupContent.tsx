@@ -7,7 +7,8 @@ import {
   AlertTriangle,
   ExternalLink,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
 import { useOverview } from '@/contexts/OverviewContext';
 import type { ResolvedEntity } from '@/lib/selection';
@@ -22,6 +23,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
   entity,
   onClose,
 }) => {
+  const navigate = useNavigate();
   const { selectEntity } = useOverview();
 
   // Parse span number to determine endpoints
@@ -135,14 +137,17 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
 
       {/* 5. Footer Actions */}
       <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
-        <Link
-          to={`/inventory?asset=${entity.id}`}
-          onClick={onClose}
-          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+        <Button
+          size="sm"
+          onClick={() => {
+            onClose();
+            navigate(`/inventory?asset=${entity.id}`);
+          }}
+          className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
         >
           <span>View route in inventory</span>
           <ExternalLink className="size-3" />
-        </Link>
+        </Button>
       </div>
     </div>
   );

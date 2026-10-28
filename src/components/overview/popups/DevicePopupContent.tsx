@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Navigation,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
 import { useOverview } from '@/contexts/OverviewContext';
@@ -25,6 +25,7 @@ export interface DevicePopupContentProps {
 }
 
 export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, onClose }) => {
+  const navigate = useNavigate();
   const { selectEntity } = useOverview();
 
   // Find underlying device record
@@ -154,22 +155,25 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
 
       {/* 5. Footer Actions */}
       <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
-        <Link
-          to={`/inventory?device=${entity.id}`}
-          onClick={onClose}
-          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+        <Button
+          size="sm"
+          onClick={() => {
+            onClose();
+            navigate(`/inventory?device=${entity.id}`);
+          }}
+          className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
         >
           <span>View device</span>
           <ExternalLink className="size-3" />
-        </Link>
+        </Button>
 
         <Button
           size="sm"
           variant="outline"
           onClick={() => selectEntity('pole', poleId, { fly: true })}
-          className="h-7 text-xs px-2.5 gap-1 border-border cursor-pointer"
+          className="h-8 px-3 text-xs font-medium bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5"
         >
-          <Navigation className="size-3 text-primary" />
+          <Navigation className="size-3 text-secondary-foreground" />
           <span>Open pole on map</span>
         </Button>
       </div>

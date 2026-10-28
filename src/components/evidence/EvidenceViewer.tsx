@@ -255,10 +255,6 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                 className="w-full h-full object-cover cursor-pointer"
                 onClick={() => onOpenLightbox && onOpenLightbox(activeFrameIndex)}
               />
-              {/* Internal Badge Label */}
-              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-black/75 backdrop-blur-xs text-white text-[10px] font-mono font-medium shadow-xs border border-white/10">
-                Snapshot
-              </div>
             </div>
           )}
 
