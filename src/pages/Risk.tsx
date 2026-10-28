@@ -11,6 +11,9 @@ import { RiskKpiStrip, type RiskKpiKey } from '@/components/risk/RiskKpiStrip';
 import { RiskToolbar } from '@/components/risk/RiskToolbar';
 import { RiskMapCard } from '@/components/risk/RiskMapCard';
 import { RiskSegmentsColumn } from '@/components/risk/RiskSegmentsColumn';
+import { SegmentDetailContent } from '@/components/risk/SegmentDetailContent';
+import { SegmentDetailSheet } from '@/components/risk/SegmentDetailSheet';
+import { DismissSegmentDialog } from '@/components/risk/DismissSegmentDialog';
 import { useToast } from '@/contexts/ToastContext';
 import {
   filterRiskSegments,
@@ -175,6 +178,11 @@ export default function Risk() {
     addToast('success', `Exported ${sortedSegments.length} risk segments to CSV.`);
   };
 
+  const [dismissTarget, setDismissTarget] = useState<RiskSegment | null>(null);
+  const [dismissDialogOpen, setDismissDialogOpen] = useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [detailSheetSegment, setDetailSheetSegment] = useState<RiskSegment | null>(null);
+
   // Investigate action (Section 5.8: Optimistic update with work order creation)
   const handleInvestigate = useCallback(
     (seg: RiskSegment) => {
@@ -190,20 +198,50 @@ export default function Risk() {
     [addToast]
   );
 
-  // Dismiss action (Section 5.8: Moves segment out of default queue, offers undo)
-  const handleDismiss = useCallback(
-    (seg: RiskSegment) => {
+  // Open dismiss dialog (Section 5.8)
+  const openDismissDialog = useCallback((seg: RiskSegment) => {
+    setDismissTarget(seg);
+    setDismissDialogOpen(true);
+  }, []);
+
+  // Confirm dismiss with reason and optional note
+  const handleConfirmDismiss = useCallback(
+    (seg: RiskSegment, reason: string, note?: string) => {
       setSegmentList((prev) =>
-        prev.map((s) => (s.id === seg.id ? { ...s, status: 'dismissed' } : s))
+        prev.map((s) =>
+          s.id === seg.id
+            ? {
+                ...s,
+                status: 'dismissed',
+                dismissReason: reason,
+                dismissNote: note,
+                dismissedAt:
+                  new Date().toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }) + ' MYT',
+              }
+            : s
+        )
       );
       addToast(
         'info',
-        `Segment ${formatId(seg.id)} dismissed from inspection queue.`,
+        `Segment ${formatId(seg.id)} dismissed (${reason}).`,
         'Segment Dismissed'
       );
     },
     [addToast]
   );
+
+  const handleOpenDetailSheet = useCallback((seg: RiskSegment) => {
+    setDetailSheetSegment(seg);
+    setDetailSheetOpen(true);
+  }, []);
+
+  const handleShowOnMap = useCallback((seg: RiskSegment) => {
+    setCurrentTab('map');
+    setSelectedSegmentId(seg.id);
+  }, []);
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full overflow-y-auto">
@@ -259,7 +297,17 @@ export default function Risk() {
               selectedSegmentId={selectedSegmentId}
               onSelectSegment={setSelectedSegmentId}
               onInvestigate={handleInvestigate}
-              onDismiss={handleDismiss}
+              onDismiss={openDismissDialog}
+              renderPopup={(segment, onClose) => (
+                <div className="w-[360px] sm:w-[420px] max-h-[540px] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col">
+                  <SegmentDetailContent
+                    segment={segment}
+                    onClose={onClose}
+                    onInvestigate={handleInvestigate}
+                    onDismiss={openDismissDialog}
+                  />
+                </div>
+              )}
             />
           ) : (
               <div className="flex flex-col h-full">
@@ -290,7 +338,11 @@ export default function Risk() {
                         </tr>
                       ) : (
                         paginatedSegments.map((s, idx) => (
-                          <tr key={s.id}>
+                          <tr
+                            key={s.id}
+                            onClick={() => handleOpenDetailSheet(s)}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          >
                             <td className="text-tertiary font-medium">
                               {(currentPage - 1) * itemsPerPage + idx + 1}
                             </td>
@@ -396,12 +448,30 @@ export default function Risk() {
               selectedSegmentId={selectedSegmentId}
               onSelectSegment={setSelectedSegmentId}
               onInvestigate={handleInvestigate}
-              onDismiss={handleDismiss}
+              onDismiss={openDismissDialog}
               isLoading={isRefreshing}
             />
           </div>
         )}
       </div>
+
+      {/* 5.8 Dismiss Segment Dialog with reason flow */}
+      <DismissSegmentDialog
+        open={dismissDialogOpen}
+        onOpenChange={setDismissDialogOpen}
+        segment={dismissTarget}
+        onConfirm={handleConfirmDismiss}
+      />
+
+      {/* 5.8 Segment Detail Right Sheet */}
+      <SegmentDetailSheet
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+        segment={detailSheetSegment}
+        onInvestigate={handleInvestigate}
+        onDismiss={openDismissDialog}
+        onShowOnMap={handleShowOnMap}
+      />
     </div>
   );
 }
