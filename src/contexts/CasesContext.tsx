@@ -433,7 +433,7 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const newAct: CaseActivityEntry = {
               id: `act-f-${Date.now()}`,
               type: 'field_work',
-              text: 'Field work report saved',
+              text: data.isSubmitted ? 'Field findings submitted' : 'Field work report draft saved',
               actor,
               timestamp: nowIso,
             };
@@ -453,7 +453,10 @@ export const CasesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         })
       );
 
-      addToast('success', 'Field findings recorded.');
+      addToast(
+        'success',
+        data.isSubmitted ? 'Field findings submitted and locked.' : 'Field findings draft saved.'
+      );
       return true;
     },
     [addToast]
