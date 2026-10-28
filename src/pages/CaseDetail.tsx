@@ -194,7 +194,7 @@ export default function CaseDetail() {
 
             {/* Closure Tab */}
             {activeTab === 'closure' && (
-              <CaseClosureTab caseData={caseData} />
+              <CaseClosureTab caseData={caseData} onNavigateTab={setActiveTab} />
             )}
 
             {/* Activity Tab */}
