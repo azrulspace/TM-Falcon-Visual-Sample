@@ -113,9 +113,13 @@ export const CaseWorkflowTracker: React.FC<CaseWorkflowTrackerProps> = ({
                   >
                     {step.label}
                   </span>
-                  {formattedTime && (
+                  {formattedTime ? (
                     <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                       {formattedTime}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/60 whitespace-nowrap">
+                      Not reached
                     </span>
                   )}
                 </div>

@@ -20,6 +20,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useAppContext } from '../contexts/AppContext';
 import { useUiMode } from '@/hooks/useUiMode';
 import { useOverview } from '@/contexts/OverviewContext';
+import { formatStagingLiveClock } from '@/lib/dateTime';
+import { formatId } from '@/lib/utils';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -97,25 +99,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     { id: '3', title: 'High Risk Cable Segment', desc: 'SEG-02 flagged for inspection under Rule v1', time: '40m ago', deviceId: 'SEG_02' },
   ], []);
 
-  const [currentTime, setCurrentTime] = useState(() => {
-    return new Date().toLocaleTimeString('en-US', {
-      timeZone: 'Asia/Kuala_Lumpur',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }) + ' MYT';
-  });
+  const [currentTime, setCurrentTime] = useState(() => formatStagingLiveClock(new Date()));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(
-        new Date().toLocaleTimeString('en-US', {
-          timeZone: 'Asia/Kuala_Lumpur',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }) + ' MYT'
-      );
+      setCurrentTime(formatStagingLiveClock(new Date()));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -178,6 +166,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (path.startsWith('/assets/inventory/devices/new')) return ['Assets & devices', 'Inventory', 'New device'];
     if (path.startsWith('/assets/inventory/devices')) return ['Assets & devices', 'Inventory', 'Device detail'];
     if (path.startsWith('/assets/inventory')) return ['Assets & devices', 'Inventory register'];
+    if (path === '/cases') return ['Cases'];
+    if (path.startsWith('/cases/')) {
+      const caseId = path.split('/')[2];
+      return ['Cases', formatId(caseId)];
+    }
     if (path.startsWith('/planned/cases')) return ['Events', 'Cases'];
     if (path.startsWith('/planned/work-queue')) return ['Risk', 'Work queue'];
     if (path.startsWith('/planned/devices')) return ['Assets', 'Device health'];
@@ -299,7 +292,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 <div className="flex items-center gap-2 truncate">
                   <Search className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground font-normal truncate">
-                    Search segments, devices, assets...
+                    Search poles, spans, devices, events, cases...
                   </span>
                 </div>
                 <kbd className="h-5 min-w-[20px] px-1.5 border border-border rounded flex items-center justify-center text-[10px] font-mono text-muted-foreground bg-muted">
@@ -1092,7 +1085,16 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb + idx}>
                     <ChevronRight className="size-3 text-muted-foreground/60" />
-                    <span className={idx === breadcrumbs.length - 1 ? 'font-semibold text-foreground' : 'hover:text-foreground cursor-pointer'}>
+                    <span
+                      onClick={() => {
+                        if (crumb === 'Cases') navigate('/cases');
+                      }}
+                      className={
+                        idx === breadcrumbs.length - 1
+                          ? 'font-semibold text-foreground'
+                          : 'hover:text-foreground cursor-pointer transition-colors'
+                      }
+                    >
                       {crumb}
                     </span>
                   </React.Fragment>

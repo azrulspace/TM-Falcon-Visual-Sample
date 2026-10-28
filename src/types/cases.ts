@@ -12,6 +12,7 @@ export interface CaseActivityEntry {
   text: string;
   actor: string;
   timestamp: string; // ISO string with offset
+  fieldChanges?: { field: string; from: string; to: string }[];
 }
 
 export interface CaseVerificationData {
@@ -34,6 +35,9 @@ export interface CaseFieldFindingsData {
   recordedAt?: string;
   lastSavedBy?: string;
   lastSavedAt?: string;
+  isSubmitted?: boolean;
+  submittedBy?: string;
+  submittedAt?: string;
 }
 
 export interface CaseClosureData {

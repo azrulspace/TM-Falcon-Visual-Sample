@@ -13,6 +13,7 @@ import { CaseVerificationTab } from '@/components/cases/detail/tabs/CaseVerifica
 import { CaseFieldFindingsTab } from '@/components/cases/detail/tabs/CaseFieldFindingsTab';
 import { CaseClosureTab } from '@/components/cases/detail/tabs/CaseClosureTab';
 import { CaseActivityTab } from '@/components/cases/detail/tabs/CaseActivityTab';
+import { CaseTabStateChip } from '@/components/cases/detail/CaseTabStateChip';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -72,6 +73,18 @@ export default function CaseDetail() {
     setSearchParams(params, { replace: true });
   };
 
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextIndex = (currentIndex + 1) % TABS.length;
+      handleTabChange(TABS[nextIndex].key);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevIndex = (currentIndex - 1 + TABS.length) % TABS.length;
+      handleTabChange(TABS[prevIndex].key);
+    }
+  };
+
   const rawCase = id ? getCaseById(id) : undefined;
   const eventMap = createEventMap(events);
   const caseData = rawCase ? joinCaseWithEvent(rawCase, eventMap) : undefined;
@@ -108,25 +121,36 @@ export default function CaseDetail() {
           <CaseWorkflowTracker caseData={caseData} />
         </div>
 
-        {/* 7.4 Tabs Bar */}
+        {/* 7.4 Tabs Bar with state chips */}
         <div className="border-b border-border">
-          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-none" aria-label="Case tabs">
-            {TABS.map((tab) => {
+          <nav
+            role="tablist"
+            className="flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-none"
+            aria-label="Case detail workflow tabs"
+          >
+            {TABS.map((tab, idx) => {
               const isActive = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
+                  role="tab"
+                  id={`case-tab-${tab.key}`}
+                  aria-controls={`case-tabpanel-${tab.key}`}
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}
                   type="button"
                   onClick={() => handleTabChange(tab.key)}
+                  onKeyDown={(e) => handleTabKeyDown(e, idx)}
                   className={cn(
-                    'border-b-2 transition-colors whitespace-nowrap cursor-pointer',
-                    isTablet ? 'px-5 py-3 text-sm min-h-[44px]' : 'px-3.5 py-2.5 text-xs font-medium',
+                    'border-b-2 transition-colors whitespace-nowrap cursor-pointer flex items-center gap-2 select-none',
+                    isTablet ? 'px-4 py-3 text-sm min-h-[44px]' : 'px-3 py-2 text-xs font-medium',
                     isActive
                       ? 'border-primary text-primary font-semibold'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                   )}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <CaseTabStateChip tab={tab.key} caseData={caseData} />
                 </button>
               );
             })}
@@ -139,7 +163,13 @@ export default function CaseDetail() {
           isPortrait ? "flex flex-col" : "grid grid-cols-1 md:grid-cols-12 xl:grid-cols-12"
         )}>
           {/* Main Column */}
-          <div className={cn("space-y-6 w-full", !isPortrait && "md:col-span-7 xl:col-span-8")}>
+          <div
+            role="tabpanel"
+            id={`case-tabpanel-${activeTab}`}
+            aria-labelledby={`case-tab-${activeTab}`}
+            tabIndex={0}
+            className={cn("space-y-6 w-full focus-visible:outline-none", !isPortrait && "md:col-span-7 xl:col-span-8")}
+          >
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
