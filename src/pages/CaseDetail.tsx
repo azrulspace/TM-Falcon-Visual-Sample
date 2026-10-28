@@ -203,8 +203,8 @@ export default function CaseDetail() {
             )}
           </div>
 
-          {/* Side Column */}
-          <div className={cn("space-y-6 w-full", !isPortrait && "md:col-span-5 xl:col-span-4")}>
+          {/* Side Column (Sticky on desktop viewports) */}
+          <div className={cn("space-y-6 w-full", !isPortrait && "md:col-span-5 xl:col-span-4 xl:sticky xl:top-20")}>
             {/* Case Details Card */}
             <CaseDetailsCard caseData={caseData} />
 

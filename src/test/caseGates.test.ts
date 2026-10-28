@@ -194,3 +194,24 @@ test('caseGates: getCaseTabState maps tab states with truthful text and icons', 
   // 5. Activity: entry count
   assert.equal(getCaseTabState('activity', baseMockCase).label, '1');
 });
+
+test('caseGates: closure tab state shows Ready to close when prerequisites pass', () => {
+  const readyCase: FalconCase = {
+    ...baseMockCase,
+    verification: {
+      lastSavedAt: '2026-10-21T11:00:00+08:00',
+      verifiedBy: 'Ahmad Syukri',
+      passCriteria: true,
+    },
+    fieldFindings: {
+      findingsSummary: 'Cable cleared and bracket restored.',
+      isSubmitted: true,
+      submittedBy: 'Zulhilmi',
+      submittedAt: '2026-10-21T11:30:00+08:00',
+    },
+  };
+
+  assert.equal(getCaseTabState('closure', readyCase).label, 'Ready to close');
+  assert.equal(getCaseTabState('closure', readyCase).variant, 'success');
+});
+

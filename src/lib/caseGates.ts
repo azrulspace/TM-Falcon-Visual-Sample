@@ -96,6 +96,13 @@ export function getClosureGates(
 }
 
 /**
+ * Evaluates whether prerequisites for closure (verification + field findings) have passed.
+ */
+export function areClosurePrerequisitesMet(caseData: FalconCase): boolean {
+  return isVerificationSaved(caseData) && isFindingsSubmitted(caseData);
+}
+
+/**
  * Evaluates whether all closure gates pass.
  */
 export function areClosureGatesMet(
@@ -174,12 +181,12 @@ export function getCaseTabState(
           ariaLabel: 'Case closed',
         };
       }
-      if (areClosureGatesMet(caseData)) {
+      if (areClosurePrerequisitesMet(caseData)) {
         return {
           label: 'Ready to close',
           variant: 'success',
           iconName: 'check',
-          ariaLabel: 'Case ready to close, all prerequisite gates passed',
+          ariaLabel: 'Case ready to close, verification and findings prerequisites passed',
         };
       }
       return {
