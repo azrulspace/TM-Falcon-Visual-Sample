@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { StatusBadge, EmptyState } from '../components/Shared';
 import { segments } from '../data/segments';
-import { Button } from '@/components/ui/button';
-import { Search, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useUiMode } from '@/contexts/UiModeContext';
 import { cn, formatId } from '@/lib/utils';
 import { RiskPageHeader } from '@/components/risk/RiskPageHeader';
@@ -11,6 +8,8 @@ import { RiskKpiStrip, type RiskKpiKey } from '@/components/risk/RiskKpiStrip';
 import { RiskToolbar } from '@/components/risk/RiskToolbar';
 import { RiskMapCard } from '@/components/risk/RiskMapCard';
 import { RiskSegmentsColumn } from '@/components/risk/RiskSegmentsColumn';
+import { RiskTableView } from '@/components/risk/RiskTableView';
+import { RiskBulkActionBar } from '@/components/risk/RiskBulkActionBar';
 import { SegmentDetailContent } from '@/components/risk/SegmentDetailContent';
 import { SegmentDetailSheet } from '@/components/risk/SegmentDetailSheet';
 import { DismissSegmentDialog } from '@/components/risk/DismissSegmentDialog';
@@ -158,12 +157,47 @@ export default function Risk() {
     setCurrentPage(1);
   }, [filters, sortKey]);
 
-  // Paginated segments for ranked list view
-  const totalPages = Math.ceil(sortedSegments.length / itemsPerPage);
-  const paginatedSegments = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return sortedSegments.slice(start, start + itemsPerPage);
-  }, [sortedSegments, currentPage, itemsPerPage]);
+  // Selection state for Ranked list tab bulk operations (Section 5.10)
+  const [selectedSegmentIds, setSelectedSegmentIds] = useState<Set<string>>(new Set());
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedSegmentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(
+    (select: boolean) => {
+      if (!select) {
+        setSelectedSegmentIds(new Set());
+      } else {
+        const start = (currentPage - 1) * itemsPerPage;
+        const pageItems = sortedSegments.slice(start, start + itemsPerPage);
+        setSelectedSegmentIds((prev) => {
+          const next = new Set(prev);
+          pageItems.forEach((s) => next.add(s.id));
+          return next;
+        });
+      }
+    },
+    [currentPage, itemsPerPage, sortedSegments]
+  );
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedSegmentIds(new Set());
+  }, []);
+
+  const handleExportSelected = useCallback(() => {
+    const selectedSegments = segmentList.filter((s) => selectedSegmentIds.has(s.id));
+    exportRiskSegmentsToCsv(selectedSegments);
+    addToast('success', `Exported ${selectedSegments.length} selected risk segments to CSV.`);
+  }, [segmentList, selectedSegmentIds, addToast]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -310,135 +344,23 @@ export default function Risk() {
               )}
             />
           ) : (
-              <div className="flex flex-col h-full">
-                <div className="app_table_container flex-1 bg-primary overflow-x-auto">
-                  <table className="app_table w-full min-w-[900px]">
-                    <thead className="border-b border-secondary">
-                      <tr>
-                        <th>RANK</th>
-                        <th>SEGMENT</th>
-                        <th>ROUTE</th>
-                        <th>SPAN</th>
-                        <th>PRIORITY</th>
-                        <th>CONFIDENCE</th>
-                        <th>BASIS</th>
-                        <th>SUGGESTED ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedSegments.length === 0 ? (
-                        <tr>
-                          <td colSpan={8}>
-                            <EmptyState
-                              icon={Search}
-                              title="No segments found"
-                              description="Try adjusting your search or filters"
-                            />
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedSegments.map((s, idx) => (
-                          <tr
-                            key={s.id}
-                            onClick={() => handleOpenDetailSheet(s)}
-                            className="cursor-pointer hover:bg-muted/50 transition-colors"
-                          >
-                            <td className="text-tertiary font-medium">
-                              {(currentPage - 1) * itemsPerPage + idx + 1}
-                            </td>
-                            <td>
-                              <span className="font-mono text-brand whitespace-nowrap">{s.id}</span>
-                            </td>
-                            <td className="whitespace-nowrap">{s.route}</td>
-                            <td className="whitespace-nowrap text-tertiary">
-                              {s.from} to {s.to}
-                            </td>
-                            <td>
-                              <StatusBadge kind="priority" value={s.priority} />
-                            </td>
-                            <td>{s.confidence}</td>
-                            <td className="text-tertiary">{s.basis}</td>
-                            <td>
-                              <span className="badge badge_neutral">{s.action}</span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {sortedSegments.length > 0 && (
-                  <div className="p-4 border-t border-secondary flex items-center justify-between bg-primary rounded-b-[16px]">
-                    <div className="text_sm text-secondary">
-                      Showing{' '}
-                      <span className="font-medium text-primary">
-                        {(currentPage - 1) * itemsPerPage + 1}
-                      </span>{' '}
-                      to{' '}
-                      <span className="font-medium text-primary">
-                        {Math.min(currentPage * itemsPerPage, sortedSegments.length)}
-                      </span>{' '}
-                      of <span className="font-medium text-primary">{sortedSegments.length}</span> segments
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2 text_sm text-secondary">
-                        Rows per page
-                        <div className="relative h-8 bg-transparent border-transparent hover:bg-secondary transition-colors cursor-pointer rounded-[8px] flex items-center">
-                          <select
-                            className="h-full pl-2 pr-8 bg-transparent font-medium text-primary cursor-pointer outline-none appearance-none"
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                              setItemsPerPage(Number(e.target.value));
-                              setCurrentPage(1);
-                            }}
-                          >
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                          </select>
-                          <ChevronDown className="absolute right-1 w-4 h-4 text-secondary pointer-events-none" />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            'p-0 flex items-center justify-center rounded-[8px]',
-                            isTablet ? 'size-11 min-w-[44px] min-h-[44px]' : 'w-8 h-8'
-                          )}
-                          disabled={currentPage === 1}
-                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <div
-                          className={cn(
-                            'font-medium text-center tabular-nums',
-                            isTablet ? 'text-sm w-10' : 'text_sm w-8'
-                          )}
-                        >
-                          {currentPage}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            'p-0 flex items-center justify-center rounded-[8px]',
-                            isTablet ? 'size-11 min-w-[44px] min-h-[44px]' : 'w-8 h-8'
-                          )}
-                          disabled={currentPage === totalPages || totalPages === 0}
-                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <RiskTableView
+              segments={sortedSegments}
+              selectedSegmentIds={selectedSegmentIds}
+              onToggleSelect={handleToggleSelect}
+              onSelectAll={handleSelectAll}
+              onRowClick={handleOpenDetailSheet}
+              onInvestigate={handleInvestigate}
+              onDismiss={openDismissDialog}
+              onShowOnMap={handleShowOnMap}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              sortKey={sortKey}
+              onSortChange={setSortKey}
+            />
+          )}
         </div>
 
         {currentTab === 'map' && (
@@ -454,6 +376,16 @@ export default function Risk() {
           </div>
         )}
       </div>
+
+      {/* 5.10 Bulk Actions Bar (when rows are selected on ranked list view) */}
+      {currentTab === 'list' && (
+        <RiskBulkActionBar
+          selectedCount={selectedSegmentIds.size}
+          totalCount={sortedSegments.length}
+          onExportSelected={handleExportSelected}
+          onClear={handleClearSelection}
+        />
+      )}
 
       {/* 5.8 Dismiss Segment Dialog with reason flow */}
       <DismissSegmentDialog
