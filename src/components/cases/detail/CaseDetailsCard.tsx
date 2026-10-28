@@ -6,8 +6,8 @@ import { AssigneeCell } from '@/components/common/AssigneeCell';
 import { RelativeTime } from '@/components/common/RelativeTime';
 import { AssignPopover } from '../AssignPopover';
 import { useCases } from '@/contexts/CasesContext';
-import { getCaseAge } from '@/data/caseSelectors';
-import { getServerNow, formatAbsoluteMYT, parseDate } from '@/lib/dateTime';
+import { formatAbsoluteMYT, parseDate } from '@/lib/dateTime';
+import { formatId } from '@/lib/utils';
 import type { CaseWithSourceEvent, AssigneeType } from '@/types/cases';
 
 export interface CaseDetailsCardProps {
@@ -17,8 +17,6 @@ export interface CaseDetailsCardProps {
 export const CaseDetailsCard: React.FC<CaseDetailsCardProps> = ({ caseData }) => {
   const { assignCase } = useCases();
   const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const now = getServerNow();
-  const age = getCaseAge(caseData, now);
 
   const createdDate = parseDate(caseData.createdAt);
   const updatedDate = parseDate(caseData.lastUpdatedAt);
@@ -42,7 +40,7 @@ export const CaseDetailsCard: React.FC<CaseDetailsCardProps> = ({ caseData }) =>
         {/* Case ID */}
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground font-medium">Case ID</span>
-          <span className="font-mono font-bold text-foreground">{caseData.id}</span>
+          <span className="font-mono font-bold text-foreground">{formatId(caseData.id)}</span>
         </div>
 
         {/* Status */}
@@ -116,18 +114,6 @@ export const CaseDetailsCard: React.FC<CaseDetailsCardProps> = ({ caseData }) =>
             </div>
           </div>
         )}
-
-        {/* Age */}
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <span className="text-muted-foreground font-medium">Age</span>
-          <span className="font-semibold text-foreground tabular-nums">
-            {caseData.status === 'Closed' ? (
-              <>Closed after {age.durationText || '—'}</>
-            ) : (
-              <>Open for {age.durationText || '—'}</>
-            )}
-          </span>
-        </div>
       </div>
     </div>
   );

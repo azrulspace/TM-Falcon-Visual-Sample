@@ -13,8 +13,8 @@ export const CaseRecentActivityCard: React.FC<CaseRecentActivityCardProps> = ({
   activities = [],
   onOpenAllActivity,
 }) => {
-  // Take latest 5 entries (newest first)
-  const recentEntries = [...activities].reverse().slice(0, 5);
+  // Take latest 3 entries (newest first)
+  const recentEntries = [...activities].reverse().slice(0, 3);
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">

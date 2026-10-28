@@ -24,6 +24,8 @@ export interface MapCanvasProps {
   onZoomChange?: (scale: number) => void;
   zoomInSignal?: number;
   zoomOutSignal?: number;
+  centerOffsetX?: number;
+  centerOffsetY?: number;
 }
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
@@ -44,6 +46,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   onMouseMoveCoords,
   zoomInSignal,
   zoomOutSignal,
+  centerOffsetX,
+  centerOffsetY,
 }) => {
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -142,12 +146,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     });
 
     const targetScale = isNearCluster ? 1.8 : 1.45;
-    // Offset center slightly to the left (~360px on SVG viewBox) so the right panel doesn't occlude it
-    const targetX = (360 - targetCoords.x) * 0.65;
-    const targetY = (350 - targetCoords.y) * 0.65;
+    // Offset center (~360px on SVG viewBox for Overview with docked right panel, or custom offset)
+    const targetX = ((centerOffsetX ?? 360) - targetCoords.x) * 0.65;
+    const targetY = ((centerOffsetY ?? 350) - targetCoords.y) * 0.65;
     setPan({ x: targetX, y: targetY });
     setScale(targetScale);
-  }, [flyToSignal, resolvedEntity, selectedId]);
+  }, [flyToSignal, resolvedEntity, selectedId, centerOffsetX, centerOffsetY]);
 
   // Convert SVG marker coordinates to viewport container pixel coordinates
   const getMarkerScreenCoords = useCallback((svgX: number, svgY: number) => {

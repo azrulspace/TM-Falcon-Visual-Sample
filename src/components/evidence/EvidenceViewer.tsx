@@ -46,6 +46,7 @@ export interface EvidenceViewerProps {
   compact?: boolean;
   initialTab?: 'snapshot' | 'clip';
   initialMode?: 'snapshot' | 'clip';
+  cameraTimestampFootnote?: string;
   onOpenLightbox?: (frameIndex: number) => void;
   onWatchLive?: () => void;
 }
@@ -68,6 +69,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
   compact = false,
   initialTab = 'snapshot',
   initialMode,
+  cameraTimestampFootnote,
   onOpenLightbox,
   onWatchLive,
 }) => {
@@ -76,6 +78,11 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
   const [activeTab, setActiveTab] = useState<'snapshot' | 'clip'>(initialMode || initialTab);
   const activeFrameIndex = 0;
+
+  const isPreviewAsset = Boolean(
+    previewClipStatus ||
+      (snapshots && snapshots.some((s) => s.includes('case-evidence') || s.includes('preview')))
+  );
 
   // Studio Zoom & Pan state (for full variant snapshot)
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -504,10 +511,10 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
           <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-muted text-[11px] font-mono text-muted-foreground border border-border truncate max-w-[200px]">
             {detectionRule}
           </span>
-          {previewClipStatus && (
+          {isPreviewAsset && (
             <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
               <Sparkles className="size-2.5" />
-              Preview data ({previewClipStatus})
+              Preview data
             </span>
           )}
         </div>
@@ -519,19 +526,23 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               <button
                 type="button"
                 onClick={() => setZoomLevel((z) => Math.max(1, z - 0.25))}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={zoomLevel <= 1}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                 title="Zoom out"
                 aria-label="Zoom out"
               >
                 <ZoomOut className="size-3.5" />
               </button>
-              <span className="text-[11px] font-mono text-muted-foreground px-1 select-none">
-                {Math.round(zoomLevel * 100)}%
-              </span>
+              {zoomLevel > 1 && (
+                <span className="text-[11px] font-mono text-muted-foreground px-1 select-none">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={zoomLevel >= 3}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                 title="Zoom in"
                 aria-label="Zoom in"
               >
@@ -543,7 +554,11 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                   setZoomLevel(1);
                   setPan({ x: 0, y: 0 });
                 }}
-                className="px-2 py-1 rounded hover:bg-muted text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className={`px-2 py-1 rounded text-[11px] transition-colors cursor-pointer ${
+                  zoomLevel === 1
+                    ? 'bg-muted font-semibold text-foreground border border-border shadow-2xs'
+                    : 'hover:bg-muted font-medium text-muted-foreground hover:text-foreground'
+                }`}
               >
                 Fit
               </button>
@@ -862,15 +877,20 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       </div>
 
       {/* 3. Caption below stage (Section 6.2) */}
-      <div className="px-4 py-2 border-b border-border bg-muted/10 flex items-center justify-between text-xs text-muted-foreground">
-        {activeTab === 'snapshot' ? (
-          <span>Snapshot captured at {capturedTimeMYT}</span>
-        ) : (
-          <span>
-            Clip, from {clipState.windowStartTime || windowStartTimeMYT} to {clipState.windowEndTime || windowEndTimeMYT} in MYT
-            {clipState.isPartial && <span className="text-amber-400 ml-1 font-semibold">(Partial clip)</span>}
-          </span>
-        )}
+      <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+          {activeTab === 'snapshot' ? (
+            <span>Snapshot, captured {capturedTimeMYT}</span>
+          ) : (
+            <span>
+              Clip, from {clipState.windowStartTime || windowStartTimeMYT} to {clipState.windowEndTime || windowEndTimeMYT} in MYT
+              {clipState.isPartial && <span className="text-amber-400 ml-1 font-semibold">(Partial clip)</span>}
+            </span>
+          )}
+          {cameraTimestampFootnote && (
+            <span className="text-[11px] text-muted-foreground/80">({cameraTimestampFootnote})</span>
+          )}
+        </div>
         {clipState.autoUploaded && (
           <span className="text-[11px] font-mono text-primary font-medium">Uploaded automatically</span>
         )}

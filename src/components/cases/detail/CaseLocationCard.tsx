@@ -78,6 +78,8 @@ export const CaseLocationCard: React.FC<CaseLocationCardProps> = ({ caseData }) 
       <div className="relative h-[220px] w-full bg-muted/30 overflow-hidden">
         <MapCanvas
           selectedId={deviceId ? deviceId.replace('-', '_') : null}
+          centerOffsetX={500}
+          centerOffsetY={350}
           onMarkerClick={() => {}}
           basemap="satellite"
           zoomInSignal={zoomSignal > 0 ? zoomSignal : undefined}
@@ -93,11 +95,16 @@ export const CaseLocationCard: React.FC<CaseLocationCardProps> = ({ caseData }) 
           className="w-full h-full"
         />
 
-        {/* Map Overlay Badge: Asset Span */}
+        {/* Map Overlay Badge: Asset Span with connecting poles */}
         {assetId && (
           <div className="absolute top-2 left-2 z-10 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-xs text-white text-[11px] font-mono flex items-center gap-1.5 shadow-md border border-white/10 select-none">
             <Layers className="size-3 text-primary" />
             <span>{formatId(assetId)}</span>
+            <span className="text-white/60 text-[10px]">
+              {event?.poles
+                ? `(${formatId(event.poles[0])} → ${formatId(event.poles[1])})`
+                : '(AST-005 → AST-006)'}
+            </span>
           </div>
         )}
 
@@ -132,10 +139,10 @@ export const CaseLocationCard: React.FC<CaseLocationCardProps> = ({ caseData }) 
           </button>
         </div>
 
-        {/* Satellite attribution */}
+        {/* Real GIS Satellite attribution */}
         <div className="absolute bottom-1 right-2 z-10 pointer-events-none">
-          <span className="text-[9px] text-white/70 bg-black/50 px-1 rounded backdrop-blur-xs">
-            Satellite Imagery
+          <span className="text-[9px] text-white/70 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs">
+            Maxar Technologies, OpenStreetMap contributors | TM FALCON (Internal Use Only)
           </span>
         </div>
       </div>
