@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PageHeader, StatusBadge, EmptyState } from '../components/Shared';
-import { useAppContext } from '../contexts/AppContext';
+import { StatusBadge, EmptyState } from '../components/Shared';
 import { segments } from '../data/segments';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Info, Search, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, Search, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUiMode } from '@/contexts/UiModeContext';
 import { cn } from '@/lib/utils';
 
@@ -35,14 +33,23 @@ const FilterDropdown = ({ icon: Icon, value, options, onChange, prefix = "", isT
   </DropdownMenu>
 );
 
+import { RiskPageHeader } from '@/components/risk/RiskPageHeader';
+
 export default function Risk() {
-  const { reviewMode } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isTablet, orientation } = useUiMode();
   const isPortrait = isTablet && orientation === 'portrait';
   
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterRoute, setFilterRoute] = useState('All');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 600);
+  };
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -78,32 +85,14 @@ export default function Risk() {
     setSearchParams({ view: value });
   };
 
-  const pageTitle = (
-    <div className="flex items-center gap-2">
-      Risk overview
-      <TooltipProvider delay={0}>
-        <Tooltip>
-          <TooltipTrigger render={
-            <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full">
-              <Info className="w-5 h-5 text-tertiary hover:text-secondary transition-colors" />
-            </button>
-          } />
-          <TooltipContent className="px-3 py-2 bg-elevated text-primary text_sm rounded-[8px] shadow-lg border border-secondary max-w-[300px] z-50 font-normal leading-normal" sideOffset={5}>
-            Priority comes from versioned rules on incident history. A risk priority does not establish that damage occurred.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
-
   return (
-    <div>
-      <PageHeader 
-        title={pageTitle} 
-        description="Where to inspect or protect next, ranked by versioned rules on incident history."
-        openQuestion={reviewMode ? "period, granularity and action thresholds." : undefined}
-        pageId="FAL_RSK_01"
-        roles="Admin, Operator"
+    <div className="p-4 sm:p-6 flex flex-col h-full overflow-y-auto">
+      <RiskPageHeader
+        filteredSegments={filteredSegments}
+        ruleVersion="Rule v1"
+        computedAtMYT="10:30 PM MYT"
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
       />
 
       {/* View Tabs */}
