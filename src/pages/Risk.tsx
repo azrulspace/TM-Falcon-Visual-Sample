@@ -5,11 +5,13 @@ import { segments } from '../data/segments';
 import { Button } from '@/components/ui/button';
 import { Search, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useUiMode } from '@/contexts/UiModeContext';
-import { cn } from '@/lib/utils';
+import { cn, formatId } from '@/lib/utils';
 import { RiskPageHeader } from '@/components/risk/RiskPageHeader';
 import { RiskKpiStrip, type RiskKpiKey } from '@/components/risk/RiskKpiStrip';
 import { RiskToolbar } from '@/components/risk/RiskToolbar';
 import { RiskMapCard } from '@/components/risk/RiskMapCard';
+import { RiskSegmentsColumn } from '@/components/risk/RiskSegmentsColumn';
+import { useToast } from '@/contexts/ToastContext';
 import {
   filterRiskSegments,
   sortRiskSegments,
@@ -22,6 +24,7 @@ import type {
   RiskPriority,
   RiskConfidence,
   SegmentStatus,
+  RiskSegment,
 } from '@/types/risk';
 
 export default function Risk() {
@@ -37,6 +40,8 @@ export default function Risk() {
   const initialKpi = (searchParams.get('kpi') as RiskKpiKey) || null;
   const initialSegment = searchParams.get('segment') || null;
 
+  const { addToast } = useToast();
+  const [segmentList, setSegmentList] = useState<RiskSegment[]>(segments);
   const [currentTab, setCurrentTab] = useState<'map' | 'list'>(initialTab);
   const [sortKey, setSortKey] = useState<RiskSortKey>(initialSort);
   const [activeKpi, setActiveKpi] = useState<RiskKpiKey | null>(initialKpi);
@@ -66,8 +71,8 @@ export default function Risk() {
 
   // Extract available routes dynamically from the segments data
   const availableRoutes = useMemo(() => {
-    return Array.from(new Set(segments.map((s) => s.route))).sort();
-  }, []);
+    return Array.from(new Set(segmentList.map((s) => s.route))).sort();
+  }, [segmentList]);
 
   // Synchronize URL query params whenever state changes
   useEffect(() => {
@@ -134,16 +139,16 @@ export default function Risk() {
 
   // Filter and sort segments
   const filteredSegments = useMemo(() => {
-    return filterRiskSegments(segments, filters);
-  }, [filters]);
+    return filterRiskSegments(segmentList, filters);
+  }, [segmentList, filters]);
 
   const sortedSegments = useMemo(() => {
     return sortRiskSegments(filteredSegments, sortKey);
   }, [filteredSegments, sortKey]);
 
   const statusCounts = useMemo(() => {
-    return getRiskStatusCounts(segments);
-  }, []);
+    return getRiskStatusCounts(segmentList);
+  }, [segmentList]);
 
   // Reset page when filters or sort change
   useEffect(() => {
@@ -161,12 +166,44 @@ export default function Risk() {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
+      addToast('info', 'Risk ranking updated with latest incident history.', 'Data Refreshed');
     }, 600);
   };
 
   const handleExport = () => {
     exportRiskSegmentsToCsv(sortedSegments);
+    addToast('success', `Exported ${sortedSegments.length} risk segments to CSV.`);
   };
+
+  // Investigate action (Section 5.8: Optimistic update with work order creation)
+  const handleInvestigate = useCallback(
+    (seg: RiskSegment) => {
+      setSegmentList((prev) =>
+        prev.map((s) => (s.id === seg.id ? { ...s, status: 'investigating' } : s))
+      );
+      addToast(
+        'success',
+        `Investigation work item created for ${formatId(seg.id)} (${seg.from} to ${seg.to}).`,
+        'Work Item Created'
+      );
+    },
+    [addToast]
+  );
+
+  // Dismiss action (Section 5.8: Moves segment out of default queue, offers undo)
+  const handleDismiss = useCallback(
+    (seg: RiskSegment) => {
+      setSegmentList((prev) =>
+        prev.map((s) => (s.id === seg.id ? { ...s, status: 'dismissed' } : s))
+      );
+      addToast(
+        'info',
+        `Segment ${formatId(seg.id)} dismissed from inspection queue.`,
+        'Segment Dismissed'
+      );
+    },
+    [addToast]
+  );
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full overflow-y-auto">
@@ -221,6 +258,8 @@ export default function Risk() {
               segments={sortedSegments}
               selectedSegmentId={selectedSegmentId}
               onSelectSegment={setSelectedSegmentId}
+              onInvestigate={handleInvestigate}
+              onDismiss={handleDismiss}
             />
           ) : (
               <div className="flex flex-col h-full">
@@ -351,101 +390,15 @@ export default function Risk() {
         </div>
 
         {currentTab === 'map' && (
-          <div className="xl:col-span-4 app_card p-0 flex flex-col h-[640px] overflow-hidden">
-            <div className="p-4 border-b border-secondary bg-elevated z-10">
-              <div className="flex items-center gap-2 mb-1">
-                <h5 className="h6">Segments to inspect</h5>
-                <span className="badge badge_brand">{sortedSegments.length}</span>
-              </div>
-              <p className="text_xs text-tertiary">
-                Most urgent first based on priority and span confidence.
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-              {sortedSegments.length === 0 ? (
-                <EmptyState
-                  icon={Search}
-                  title="No segments found"
-                  description="Try adjusting your filters"
-                />
-              ) : (
-                sortedSegments.map((s) => {
-                  const isSelected = selectedSegmentId === s.id;
-                  const confidenceBars =
-                    s.confidence === 'High' ? 3 : s.confidence === 'Medium' ? 2 : 1;
-
-                  return (
-                    <div
-                      key={s.id}
-                      className={`border rounded-xl p-4 cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'border-brand ring-1 ring-primary/40 bg-secondary'
-                          : 'bg-primary border-secondary hover:bg-secondary'
-                      }`}
-                      onClick={() => setSelectedSegmentId(s.id)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-semibold uppercase tracking-wider text-[10px] text-tertiary">
-                          SEGMENT
-                        </span>
-                        <span className="font-mono text_xs text-brand">{s.id}</span>
-                      </div>
-                      <div className="text_sm font-semibold text-primary mb-2">
-                        {s.from} to {s.to}
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <StatusBadge kind="priority" value={s.priority} />
-                        <span className="badge badge_neutral">{s.route}</span>
-                      </div>
-                      <div className="text_xs text-secondary flex flex-col gap-1">
-                        <div>
-                          <span className="font-semibold text-primary">Basis:</span> {s.basis}
-                        </div>
-                        <div className="inline-flex items-center gap-2 mt-0.5">
-                          <span className="font-semibold text-primary">Confidence:</span>
-                          <span className="text-secondary">{s.confidence}</span>
-                          <div className="flex gap-1 items-center">
-                            {[1, 2, 3].map((bar) => {
-                              const isActive = bar <= confidenceBars;
-                              let colorClass = 'bg-slate-200 dark:bg-slate-700';
-                              if (isActive) {
-                                if (s.confidence === 'High') colorClass = 'bg-emerald-600';
-                                else if (s.confidence === 'Medium') colorClass = 'bg-amber-500';
-                                else colorClass = 'bg-rose-500';
-                              }
-                              return (
-                                <div
-                                  key={bar}
-                                  className={`h-[6px] w-[14px] rounded-full transition-colors ${colorClass}`}
-                                ></div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 mt-4 pt-3 border-t border-secondary">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className={cn('flex-1', isTablet ? 'h-11 text-sm' : '')}
-                        >
-                          Investigate
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn('flex-1', isTablet ? 'h-11 text-sm' : '')}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+          <div className="xl:col-span-4 h-[640px] overflow-hidden">
+            <RiskSegmentsColumn
+              segments={sortedSegments}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={setSelectedSegmentId}
+              onInvestigate={handleInvestigate}
+              onDismiss={handleDismiss}
+              isLoading={isRefreshing}
+            />
           </div>
         )}
       </div>
