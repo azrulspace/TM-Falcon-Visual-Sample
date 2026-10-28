@@ -120,7 +120,7 @@ export default function Overview() {
   }, [setSelectedId]);
 
   return (
-    <div className="w-full h-full flex flex-col relative overflow-hidden select-none font-sans dark:bg-[#0B101B] bg-slate-900 text-foreground transition-colors">
+    <div className="w-full h-full flex flex-col relative overflow-hidden select-none font-sans bg-background text-foreground transition-colors">
       {/* 1. Network Summary Row (72px, Section 4.2 / Figma node 138:13178 / 138:14055) */}
       <NetworkSummaryRow />
 

@@ -95,7 +95,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       className="flex flex-col w-[300px] max-h-[calc(100vh-220px)] text-foreground select-none overflow-hidden"
     >
       {/* 1. Sticky Header */}
-      <div className="flex items-center justify-between h-[42px] px-3.5 border-b dark:border-[#222b38] border-slate-200 shrink-0 dark:bg-[#121720]/80 bg-slate-50/80">
+      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card/80">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-foreground tracking-tight">
             Assets and devices
@@ -125,7 +125,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 2. Search Field and Helper Text */}
-      <div className="p-3 pb-2 border-b dark:border-[#222b38] border-slate-200/60 shrink-0 space-y-1.5 bg-background/50">
+      <div className="p-3 pb-2 border-b border-border shrink-0 space-y-1.5 bg-background/50">
         <div className="relative flex items-center">
           <Search className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
           <input
@@ -135,7 +135,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
             onChange={(e) => setRawSearch(e.target.value)}
             placeholder="Search features"
             aria-label="Search features"
-            className="w-full h-8 pl-8 pr-7 text-xs rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#0f141c] bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all font-sans"
+            className="w-full h-8 pl-8 pr-7 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all font-sans"
           />
           {rawSearch && (
             <button
@@ -154,7 +154,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 3. Type Filter Chips */}
-      <div className="flex items-center px-3 py-1.5 gap-1 overflow-x-auto no-scrollbar border-b dark:border-[#222b38] border-slate-200/60 shrink-0">
+      <div className="flex items-center px-3 py-1.5 gap-1 overflow-x-auto no-scrollbar border-b border-border shrink-0">
         <button
           onClick={() => handleSelectType('all')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
@@ -198,7 +198,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 4. Results Count */}
-      <div className="px-3.5 py-1 text-[10.5px] text-muted-foreground shrink-0 border-b dark:border-[#222b38]/40 border-slate-100 flex justify-between items-center">
+      <div className="px-3.5 py-1 text-[10.5px] text-muted-foreground shrink-0 border-b border-border/40 flex justify-between items-center">
         <span>Showing {filteredFeatures.length} features</span>
         {rawSearch && (
           <span className="font-mono text-[10px]">Filter: &quot;{rawSearch}&quot;</span>
@@ -234,8 +234,8 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
                 }}
                 className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'border-l-2 border-l-primary border-primary/50 dark:bg-[#1e2632] bg-sky-50/70 shadow-sm'
-                    : 'dark:bg-[#161c24] bg-white border-slate-200/60 dark:border-[#222b38] hover:dark:bg-[#1c2430] hover:bg-slate-50'
+                    ? 'border-l-2 border-l-primary border-primary/50 bg-primary/10 shadow-sm'
+                    : 'bg-card border-border/60 hover:bg-muted'
                 }`}
               >
                 {/* Left: Icon, Type label, Mono ID */}

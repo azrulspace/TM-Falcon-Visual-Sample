@@ -245,7 +245,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
     return (
       <div className={`space-y-2 select-none ${className}`} data-testid="evidence-viewer-compact">
         {/* 16:9 Frame with fixed stable height */}
-        <div className="relative aspect-video w-full rounded-lg bg-slate-950 overflow-hidden border dark:border-[#2a323d] border-slate-200 shadow-sm flex items-center justify-center">
+        <div className="relative aspect-video w-full rounded-lg bg-black overflow-hidden border border-border shadow-sm flex items-center justify-center">
           {/* SNAPSHOT VIEW */}
           {activeTab === 'snapshot' && (
             <div className="relative w-full h-full flex items-center justify-center group">

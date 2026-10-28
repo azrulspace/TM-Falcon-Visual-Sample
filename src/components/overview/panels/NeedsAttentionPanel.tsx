@@ -127,12 +127,12 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       return <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />;
     }
     if (item.deviceType === 'camera') {
-      return <Camera className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />;
+      return <Camera className="size-3.5 shrink-0 text-muted-foreground" />;
     }
     if (item.deviceType === 'tower') {
-      return <RadioTower className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />;
+      return <RadioTower className="size-3.5 shrink-0 text-muted-foreground" />;
     }
-    return <Cpu className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />;
+    return <Cpu className="size-3.5 shrink-0 text-muted-foreground" />;
   };
 
   return (
@@ -141,7 +141,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       className="flex flex-col w-[300px] max-h-[calc(100vh-220px)] text-foreground select-none overflow-hidden"
     >
       {/* 1. Sticky Header */}
-      <div className="flex items-center justify-between h-[42px] px-3.5 border-b dark:border-[#222b38] border-slate-200 shrink-0 dark:bg-[#121720]/80 bg-slate-50/80">
+      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card/80">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-foreground tracking-tight">
             Needs attention
@@ -163,7 +163,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       </div>
 
       {/* 2. Type Tabs (Shown only for types that have items) */}
-      <div className="flex items-center px-3 pt-2 gap-1.5 border-b dark:border-[#222b38] border-slate-200/60 shrink-0">
+      <div className="flex items-center px-3 pt-2 gap-1.5 border-b border-border shrink-0">
         <button
           onClick={() => setActiveTab('devices')}
           className={`flex items-center gap-1.5 pb-2 px-2 text-xs font-medium border-b-2 transition-all cursor-pointer ${
@@ -236,8 +236,8 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
                 }}
                 className={`flex flex-col justify-between p-2.5 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'border-l-2 border-l-primary border-primary/50 dark:bg-[#1e2632] bg-sky-50/70 shadow-sm'
-                    : 'dark:bg-[#161c24] bg-white border-slate-200/60 dark:border-[#222b38] hover:dark:bg-[#1c2430] hover:bg-slate-50'
+                    ? 'border-l-2 border-l-primary border-primary/50 bg-primary/10 shadow-sm'
+                    : 'bg-card border-border/60 hover:bg-muted'
                 }`}
               >
                 {/* Line 1: Semantic icon, Mono ID, Status badge, and Age */}
@@ -285,7 +285,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       </div>
 
       {/* 4. Sticky Footer with Navigation Link */}
-      <div className="p-2.5 px-3.5 border-t dark:border-[#222b38] border-slate-200 shrink-0 dark:bg-[#121720]/90 bg-slate-50/90 flex items-center justify-between">
+      <div className="p-2.5 px-3.5 border-t border-border shrink-0 bg-card/90 flex items-center justify-between">
         {activeTab === 'devices' ? (
           <Link
             to="/assets/inventory"

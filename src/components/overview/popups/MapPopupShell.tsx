@@ -90,7 +90,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
         role="dialog"
         aria-modal="false"
         aria-label={`${typeChip} ${id} details`}
-        className={`pointer-events-auto fixed bottom-0 left-0 right-0 max-h-[52vh] z-40 flex flex-col rounded-t-2xl border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/98 bg-white/98 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in slide-in-from-bottom duration-200 ${className}`}
+        className={`pointer-events-auto fixed bottom-0 left-0 right-0 max-h-[52vh] z-40 flex flex-col rounded-t-2xl border-t border-border bg-popover/98 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in slide-in-from-bottom duration-200 ${className}`}
       >
         {/* Drag handle */}
         <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30 mx-auto my-2.5 shrink-0" />
@@ -104,7 +104,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
         )}
 
         {/* 1. Header (44px) */}
-        <div className="flex items-center justify-between h-[44px] px-4 border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/80 bg-slate-50/80 shrink-0 z-10">
+        <div className="flex items-center justify-between h-[44px] px-4 border-b border-border bg-card/80 shrink-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
             <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider border font-sans ${chipColorClass}`}>
               {typeChip}
@@ -138,7 +138,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
 
         {/* 3. Footer */}
         {footerActions && (
-          <div className="p-3.5 border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/95 bg-slate-50/95 flex items-center justify-between gap-3 shrink-0 z-10">
+          <div className="p-3.5 border-t border-border bg-card/95 flex items-center justify-between gap-3 shrink-0 z-10">
             {footerActions}
           </div>
         )}
@@ -154,19 +154,19 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       style={style}
       className={`pointer-events-auto absolute z-40 ${
         isTabletLandscape ? 'w-[340px]' : 'w-[320px] sm:w-[380px]'
-      } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
+      } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
     >
       {/* Visual Tail pointing to marker */}
       {side === 'top' && !unlocated && (
         <div
           style={{ left: `${tailOffset}px` }}
-          className="absolute -bottom-2 -translate-x-1/2 w-4 h-4 rotate-45 border-r border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23] bg-white pointer-events-none"
+          className="absolute -bottom-2 -translate-x-1/2 w-4 h-4 rotate-45 border-r border-b border-border bg-popover pointer-events-none"
         />
       )}
       {side === 'bottom' && !unlocated && (
         <div
           style={{ left: `${tailOffset}px` }}
-          className="absolute -top-2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#141b23] bg-white pointer-events-none"
+          className="absolute -top-2 -translate-x-1/2 w-4 h-4 rotate-45 border-l border-t border-border bg-popover pointer-events-none"
         />
       )}
 
@@ -179,7 +179,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       )}
 
       {/* 1. Sticky Non-Overlapping Header (Strict 44px height) */}
-      <div className="flex items-center justify-between h-[44px] px-3.5 border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/80 bg-slate-50/80 shrink-0 z-10">
+      <div className="flex items-center justify-between h-[44px] px-3.5 border-b border-border bg-card/80 shrink-0 z-10">
         <div className="flex items-center gap-2 min-w-0">
           {/* Type Chip */}
           <span
@@ -227,7 +227,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
 
       {/* 3. Sticky Non-Overlapping Footer (Never covers body content) */}
       {footerActions && (
-        <div className="p-3 border-t dark:border-[#2a323d] border-slate-200 dark:bg-[#121720]/90 bg-slate-50/90 flex items-center justify-between gap-2 shrink-0 z-10">
+        <div className="p-3 border-t border-border bg-card/90 flex items-center justify-between gap-2 shrink-0 z-10">
           {footerActions}
         </div>
       )}

@@ -72,7 +72,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
       </div>
 
       {/* 2. Hardware Identifiers & Telemetry Grid */}
-      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 text-xs">
+      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block">Device ID</span>
           <span className="font-mono font-medium text-primary">{entity.id}</span>
@@ -98,7 +98,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
       </div>
 
       {/* 3. Asset & Site Installation Location */}
-      <div className="p-2.5 rounded-lg bg-black/5 dark:bg-black/15 border dark:border-[#2a323d]/60 border-slate-200/60 space-y-2 text-xs">
+      <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-2 text-xs">
         {/* Installed on Pole */}
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
@@ -117,13 +117,13 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
         </div>
 
         {/* Site Location */}
-        <div className="flex items-center justify-between border-t dark:border-white/5 border-slate-200/40 pt-1.5">
+        <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
           <span className="text-muted-foreground text-[11px]">Site name</span>
           <span className="text-foreground text-[11px] truncate max-w-[180px]">{siteName}</span>
         </div>
 
         {/* Surge / Physical Protection */}
-        <div className="flex items-center justify-between border-t dark:border-white/5 border-slate-200/40 pt-1.5">
+        <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
           <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
             <Shield className="size-3 text-muted-foreground/70" />
             Protection
@@ -133,7 +133,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
       </div>
 
       {/* 4. Events Captured Summary */}
-      <div className="flex items-center justify-between p-2 rounded-lg bg-black/5 dark:bg-black/15 text-xs">
+      <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-xs">
         <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
           <AlertTriangle className="size-3.5 text-amber-500/80" />
           Recorded events
@@ -153,7 +153,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
       </div>
 
       {/* 5. Footer Actions */}
-      <div className="pt-2 border-t dark:border-[#2a323d] border-slate-200 flex items-center justify-between gap-2">
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
         <Link
           to={`/inventory?device=${entity.id}`}
           onClick={onClose}
@@ -167,7 +167,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
           size="sm"
           variant="outline"
           onClick={() => selectEntity('pole', poleId, { fly: true })}
-          className="h-7 text-xs px-2.5 gap-1 border-slate-300 dark:border-[#2a323d] cursor-pointer"
+          className="h-7 text-xs px-2.5 gap-1 border-border cursor-pointer"
         >
           <Navigation className="size-3 text-primary" />
           <span>Open pole on map</span>

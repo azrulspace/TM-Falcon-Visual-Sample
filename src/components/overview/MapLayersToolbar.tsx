@@ -118,7 +118,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
     <div
       className={`pointer-events-auto flex items-center ${
         isTablet ? 'h-[56px] px-1.5 py-1.5 gap-1.5' : 'h-[42px] px-1 py-1 gap-1'
-      } rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors select-none overflow-x-auto no-scrollbar max-w-[calc(100vw-32px)] ${className}`}
+      } rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors select-none overflow-x-auto no-scrollbar max-w-[calc(100vw-32px)] ${className}`}
       data-testid="map-layers-toolbar"
       data-name="Map layers toolbar"
       role="toolbar"
@@ -138,7 +138,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
                       className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                         infoSheetOpen
                           ? 'bg-primary text-primary-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                       }`}
                     >
                       <Info className={iconSizeClass} />
@@ -172,7 +172,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
                       className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                         infoPopoverOpen
                           ? 'bg-primary text-primary-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                       }`}
                     >
                       <Info className={iconSizeClass} />
@@ -212,7 +212,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.sites
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <RadioTower className={iconSizeClass} />
@@ -237,7 +237,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.cableRoutes
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <Route className={iconSizeClass} />
@@ -262,7 +262,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.devices
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <CircleDot className={iconSizeClass} />
@@ -287,7 +287,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.cctv
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <Video className={iconSizeClass} />
@@ -312,7 +312,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.poles
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <Milestone className={iconSizeClass} />
@@ -337,7 +337,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
               className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                 activeLayers.events
                   ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-black/5 dark:hover:bg-white/5'
+                  : 'opacity-45 text-muted-foreground hover:opacity-80 hover:bg-muted'
               }`}
             >
               <ShieldAlert className={iconSizeClass} />
@@ -363,7 +363,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
                     className={`flex items-center justify-center rounded-lg transition-all cursor-pointer ${btnSizeClass} ${
                       layersPopoverOpen
                         ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     <Layers className={iconSizeClass} />

@@ -110,7 +110,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
       />
 
       {/* d. Key Facts (Two Columns: Detection & Captured By) */}
-      <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 text-xs">
+      <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
         {/* Left Column: Detection */}
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-[11px] text-muted-foreground">Detection</span>
@@ -144,7 +144,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
       </div>
 
       {/* e. Span Section (Collapsed by Default) */}
-      <div className="rounded-lg border dark:border-[#2a323d] border-slate-200/80 overflow-hidden bg-black/5 dark:bg-black/20">
+      <div className="rounded-lg border border-border overflow-hidden bg-muted/30">
         <button
           type="button"
           onClick={() => setSpanExpanded((prev: boolean) => !prev)}
@@ -166,7 +166,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
         </button>
 
         {spanExpanded && (
-          <div className="p-2.5 pt-1 border-t dark:border-[#2a323d] border-slate-200/60 space-y-2.5 text-xs animate-in fade-in duration-150">
+          <div className="p-2.5 pt-1 border-t border-border space-y-2.5 text-xs animate-in fade-in duration-150">
             {/* Chips */}
             <div className="flex flex-wrap items-center gap-1.5">
               <button

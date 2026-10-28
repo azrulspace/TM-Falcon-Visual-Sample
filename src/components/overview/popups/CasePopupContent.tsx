@@ -41,7 +41,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
       </div>
 
       {/* 2. Key Details Grid */}
-      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 text-xs">
+      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block">Case ID</span>
           <span className="font-mono font-medium text-purple-600 dark:text-purple-400">{entity.id}</span>
@@ -57,7 +57,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
         </div>
 
         {/* Source Event Link */}
-        <div className="col-span-2 border-t dark:border-white/5 border-slate-200/40 pt-1.5 flex items-center justify-between">
+        <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
             <ShieldAlert className="size-3 text-muted-foreground/70" />
             Source event
@@ -73,7 +73,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
 
         {/* Created Timestamp */}
         {c?.createdAt && (
-          <div className="col-span-2 border-t dark:border-white/5 border-slate-200/40 pt-1.5 flex items-center justify-between">
+          <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between">
             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Clock className="size-3 text-muted-foreground/70" />
               Created
@@ -86,7 +86,7 @@ export const CasePopupContent: React.FC<CasePopupContentProps> = ({ entity, onCl
       </div>
 
       {/* 3. Footer Action */}
-      <div className="pt-2 border-t dark:border-[#2a323d] border-slate-200 flex items-center justify-between gap-2">
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
         <Link
           to={`/cases?case=${entity.id}`}
           onClick={onClose}

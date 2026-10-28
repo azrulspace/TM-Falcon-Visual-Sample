@@ -360,7 +360,7 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                                 e.stopPropagation();
                                 navigate(`/events/${event.id}`);
                               }}
-                              className="font-mono text-xs font-semibold text-blue-600 dark:text-[#60a5fa] hover:underline cursor-pointer"
+                              className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer"
                               title={`Open ${event.id}`}
                             >
                               {formatId(event.id)}
@@ -680,7 +680,7 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
                         e.stopPropagation();
                         navigate(`/events/${event.id}`);
                       }}
-                      className="font-mono text-xs font-semibold text-blue-600 dark:text-[#60a5fa] hover:underline"
+                      className="font-mono text-xs font-semibold text-primary hover:underline"
                     >
                       {formatId(event.id)}
                     </span>

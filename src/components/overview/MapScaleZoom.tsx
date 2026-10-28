@@ -53,19 +53,19 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
           data-name="Map scale"
         >
           {/* Bar & Ticks */}
-          <div className="absolute top-[4px] left-0 w-[112px] h-[1.5px] dark:bg-[#d9e9db] bg-slate-800" />
-          <div className="absolute top-[0px] left-0 w-[1.5px] h-[8px] dark:bg-[#d9e9db] bg-slate-800" />
-          <div className="absolute top-[0px] left-[56px] w-[1.5px] h-[8px] dark:bg-[#d9e9db] bg-slate-800" />
-          <div className="absolute top-[0px] right-0 w-[1.5px] h-[8px] dark:bg-[#d9e9db] bg-slate-800" />
+          <div className="absolute top-[4px] left-0 w-[112px] h-[1.5px] bg-foreground/90" />
+          <div className="absolute top-[0px] left-0 w-[1.5px] h-[8px] bg-foreground/90" />
+          <div className="absolute top-[0px] left-[56px] w-[1.5px] h-[8px] bg-foreground/90" />
+          <div className="absolute top-[0px] right-0 w-[1.5px] h-[8px] bg-foreground/90" />
 
           {/* Labels: 0, 2.5, 5 km */}
-          <div className="absolute top-[10px] left-0 text-[10px] font-normal dark:text-[#e4ece8] text-slate-800 leading-none">
+          <div className="absolute top-[10px] left-0 text-[10px] font-normal text-foreground leading-none">
             0
           </div>
-          <div className="absolute top-[10px] left-[46px] -translate-x-1/2 text-[10px] font-normal dark:text-[#e4ece8] text-slate-800 leading-none">
+          <div className="absolute top-[10px] left-[46px] -translate-x-1/2 text-[10px] font-normal text-foreground leading-none">
             {midDistance}
           </div>
-          <div className="absolute top-[10px] right-0 text-[10px] font-normal dark:text-[#e4ece8] text-slate-800 leading-none">
+          <div className="absolute top-[10px] right-0 text-[10px] font-normal text-foreground leading-none">
             {maxDistance} km
           </div>
         </div>
@@ -73,22 +73,22 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
         {/* Zoom controls: Stacked 48px buttons in tablet mode, horizontal pill in desktop */}
         {isTablet ? (
           <div
-            className="flex flex-col gap-1.5 p-1 rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors"
+            className="flex flex-col gap-1.5 p-1 rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors"
             data-node-id="138:13849"
             data-name="Zoom controls tablet"
           >
             <button
               onClick={onZoomIn}
-              className="flex items-center justify-center size-12 rounded-lg text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center justify-center size-12 rounded-lg text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
               aria-label="Zoom In"
               title="Zoom In (+)"
             >
               <ZoomIn className="size-5 shrink-0" />
             </button>
-            <div className="h-px w-8 mx-auto dark:bg-[#2a323d] bg-slate-200 shrink-0" />
+            <div className="h-px w-8 mx-auto bg-border shrink-0" />
             <button
               onClick={onZoomOut}
-              className="flex items-center justify-center size-12 rounded-lg text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center justify-center size-12 rounded-lg text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
               aria-label="Zoom Out"
               title="Zoom Out (-)"
             >
@@ -97,14 +97,14 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
           </div>
         ) : (
           <div
-            className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-xl transition-colors"
+            className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors"
             data-node-id="138:13849"
             data-name="Zoom controls"
           >
             {/* Zoom In button */}
             <button
               onClick={onZoomIn}
-              className="flex items-center justify-center gap-1.5 w-[87px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 w-[87px] h-[32px] rounded-lg text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
               aria-label="Zoom In"
               title="Zoom In (+)"
             >
@@ -113,12 +113,12 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
             </button>
 
             {/* 1px divider */}
-            <div className="w-px h-[16px] dark:bg-[#2a323d] bg-slate-200 shrink-0" />
+            <div className="w-px h-[16px] bg-border shrink-0" />
 
             {/* Zoom Out button */}
             <button
               onClick={onZoomOut}
-              className="flex items-center justify-center gap-1.5 w-[98px] h-[32px] rounded-lg text-xs font-medium text-slate-700 dark:text-[#e2e7ef] hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 w-[98px] h-[32px] rounded-lg text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition-all cursor-pointer"
               aria-label="Zoom Out"
               title="Zoom Out (-)"
             >

@@ -118,22 +118,22 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
     <>
       <div
         style={{ width: '280px' }}
-        className="pointer-events-auto flex flex-col rounded-[12px] border dark:border-[#222b38] border-slate-200/90 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
+        className="pointer-events-auto flex flex-col rounded-[12px] border border-border bg-popover/95 backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
         data-node-id="138:13630"
         data-name="Incidents and attention"
       >
         {/* Header (42px) */}
         <div
-          className="flex items-center justify-between h-[42px] px-[15px] border-b dark:border-[#222b38] border-slate-200 shrink-0"
+          className="flex items-center justify-between h-[42px] px-[15px] border-b border-border shrink-0"
           data-node-id="138:13631"
           data-name="Incident panel header"
         >
-          <span className="text-[12px] font-semibold text-slate-800 dark:text-[#e2e7ef] tracking-tight">
+          <span className="text-[12px] font-semibold text-foreground tracking-tight">
             Incidents &amp; attention ({displayedIncidents.length})
           </span>
           <button
             onClick={() => setViewAllOpen(true)}
-            className="flex items-center gap-[5px] text-[10px] font-normal text-[#6c9cd8] hover:text-[#90b9ee] transition-colors cursor-pointer"
+            className="flex items-center gap-[5px] text-[10px] font-normal text-primary hover:text-primary/80 transition-colors cursor-pointer"
             data-node-id="132:10720"
             data-name="View all incidents"
           >
@@ -154,8 +154,8 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                 onClick={() => onSelectItem(incident.id)}
                 className={`flex flex-col justify-between h-[61px] p-2.5 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'dark:bg-[#1e2632] bg-sky-50/70 border-primary ring-1 ring-primary/40'
-                    : 'dark:bg-[#161c24] bg-white border-slate-200/60 dark:border-[#222b38] hover:dark:bg-[#1c2430] hover:bg-slate-50 shadow-xs'
+                    ? 'bg-primary/10 border-primary ring-1 ring-primary/40'
+                    : 'bg-card border-border/60 hover:bg-muted shadow-xs'
                 }`}
                 tabIndex={0}
                 role="button"
@@ -180,7 +180,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                     </div>
 
                     {/* Device ID (11px semibold font-mono) */}
-                    <span className="font-semibold text-xs dark:text-[#e2e7ef] text-slate-800 font-mono">
+                    <span className="font-semibold text-xs text-foreground font-mono">
                       {formatId(incident.id)}
                     </span>
 
@@ -189,7 +189,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                       className={`h-[18px] px-1.5 rounded flex items-center justify-center text-[10px] font-medium leading-none ${
                         isOffline
                           ? 'dark:bg-[#e33f50]/15 bg-[#e33f50]/10 text-[#e33f50] border border-[#e33f50]/30'
-                          : 'dark:bg-slate-700/50 bg-slate-200 text-slate-700 dark:text-slate-300'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                       data-name="Status badge"
                     >
@@ -200,7 +200,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                   {/* Age / Duration right-aligned */}
                   <span
                     className={`text-[10px] font-mono ${
-                      isOffline ? 'text-[#e33f50]' : 'dark:text-[#a3adbd] text-slate-500'
+                      isOffline ? 'text-[#e33f50]' : 'text-muted-foreground'
                     }`}
                   >
                     {incident.duration}
@@ -208,23 +208,23 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                 </div>
 
                 {/* Line 2: Type icon, Location - Cause, and right-aligned chevron */}
-                <div className="flex items-center justify-between w-full pl-0.5 text-xs text-slate-500 dark:text-[#a3adbd]">
+                <div className="flex items-center justify-between w-full pl-0.5 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5 min-w-0 truncate text-[11px]">
                     {incident.type === 'tower' ? (
-                      <RadioTower className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />
+                      <RadioTower className="size-3.5 shrink-0 text-muted-foreground" />
                     ) : (
-                      <Monitor className="size-3.5 shrink-0 text-slate-400 dark:text-[#8895a7]" />
+                      <Monitor className="size-3.5 shrink-0 text-muted-foreground" />
                     )}
-                    <span className="font-medium dark:text-slate-300 text-slate-700 truncate">
+                    <span className="font-medium text-foreground/90 truncate">
                       {incident.location}
                     </span>
-                    <span className="text-slate-400 dark:text-[#64748b]">•</span>
-                    <span className="truncate text-slate-500 dark:text-[#94a3b8]">
+                    <span className="text-muted-foreground/60">•</span>
+                    <span className="truncate text-muted-foreground">
                       {incident.issue}
                     </span>
                   </div>
 
-                  <ChevronRight className="size-3.5 text-slate-400 dark:text-[#718096] shrink-0" />
+                  <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
                 </div>
               </div>
             );
@@ -236,9 +236,9 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
       <Sheet open={viewAllOpen} onOpenChange={setViewAllOpen}>
         <SheetContent
           side="right"
-          className="p-0 sm:max-w-[460px] w-full border-l dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white text-foreground shadow-2xl h-full flex flex-col z-50"
+          className="p-0 sm:max-w-[460px] w-full border-l border-border bg-card text-foreground shadow-2xl h-full flex flex-col z-50"
         >
-          <SheetHeader className="p-4 border-b dark:border-[#2a323d] border-slate-200 flex flex-row items-center justify-between shrink-0">
+          <SheetHeader className="p-4 border-b border-border flex flex-row items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <ShieldAlert className="size-4 text-[#e33f50]" />
               <SheetTitle className="text-sm font-bold text-foreground">
@@ -261,7 +261,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                   onSelectItem(card.id);
                   setViewAllOpen(false);
                 }}
-                className="p-3.5 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#1a212c] bg-slate-50 hover:dark:bg-[#202937] hover:bg-slate-100 transition-all cursor-pointer"
+                className="p-3.5 rounded-xl border border-border bg-muted/40 hover:bg-muted transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">

@@ -50,7 +50,7 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
       </div>
 
       {/* 2. Location & Infrastructure Details */}
-      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 text-xs">
+      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block">Asset ID</span>
           <span className="font-mono font-medium text-emerald-400">{entity.id}</span>
@@ -59,7 +59,7 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
           <span className="text-[10px] text-muted-foreground block">Surge protection</span>
           <span className="text-muted-foreground text-[11px] italic">{protection}</span>
         </div>
-        <div className="col-span-2 border-t dark:border-white/5 border-slate-200/40 pt-1.5">
+        <div className="col-span-2 border-t border-border/40 pt-1.5">
           <span className="text-[10px] text-muted-foreground block">Coordinates</span>
           {coords ? (
             <span className="font-mono text-muted-foreground text-[11px]">
@@ -106,7 +106,7 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
                 key={d.id}
                 type="button"
                 onClick={() => selectEntity('device', d.id, { fly: true })}
-                className="w-full flex items-center justify-between p-1.5 rounded-lg border dark:border-[#2a323d] border-slate-200/60 dark:bg-black/15 bg-slate-50/50 hover:border-primary/50 text-xs transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between p-1.5 rounded-lg border border-border bg-muted/30 hover:border-primary/50 text-xs transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Camera className="size-3 text-primary shrink-0" />
@@ -133,7 +133,7 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
       </div>
 
       {/* 5. Footer Actions */}
-      <div className="pt-2 border-t dark:border-[#2a323d] border-slate-200 flex items-center justify-between gap-2">
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
         <Link
           to={`/inventory?asset=${entity.id}`}
           onClick={onClose}

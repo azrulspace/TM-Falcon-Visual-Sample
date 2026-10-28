@@ -219,7 +219,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
     <footer
       className={`w-full ${
         isTabletPortrait ? 'min-h-[96px] py-2.5 flex-col justify-between gap-2.5' : 'h-[56px] items-center justify-between'
-      } shrink-0 px-4 md:px-6 flex gap-3 select-none dark:bg-[#10151c] bg-white border-t dark:border-[#2a323d] border-slate-200 z-30 transition-colors ${className}`}
+      } shrink-0 px-4 md:px-6 flex gap-3 select-none bg-card border-t border-border z-30 transition-colors ${className}`}
       data-testid="docked-time-bar"
       role="region"
       aria-label="Time navigation and live clock"
@@ -243,7 +243,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
           </Tooltip>
 
           {/* Mode Segmented Control: Active now vs History */}
-          <div className={`bg-slate-100 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200 p-0.5 flex ${buttonHeightClass} items-center rounded-lg overflow-hidden shrink-0`}>
+          <div className={`bg-muted/60 border border-border p-0.5 flex ${buttonHeightClass} items-center rounded-lg overflow-hidden shrink-0`}>
             {/* Active now button */}
             <button
               type="button"
@@ -282,7 +282,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <button className="border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white flex items-center justify-between h-[30px] px-2.5 rounded-md text-xs text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none cursor-pointer">
+                  <button className="border border-border bg-popover flex items-center justify-between h-[30px] px-2.5 rounded-md text-xs text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none cursor-pointer">
                     <CalendarDays className="size-3 text-muted-foreground mr-1.5 shrink-0" />
                     <span className="truncate">{historyRange}</span>
                     <ChevronDown className="size-3 text-muted-foreground ml-1.5 shrink-0" />
@@ -323,7 +323,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
               render={
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3 h-[44px] rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 h-[44px] rounded-full border border-border bg-popover hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer"
                   title="Telemetry connection status"
                 >
                   <span className="relative flex size-2.5">
@@ -394,7 +394,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
           }`}
         >
           {/* Base Horizontal Track Axis */}
-          <div className="absolute left-[2%] right-[2%] top-1/2 -translate-y-1/2 h-px bg-border/80 dark:bg-border" />
+          <div className="absolute left-[2%] right-[2%] top-1/2 -translate-y-1/2 h-px bg-border" />
 
           {/* 25 Small Ticks Across Track */}
           {Array.from({ length: 25 }, (_, idx) => (
@@ -507,7 +507,7 @@ export const TimeBar: React.FC<TimeBarProps> = ({
               render={
                 <button
                   type="button"
-                  className={`flex items-center gap-1.5 ${isTablet ? 'h-[44px] px-3' : 'px-2.5 py-1'} rounded-full border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#151a22] bg-white hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer`}
+                  className={`flex items-center gap-1.5 ${isTablet ? 'h-[44px] px-3' : 'px-2.5 py-1'} rounded-full border border-border bg-popover hover:bg-muted/50 transition-colors text-xs font-medium cursor-pointer`}
                   title="Telemetry connection status"
                 >
                   <span className="relative flex size-2">

@@ -74,7 +74,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
       >
         {/* ================= SLOT 1: Needs Attention ================= */}
         {activePanel === 'attention' && !isTabletPortrait ? (
-          <div className="pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
+          <div className="pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border border-border bg-popover/95 backdrop-blur-md">
             {renderAttentionPanel ? (
               renderAttentionPanel()
             ) : (
@@ -100,7 +100,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
                   aria-expanded={isAttentionActive}
                   aria-controls="needs-attention-panel"
                   aria-label={`Needs attention (${attentionCount})`}
-                  className={`pointer-events-auto relative ${buttonSizeClass} rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/90 bg-white/90 backdrop-blur-md shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-180 cursor-pointer ${
+                  className={`pointer-events-auto relative ${buttonSizeClass} rounded-xl border border-border bg-popover/90 backdrop-blur-md shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-180 cursor-pointer ${
                     isAttentionActive
                       ? 'ring-2 ring-amber-500/80 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
                       : 'text-muted-foreground hover:text-foreground'
@@ -110,11 +110,11 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
                     className={`${isTablet ? 'size-5' : 'size-4'} ${
                       isAttentionActive
                         ? 'text-amber-500 dark:text-amber-400'
-                        : 'text-slate-300 dark:text-slate-200'
+                        : 'text-muted-foreground'
                     }`}
                   />
                   {attentionCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e33f50] text-white text-[10px] font-bold font-mono flex items-center justify-center shadow-md border-2 dark:border-[#141b23] border-white">
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#e33f50] text-white text-[10px] font-bold font-mono flex items-center justify-center shadow-md border-2 border-background">
                       {attentionCount}
                     </span>
                   )}
@@ -129,7 +129,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
 
         {/* ================= SLOT 2: Assets and Devices ================= */}
         {activePanel === 'assets' && !isTabletPortrait ? (
-          <div className="pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border dark:border-[#222b38] border-slate-200 dark:bg-[#141b23]/95 bg-white/95 backdrop-blur-md">
+          <div className="pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] flex flex-col animate-in fade-in-50 zoom-in-95 duration-180 motion-reduce:duration-0 shadow-2xl rounded-xl overflow-hidden border border-border bg-popover/95 backdrop-blur-md">
             {renderAssetsPanel ? (
               renderAssetsPanel()
             ) : (
@@ -147,14 +147,14 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
                   aria-expanded={isAssetsActive}
                   aria-controls="assets-and-devices-panel"
                   aria-label={`Assets and devices (${assetsCount})`}
-                  className={`pointer-events-auto relative ${buttonSizeClass} rounded-xl border dark:border-[#2a323d] border-slate-200/90 dark:bg-[#141b23]/90 bg-white/90 backdrop-blur-md shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-180 cursor-pointer ${
+                  className={`pointer-events-auto relative ${buttonSizeClass} rounded-xl border border-border bg-popover/90 backdrop-blur-md shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-180 cursor-pointer ${
                     isAssetsActive
                       ? 'ring-2 ring-primary/80 border-primary/50 shadow-[0_0_15px_rgba(59,130,246,0.25)]'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Layers className={`${isTablet ? 'size-5' : 'size-4'} text-primary`} />
-                  <span className="absolute -top-1.5 -right-2 min-w-[20px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold font-mono flex items-center justify-center shadow-md border-2 dark:border-[#141b23] border-white">
+                  <span className="absolute -top-1.5 -right-2 min-w-[20px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold font-mono flex items-center justify-center shadow-md border-2 border-background">
                     {assetsCount}
                   </span>
                 </button>
@@ -170,7 +170,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
       {/* Portrait Tablet Drawer Mode for Active Panel */}
       {isTabletPortrait && activePanel === 'attention' && (
         <Sheet open={true} onOpenChange={(open) => { if (!open) handleCloseAttention(); }}>
-          <SheetContent side="bottom" className="p-0 max-h-[75vh] flex flex-col rounded-t-2xl overflow-hidden border-t dark:border-[#2a323d] border-slate-200 shadow-2xl">
+          <SheetContent side="bottom" className="p-0 max-h-[75vh] flex flex-col rounded-t-2xl overflow-hidden border-t border-border shadow-2xl">
             <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30 mx-auto my-2.5 shrink-0" />
             <div className="flex-1 overflow-y-auto min-h-0">
               {renderAttentionPanel ? (
@@ -185,7 +185,7 @@ export const FloatingIconStack: React.FC<FloatingIconStackProps> = ({
 
       {isTabletPortrait && activePanel === 'assets' && (
         <Sheet open={true} onOpenChange={(open) => { if (!open) handleCloseAssets(); }}>
-          <SheetContent side="bottom" className="p-0 max-h-[75vh] flex flex-col rounded-t-2xl overflow-hidden border-t dark:border-[#2a323d] border-slate-200 shadow-2xl">
+          <SheetContent side="bottom" className="p-0 max-h-[75vh] flex flex-col rounded-t-2xl overflow-hidden border-t border-border shadow-2xl">
             <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30 mx-auto my-2.5 shrink-0" />
             <div className="flex-1 overflow-y-auto min-h-0">
               {renderAssetsPanel ? (

@@ -1043,19 +1043,19 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             left: `${Math.min(hoverRoutePos.x + 16, (containerSize.width || 1200) - 280)}px`,
             top: `${Math.min(hoverRoutePos.y - 30, (containerSize.height || 700) - 120)}px`,
           }}
-          className="absolute z-40 w-64 rounded-lg border border-[#2a323d] bg-[#151a22]/95 p-3 text-white shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in-50 duration-150 select-none"
+          className="absolute z-40 w-64 rounded-lg border border-border bg-popover/95 p-3 text-foreground shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in-50 duration-150 select-none"
         >
-          <div className="flex items-center justify-between border-b border-[#2a323d] pb-1.5 mb-2">
+          <div className="flex items-center justify-between border-b border-border pb-1.5 mb-2">
             <span className="font-mono text-xs font-bold text-sky-400">{hoveredRoute.id}</span>
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">
               ACTIVE
             </span>
           </div>
           <div className="space-y-1 text-xs">
-            <div className="text-[11px] text-slate-300 font-medium">{hoveredRoute.type}</div>
-            <div className="flex justify-between text-slate-400 text-[11px] pt-1">
+            <div className="text-[11px] text-foreground/90 font-medium">{hoveredRoute.type}</div>
+            <div className="flex justify-between text-muted-foreground text-[11px] pt-1">
               <span>Length:</span>
-              <span className="font-mono text-white font-medium">{hoveredRoute.length}</span>
+              <span className="font-mono text-foreground font-medium">{hoveredRoute.length}</span>
             </div>
             <div className="text-[10.5px] text-emerald-400 pt-0.5 flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1146,7 +1146,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
       {/* Layer Auto-On Toast Notification */}
       {toastNotification && (
-        <div className="absolute top-6 left-6 z-50 bg-[#141b23]/95 border border-primary/40 text-foreground px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
+        <div className="absolute top-6 left-6 z-50 bg-popover/95 border border-primary/40 text-foreground px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
           <span className="size-2 rounded-full bg-primary animate-pulse" />
           <span>{toastNotification}</span>
         </div>

@@ -55,7 +55,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
       </div>
 
       {/* 2. Endpoint Assets Route Strip */}
-      <div className="p-2.5 rounded-lg bg-black/10 dark:bg-black/25 border dark:border-[#2a323d] border-slate-200/80 space-y-2 text-xs">
+      <div className="p-2.5 rounded-lg bg-muted/40 border border-border space-y-2 text-xs">
         <span className="text-[10px] text-muted-foreground block font-semibold">
           Span Endpoints
         </span>
@@ -64,7 +64,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
           <button
             type="button"
             onClick={() => selectEntity('pole', startPoleId, { fly: true })}
-            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-500 transition-colors cursor-pointer"
+            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border border-border bg-card hover:border-emerald-500 transition-colors cursor-pointer"
           >
             <MapPin className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-semibold text-foreground truncate">
@@ -78,7 +78,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
           <button
             type="button"
             onClick={() => selectEntity('pole', endPoleId, { fly: true })}
-            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border dark:border-[#2a323d] border-slate-200 dark:bg-black/20 bg-white hover:border-emerald-500 transition-colors cursor-pointer"
+            className="flex-1 flex items-center gap-1.5 p-1.5 rounded-md border border-border bg-card hover:border-emerald-500 transition-colors cursor-pointer"
           >
             <MapPin className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-semibold text-foreground truncate">
@@ -101,7 +101,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
                 key={d.id}
                 type="button"
                 onClick={() => selectEntity('device', d.id, { fly: true })}
-                className="w-full flex items-center justify-between p-1.5 rounded-lg border dark:border-[#2a323d] border-slate-200/60 dark:bg-black/15 bg-slate-50/50 hover:border-primary/50 text-xs transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between p-1.5 rounded-lg border border-border bg-muted/30 hover:border-primary/50 text-xs transition-colors cursor-pointer"
               >
                 <span className="font-mono font-medium text-foreground">{formatId(d.id)}</span>
                 <span className="text-[10px] text-muted-foreground">({d.type})</span>
@@ -114,7 +114,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
       </div>
 
       {/* 4. Events Recorded */}
-      <div className="flex items-center justify-between p-2 rounded-lg bg-black/5 dark:bg-black/15 text-xs">
+      <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-xs">
         <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
           <AlertTriangle className="size-3.5 text-amber-500/80" />
           Recorded incidents
@@ -134,7 +134,7 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
       </div>
 
       {/* 5. Footer Actions */}
-      <div className="pt-2 border-t dark:border-[#2a323d] border-slate-200 flex items-center justify-between gap-2">
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
         <Link
           to={`/inventory?asset=${entity.id}`}
           onClick={onClose}
