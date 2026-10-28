@@ -250,12 +250,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     <Tooltip.Provider delayDuration={150}>
       <div className="flex flex-col h-[100dvh] w-full min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-background text-foreground">
         {/* Header adhering strictly to Section 5.1 (Single toggle, brand, search, notifications, live data, MYT clock, location, avatar) */}
-        <header className="h-[60px] border-b dark:border-[#2a323d] border-slate-200 dark:bg-[#10151c] bg-white flex items-center justify-between px-4 sm:px-6 z-30 shrink-0 select-none gap-4 transition-colors">
+        <header className="h-[60px] border-b border-border bg-card flex items-center justify-between px-4 sm:px-6 z-30 shrink-0 select-none gap-4 transition-colors">
           {/* Left: TM Logo & Single Sidebar Toggle */}
           <div className="flex items-center gap-3 shrink-0">
             <Link to="/overview" className="flex items-center gap-2.5" aria-label="Falcon Overview">
               <Logo className="h-6 w-auto" markOnly={true} />
-              <span className="text-base font-bold text-slate-900 dark:text-[#ecf0f5] tracking-tight hidden sm:inline">
+              <span className="text-base font-bold text-foreground tracking-tight hidden sm:inline">
                 FALCON
               </span>
             </Link>
@@ -272,7 +272,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       handleToggleSidebar();
                     }
                   }}
-                  className="flex items-center justify-center size-8 rounded-lg text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors cursor-pointer"
+                  className="flex items-center justify-center size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                   aria-label="Toggle sidebar navigation"
                   title="Toggle sidebar"
                 >
@@ -293,15 +293,15 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="w-[280px] sm:w-[320px] h-[36px] px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] flex items-center justify-between text-xs text-slate-500 dark:text-[#a3adbd] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary shadow-xs cursor-pointer"
+                className="w-[280px] sm:w-[320px] h-[36px] px-3 rounded-lg border border-border bg-popover hover:bg-muted/80 flex items-center justify-between text-xs text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary shadow-xs cursor-pointer"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <Search className="size-3.5 shrink-0 text-slate-400 dark:text-[#a3adbd]" />
-                  <span className="text-xs text-slate-500 dark:text-[#a3adbd] font-normal truncate">
+                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground font-normal truncate">
                     Search segments, devices, assets...
                   </span>
                 </div>
-                <kbd className="h-5 min-w-[20px] px-1.5 border dark:border-[#2a323d] border-slate-200 rounded flex items-center justify-center text-[10px] font-mono text-slate-500 dark:text-[#778394] dark:bg-[#10151c] bg-slate-100">
+                <kbd className="h-5 min-w-[20px] px-1.5 border border-border rounded flex items-center justify-center text-[10px] font-mono text-muted-foreground bg-muted">
                   /
                 </kbd>
               </button>
@@ -315,7 +315,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="size-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1c232e] text-slate-500 dark:text-[#a3adbd] cursor-pointer"
+                className="size-8 rounded-lg flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                 aria-label="Search"
               >
                 <Search className="size-4" />
@@ -327,12 +327,12 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <PopoverTrigger render={
                 <button
                   type="button"
-                  className="relative size-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors cursor-pointer"
+                  className="relative size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                   aria-label="Notifications"
                 >
                   <Bell className="size-4" />
                   {unreadNotifications > 0 && (
-                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 dark:ring-[#10151c] ring-white" />
+                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-card" />
                   )}
                 </button>
               } />
@@ -384,7 +384,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <DropdownMenuTrigger render={
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 h-8 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1c232e] text-xs font-medium text-slate-700 dark:text-[#ecf0f5] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 h-8 px-2 rounded-lg hover:bg-muted text-xs font-medium text-foreground transition-colors cursor-pointer"
                   aria-label="Live data stream status"
                 >
                   <span className="relative flex size-2">
@@ -430,19 +430,19 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             </DropdownMenu>
 
             {/* MYT Real-time Clock */}
-            <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono text-slate-600 dark:text-[#a3adbd] bg-slate-100/60 dark:bg-[#151a22] border dark:border-[#2a323d] border-slate-200/80">
+            <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono text-muted-foreground bg-muted/60 border border-border">
               <Clock className="size-3 text-muted-foreground" />
               <span>{currentTime}</span>
             </div>
             {/* Location Selector Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="flex items-center gap-2 h-9 px-3 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 hover:bg-slate-100 dark:hover:bg-[#1c232e] text-xs font-medium text-slate-800 dark:text-[#ecf0f5] transition-colors cursor-pointer select-none"
+                className="flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition-colors cursor-pointer select-none"
                 aria-label="Select location"
               >
-                <MapPin className="size-3.5 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+                <MapPin className="size-3.5 text-muted-foreground shrink-0" />
                 <span className="truncate max-w-[150px] sm:max-w-none">{selectedLocation}</span>
-                <ChevronDown className="size-3 text-slate-400 dark:text-[#a3adbd] shrink-0" />
+                <ChevronDown className="size-3 text-muted-foreground shrink-0" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
                 <DropdownMenuGroup>
@@ -467,13 +467,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             {/* User Profile Avatar with dropdown (appearance, admin, tablet mode, logout) */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="flex items-center gap-1.5 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1c232e] transition-colors focus-visible:outline-none cursor-pointer select-none"
+                className="flex items-center gap-1.5 p-1 rounded-md hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer select-none"
                 aria-label="User account menu"
               >
                 <div className="size-8 rounded-full bg-[#581c87] dark:bg-[#6b21a8] text-white flex items-center justify-center text-xs font-semibold shadow-xs">
                   A
                 </div>
-                <ChevronDown className="size-3 text-slate-400 dark:text-[#bdc5d1]" />
+                <ChevronDown className="size-3 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground z-50">
                 <div className="px-2 py-1.5 border-b border-border">
@@ -660,7 +660,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           {!isTabletPortrait && (
             <aside
               style={{ width: isTabletLandscape ? '80px' : (sidebarMinimized ? '72px' : '264px') }}
-              className="dark:bg-[#151a22] bg-white border-r dark:border-[#2a323d] border-slate-200 hidden lg:flex flex-col shrink-0 h-full max-h-full transition-all duration-200 z-30 select-none relative"
+              className="bg-sidebar border-r border-sidebar-border hidden lg:flex flex-col shrink-0 h-full max-h-full transition-all duration-200 z-30 select-none relative"
               onMouseLeave={handleRailMouseLeave}
             >
 
@@ -670,7 +670,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 {navigationConfig.map((sec) => (
                   <div key={sec.id} className="flex flex-col gap-1">
                     {!sidebarMinimized && !isTabletLandscape && (
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#778394] px-2.5 mt-2 mb-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-2.5 mt-2 mb-0.5">
                         {sec.label}
                       </div>
                     )}
@@ -689,10 +689,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             key={item.id}
                             className={`flex flex-col items-center justify-center h-[56px] w-full px-1 py-1 rounded-[8px] cursor-pointer text-xs font-medium transition-all relative ${
                               isLeafActive
-                                ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
+                                ? 'bg-primary/15 text-primary font-semibold shadow-xs'
                                 : isParentActive
-                                ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
-                                : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                ? 'text-foreground hover:bg-muted/60'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                             }`}
                             onClick={(e) => {
                               if (hasChildren) {
@@ -712,7 +712,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             }}
                           >
                             {isLeafActive && (
-                              <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
+                              <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r-[6px]" />
                             )}
                             <item.icon className="size-5 shrink-0" />
                             <span className="text-[11px] leading-tight text-center truncate max-w-[72px] mt-0.5">
@@ -734,10 +734,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                   sidebarMinimized ? 'justify-center' : 'justify-between'
                                 } ${
                                   isLeafActive
-                                    ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold shadow-xs'
+                                    ? 'bg-primary/15 text-primary font-semibold shadow-xs'
                                     : isParentActive
-                                    ? 'text-slate-900 dark:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
-                                    : 'text-slate-500 dark:text-[#a3adbd] hover:text-slate-900 dark:hover:text-[#e2e7ef] hover:bg-slate-100 dark:hover:bg-[#1e2632]'
+                                    ? 'text-foreground hover:bg-muted/60'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                                 } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary`}
                                 onClick={() => {
                                   if (hasChildren && !sidebarMinimized) {
@@ -763,9 +763,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                               >
                                 {/* Active blue accent bar on left edge */}
                                 {isLeafActive && (
-                                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#2f6fed] rounded-r-[6px]" />
+                                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary rounded-r-[6px]" />
                                 )}
-                                <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-blue-600 dark:text-[#60a5fa]' : isParentActive ? 'text-primary' : 'text-[#a3adbd]'}`} />
+                                <item.icon className={`size-5 shrink-0 ${isLeafActive ? 'text-primary' : isParentActive ? 'text-primary' : 'text-muted-foreground'}`} />
                                 {!sidebarMinimized && <span className="truncate">{item.label}</span>}
 
                                 {!sidebarMinimized && (
@@ -793,7 +793,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                 <Tooltip.Content
                                   side="right"
                                   sideOffset={14}
-                                  className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
+                                  className="bg-popover text-popover-foreground border border-border shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
                                 >
                                   <span>{item.label}</span>
                                   {item.badge !== undefined && (
@@ -808,7 +808,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                           {/* Expanded Children Tree (Up to 3 levels) */}
                           {!sidebarMinimized && hasChildren && isExpanded && (
-                            <div className="ml-4 pl-3 border-l border-[#2a323d] flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
+                            <div className="ml-4 pl-3 border-l border-border/80 flex flex-col gap-1 my-1 animate-in fade-in-50 duration-150">
                               {item.children?.map((child) => {
                                 const isChildActive = location.pathname === child.route;
                                 const hasGrandChildren = child.children && child.children.length > 0;
@@ -818,14 +818,14 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                     <div
                                       className={`flex items-center justify-between px-2 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
                                         isChildActive
-                                          ? 'bg-blue-500/15 dark:bg-[#2f6fed]/20 text-blue-600 dark:text-[#60a5fa] font-semibold'
-                                          : 'text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]'
+                                          ? 'bg-primary/15 text-primary font-semibold'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                                       }`}
                                       onClick={() => navigate(child.route)}
                                     >
                                       <span className="truncate">{child.label}</span>
                                       {child.badge !== undefined && (
-                                        <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-[#1c232e] text-[#a3adbd]">
+                                        <span className="px-1 py-0.2 rounded text-[10px] font-mono bg-muted text-muted-foreground">
                                           {child.badge}
                                         </span>
                                       )}
@@ -833,7 +833,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
                                     {/* 3rd Level Indentation */}
                                     {hasGrandChildren && (
-                                      <div className="ml-3 pl-2 border-l border-[#2a323d]/60 flex flex-col gap-0.5 my-0.5">
+                                      <div className="ml-3 pl-2 border-l border-border/60 flex flex-col gap-0.5 my-0.5">
                                         {child.children?.map((grandChild) => {
                                           const isGrandActive = location.pathname === grandChild.route;
                                           return (
@@ -842,13 +842,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                                               className={`px-2 py-1 text-[11px] rounded cursor-pointer transition-colors flex items-center justify-between ${
                                                 isGrandActive
                                                   ? 'text-primary font-semibold'
-                                                  : 'text-[#a3adbd] hover:text-[#e2e7ef]'
+                                                  : 'text-muted-foreground hover:text-foreground'
                                               }`}
                                               onClick={() => navigate(grandChild.route)}
                                             >
                                               <span className="truncate">{grandChild.label}</span>
                                               {grandChild.badge !== undefined && (
-                                                <span className="text-[10px] font-mono text-[#a3adbd]">
+                                                <span className="text-[10px] font-mono text-muted-foreground">
                                                   {grandChild.badge}
                                                 </span>
                                               )}
@@ -946,10 +946,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               )}
 
               {/* Bottom Log out button */}
-              <div className="p-3 border-t border-[#2a323d] mt-auto shrink-0">
+              <div className="p-3 border-t border-border mt-auto shrink-0">
                 {isTabletLandscape ? (
                   <div
-                    className="flex flex-col items-center justify-center h-[56px] w-full rounded-lg cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632]"
+                    className="flex flex-col items-center justify-center h-[56px] w-full rounded-lg cursor-pointer text-xs font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-muted"
                     onClick={handleLogout}
                     role="button"
                     tabIndex={0}
@@ -961,7 +961,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <div
-                        className={`flex items-center gap-3 px-3 h-10 rounded-md cursor-pointer text-xs font-medium transition-all text-[#a3adbd] hover:text-[#e2e7ef] hover:bg-[#1e2632] ${
+                        className={`flex items-center gap-3 px-3 h-10 rounded-md cursor-pointer text-xs font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-muted ${
                           sidebarMinimized ? 'justify-center' : ''
                         }`}
                         onClick={handleLogout}
@@ -980,7 +980,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                         <Tooltip.Content
                           side="right"
                           sideOffset={14}
-                          className="bg-[#151a22] text-[#e2e7ef] border border-[#2a323d] shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
+                          className="bg-popover text-popover-foreground border border-border shadow-xl px-2.5 py-1 rounded text-xs z-50 font-medium"
                         >
                           <span>Log out</span>
                         </Tooltip.Content>

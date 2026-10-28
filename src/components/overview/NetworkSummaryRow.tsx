@@ -60,7 +60,7 @@ export const NetworkSummaryRow: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`w-full h-11 shrink-0 dark:bg-[#0c1017] bg-white border-b dark:border-[#1e2633] border-slate-200 px-6 flex items-center justify-between z-20 select-none overflow-x-auto no-scrollbar transition-colors ${
+      className={`w-full h-11 shrink-0 bg-card border-b border-border px-6 flex items-center justify-between z-20 select-none overflow-x-auto no-scrollbar transition-colors ${
         isShimmering ? 'opacity-80 animate-pulse' : ''
       }`}
       data-node-id="138:13178"
@@ -77,15 +77,15 @@ export const NetworkSummaryRow: React.FC = () => {
               aria-pressed={summaryFilter === 'events'}
               className={`flex items-center gap-2 py-1 px-2.5 rounded-md transition-all cursor-pointer ${
                 summaryFilter === 'events'
-                  ? 'dark:bg-sky-500/15 bg-sky-500/10 ring-1 ring-sky-500/50 shadow-sm'
-                  : 'hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-sky-500/15 ring-1 ring-sky-500/50 shadow-sm'
+                  : 'hover:bg-muted'
               }`}
             >
               <span className="size-2 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.7)] shrink-0" />
-              <span className="text-[14px] font-bold dark:text-[#e2e7ef] text-slate-900 font-sans tabular-nums">
+              <span className="text-[14px] font-bold text-foreground font-sans tabular-nums">
                 {eventsCount}
               </span>
-              <span className="text-[13px] dark:text-[#a3adbd] text-slate-500 font-normal">
+              <span className="text-[13px] text-muted-foreground font-normal">
                 Events
               </span>
             </button>
@@ -104,15 +104,15 @@ export const NetworkSummaryRow: React.FC = () => {
               aria-pressed={summaryFilter === 'cases'}
               className={`flex items-center gap-2 py-1 px-2.5 rounded-md transition-all cursor-pointer ${
                 summaryFilter === 'cases'
-                  ? 'dark:bg-sky-500/15 bg-sky-500/10 ring-1 ring-sky-500/50 shadow-sm'
-                  : 'hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-sky-500/15 ring-1 ring-sky-500/50 shadow-sm'
+                  : 'hover:bg-muted'
               }`}
             >
               <span className="size-2 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.7)] shrink-0" />
-              <span className="text-[14px] font-bold dark:text-[#e2e7ef] text-slate-900 font-sans tabular-nums">
+              <span className="text-[14px] font-bold text-foreground font-sans tabular-nums">
                 {openCasesCount}
               </span>
-              <span className="text-[13px] dark:text-[#a3adbd] text-slate-500 font-normal">
+              <span className="text-[13px] text-muted-foreground font-normal">
                 Open cases
               </span>
             </button>
@@ -131,8 +131,8 @@ export const NetworkSummaryRow: React.FC = () => {
               aria-pressed={summaryFilter === 'attention'}
               className={`flex items-center gap-2 py-1 px-2.5 rounded-md transition-all cursor-pointer ${
                 summaryFilter === 'attention'
-                  ? 'dark:bg-amber-500/15 bg-amber-500/10 ring-1 ring-amber-500/50 shadow-sm'
-                  : 'hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-amber-500/15 ring-1 ring-amber-500/50 shadow-sm'
+                  : 'hover:bg-muted'
               }`}
             >
               <span className="size-2 rounded-full bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.7)] shrink-0" />
@@ -140,7 +140,7 @@ export const NetworkSummaryRow: React.FC = () => {
                 className={`text-[14px] font-bold font-sans tabular-nums ${
                   summaryFilter === 'attention'
                     ? 'text-amber-500 dark:text-amber-400'
-                    : 'dark:text-[#e2e7ef] text-slate-900'
+                    : 'text-foreground'
                 }`}
               >
                 {needingAttentionCount}
@@ -149,7 +149,7 @@ export const NetworkSummaryRow: React.FC = () => {
                 className={`text-[13px] font-normal ${
                   summaryFilter === 'attention'
                     ? 'text-amber-500/90 dark:text-amber-400/90'
-                    : 'dark:text-[#a3adbd] text-slate-500'
+                    : 'text-muted-foreground'
                 }`}
               >
                 Devices needing attention
@@ -170,7 +170,7 @@ export const NetworkSummaryRow: React.FC = () => {
               <SheetTrigger render={
                 <button
                   type="button"
-                  className="flex items-center gap-2 px-3 py-1 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white hover:bg-muted text-xs font-medium cursor-pointer shrink-0 min-h-[36px]"
+                  className="flex items-center gap-2 px-3 py-1 rounded-lg border border-border bg-popover hover:bg-muted text-xs font-medium cursor-pointer shrink-0 min-h-[36px]"
                   title="View network assets"
                 >
                   <Network className="size-4 text-primary shrink-0" />
@@ -190,21 +190,21 @@ export const NetworkSummaryRow: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => { setAssetTypeFilter('poles' as any); triggerAssetPulse('poles'); setNetworkSheetOpen(false); setActivePanel('assets'); }}
-                    className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
+                    className="p-3 rounded-xl border border-border bg-popover flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{polesCount}</span>
                     <span className="text-xs text-muted-foreground">Poles</span>
                   </button>
                   <button
                     onClick={() => { setAssetTypeFilter('span'); triggerAssetPulse('cables'); setNetworkSheetOpen(false); setActivePanel('assets'); }}
-                    className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
+                    className="p-3 rounded-xl border border-border bg-popover flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{cableSpansCount}</span>
                     <span className="text-xs text-muted-foreground">Cable spans</span>
                   </button>
                   <button
                     onClick={() => { setAssetTypeFilter('device'); setActivePanel('assets'); setNetworkSheetOpen(false); }}
-                    className="p-3 rounded-xl border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
+                    className="p-3 rounded-xl border border-border bg-popover flex flex-col gap-1 text-left hover:border-primary transition-colors cursor-pointer min-h-[56px]"
                   >
                     <span className="text-lg font-bold font-sans text-foreground">{devicesCount}</span>
                     <span className="text-xs text-muted-foreground">Devices</span>
@@ -217,7 +217,7 @@ export const NetworkSummaryRow: React.FC = () => {
               <PopoverTrigger render={
                 <button
                   type="button"
-                  className="flex items-center gap-2 px-3 py-1 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-white hover:bg-muted text-xs font-medium cursor-pointer shrink-0 min-h-[36px]"
+                  className="flex items-center gap-2 px-3 py-1 rounded-lg border border-border bg-popover hover:bg-muted text-xs font-medium cursor-pointer shrink-0 min-h-[36px]"
                   title="View network assets"
                 >
                   <Network className="size-4 text-primary shrink-0" />
@@ -235,21 +235,21 @@ export const NetworkSummaryRow: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <button
                     onClick={() => { setAssetTypeFilter('pole'); triggerAssetPulse('poles'); setNetworkPopoverOpen(false); setActivePanel('assets'); }}
-                    className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
+                    className="p-2.5 rounded-lg border border-border bg-popover flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{polesCount}</span>
                     <span className="text-[11px] text-muted-foreground">Poles</span>
                   </button>
                   <button
                     onClick={() => { setAssetTypeFilter('span'); triggerAssetPulse('cables'); setNetworkPopoverOpen(false); setActivePanel('assets'); }}
-                    className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
+                    className="p-2.5 rounded-lg border border-border bg-popover flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{cableSpansCount}</span>
                     <span className="text-[11px] text-muted-foreground">Cable spans</span>
                   </button>
                   <button
                     onClick={() => { setAssetTypeFilter('device'); setActivePanel('assets'); setNetworkPopoverOpen(false); }}
-                    className="p-2.5 rounded-lg border dark:border-[#2a323d] border-slate-200 dark:bg-[#151a22] bg-slate-50 flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
+                    className="p-2.5 rounded-lg border border-border bg-popover flex flex-col gap-0.5 text-left hover:border-primary transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold font-sans text-foreground">{devicesCount}</span>
                     <span className="text-[11px] text-muted-foreground">Devices</span>
@@ -273,10 +273,10 @@ export const NetworkSummaryRow: React.FC = () => {
                 }}
                 className="flex items-baseline gap-1.5 cursor-pointer transition-transform hover:scale-105 active:scale-95 leading-tight"
               >
-                <span className="text-[14px] font-bold dark:text-[#e2e7ef] text-slate-900 font-sans tabular-nums">
+                <span className="text-[14px] font-bold text-foreground font-sans tabular-nums">
                   {polesCount}
                 </span>
-                <span className="text-[13px] dark:text-[#a3adbd] text-slate-500 font-normal">
+                <span className="text-[13px] text-muted-foreground font-normal">
                   Poles
                 </span>
               </button>
@@ -298,10 +298,10 @@ export const NetworkSummaryRow: React.FC = () => {
                 }}
                 className="flex items-baseline gap-1.5 cursor-pointer transition-transform hover:scale-105 active:scale-95 leading-tight"
               >
-                <span className="text-[14px] font-bold dark:text-[#e2e7ef] text-slate-900 font-sans tabular-nums">
+                <span className="text-[14px] font-bold text-foreground font-sans tabular-nums">
                   {cableSpansCount}
                 </span>
-                <span className="text-[13px] dark:text-[#a3adbd] text-slate-500 font-normal">
+                <span className="text-[13px] text-muted-foreground font-normal">
                   Cable spans
                 </span>
               </button>
@@ -322,10 +322,10 @@ export const NetworkSummaryRow: React.FC = () => {
                 }}
                 className="flex items-baseline gap-1.5 cursor-pointer transition-transform hover:scale-105 active:scale-95 leading-tight"
               >
-                <span className="text-[14px] font-bold dark:text-[#e2e7ef] text-slate-900 font-sans tabular-nums">
+                <span className="text-[14px] font-bold text-foreground font-sans tabular-nums">
                   {devicesCount}
                 </span>
-                <span className="text-[13px] dark:text-[#a3adbd] text-slate-500 font-normal">
+                <span className="text-[13px] text-muted-foreground font-normal">
                   Devices
                 </span>
               </button>

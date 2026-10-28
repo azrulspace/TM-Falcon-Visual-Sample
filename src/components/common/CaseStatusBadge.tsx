@@ -39,7 +39,7 @@ export const CaseStatusBadge: React.FC<CaseStatusBadgeProps> = ({
     text = 'In review';
   } else if (norm === 'closed') {
     // Closed: neutral grey, check icon
-    styles = 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/25';
+    styles = 'bg-muted/60 text-muted-foreground border-border';
     Icon = Check;
     text = 'Closed';
   }

@@ -100,7 +100,7 @@ export const AssigneeCell: React.FC<AssigneeCellProps> = ({
   if (isTeam) {
     return (
       <div className={cn('inline-flex items-center gap-1.5', className)}>
-        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-slate-500/15 text-slate-700 dark:text-slate-300 ring-1 ring-border">
+        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border">
           <Users className="size-3" />
         </span>
         <span className="text-xs text-foreground font-medium truncate max-w-[130px]" title={assignee}>

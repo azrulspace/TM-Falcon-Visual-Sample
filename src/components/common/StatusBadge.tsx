@@ -65,12 +65,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     text = label || 'Acknowledged';
   } else if (norm === 'in case' || norm === 'in_case' || norm === 'assigned') {
     // In case: neutral with a case icon
-    styles = 'bg-slate-500/10 text-slate-700 dark:text-[#cbd5e1] border-slate-500/30';
+    styles = 'bg-muted/80 text-foreground border-border';
     Icon = ClipboardList;
     text = label || 'In case';
   } else if (norm === 'dismissed') {
     // Dismissed: grey, x icon
-    styles = 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20';
+    styles = 'bg-muted/50 text-muted-foreground border-border';
     Icon = X;
     text = label || 'Dismissed';
   } else if (norm === 'resolved' || norm === 'closed') {
