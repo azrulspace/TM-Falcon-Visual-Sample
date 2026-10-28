@@ -1,4 +1,4 @@
-import type { RiskSegment } from '@/types/risk';
+import type { RiskSegment } from '../types/risk.ts';
 
 /**
  * 25 Canonical Risk Segments for Falcon Infrastructure Monitoring.

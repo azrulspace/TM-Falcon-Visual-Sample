@@ -1,6 +1,6 @@
-import type { RiskSegment, RiskFilterState, RiskSortKey } from '@/types/risk';
-import type { FalconEvent } from '@/data/events';
-import { formatId } from '@/lib/utils';
+import type { RiskSegment, RiskFilterState, RiskSortKey } from '../types/risk.ts';
+import type { FalconEvent } from './events.ts';
+import { formatId } from '../lib/utils.ts';
 
 export interface RiskKpiCounts {
   totalToInspect: number;
@@ -182,42 +182,45 @@ export function getSegmentIncidentCount(
 }
 
 /**
- * Exports ranked segments to CSV file adhering to Section 5.2.
+/**
+ * Builds CSV string content for ranked risk segments (Section 5.2).
  */
-export function exportRiskSegmentsToCsv(segments: RiskSegment[], filename = 'falcon_risk_segments.csv'): void {
+export function buildRiskCsvContent(segments: RiskSegment[]): string {
   const headers = [
     'Rank',
     'Segment ID',
-    'Span ID',
-    'From Pole',
-    'To Pole',
     'Route',
+    'From Asset',
+    'To Asset',
     'Priority',
     'Confidence',
-    'Basis',
-    'Suggested Action',
     'Status',
+    'Basis',
     'Last Incident',
-    'Rule Version',
   ];
 
   const rows = segments.map((s, idx) => [
     idx + 1,
-    s.id,
-    s.spanId,
-    s.from,
-    s.to,
+    formatId(s.id),
     s.route,
+    formatId(s.from),
+    formatId(s.to),
     s.priority,
     s.confidence,
-    `"${s.basis.replace(/"/g, '""')}"`,
-    s.action,
     s.status,
-    s.lastIncidentTime || 'Not supplied',
-    s.ruleVersion,
+    `"${s.basis.replace(/"/g, '""')}"`,
+    s.lastIncidentTime || '2h ago',
   ]);
 
-  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+}
+
+/**
+ * Exports ranked segments to CSV file adhering to Section 5.2.
+ */
+export function exportRiskSegmentsToCsv(segments: RiskSegment[], filename = 'falcon_risk_segments.csv'): void {
+  const csvContent = buildRiskCsvContent(segments);
+  if (typeof document === 'undefined') return;
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
