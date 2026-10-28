@@ -13,7 +13,10 @@
         if (!t) t = "dark";
         document.documentElement.classList.remove("theme_light", "theme_dark", "dark");
         document.documentElement.classList.add("theme_" + t);
-        if (t === "dark") document.documentElement.classList.add("dark");
+        if (t === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+        document.documentElement.setAttribute("data-theme", t);
       })();
     </script>
   </head>

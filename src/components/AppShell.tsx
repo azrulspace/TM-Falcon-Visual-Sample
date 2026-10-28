@@ -128,6 +128,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (newTheme === "dark") {
       r.classList.add("dark");
     }
+    r.setAttribute("data-theme", newTheme);
     localStorage.setItem("ds_theme", newTheme);
     setTheme(newTheme);
   }, [theme]);
