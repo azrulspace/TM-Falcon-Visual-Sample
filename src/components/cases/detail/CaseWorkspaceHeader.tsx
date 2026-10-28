@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   UserPlus,
@@ -26,7 +26,7 @@ import { AssignPopover } from '../AssignPopover';
 import { useCases } from '@/contexts/CasesContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useUiMode } from '@/contexts/UiModeContext';
-import { cn } from '@/lib/utils';
+import { cn, formatId } from '@/lib/utils';
 import { exportCasesToCsv } from '@/data/caseSelectors';
 import { getServerNow } from '@/lib/dateTime';
 import type { FalconCase, AssigneeType } from '@/types/cases';
@@ -41,7 +41,7 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
   onOpenClosureTab,
 }) => {
   const navigate = useNavigate();
-  const { assignCase, startWork, sendForReview, closeCase, reopenCase } = useCases();
+  const { assignCase, startWork, sendForReview, reopenCase } = useCases();
   const { addToast } = useToast();
   const { isTablet, orientation } = useUiMode();
   const isPortrait = isTablet && orientation === 'portrait';
@@ -92,21 +92,24 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
         setIsAssignOpen(true);
       } else if (caseData.status === 'Open') {
         await startWork(caseData.id);
+        addToast('success', `Started work on case ${formatId(caseData.id)}`);
       } else if (caseData.status === 'In progress') {
         await sendForReview(caseData.id);
+        addToast('success', `Case ${formatId(caseData.id)} sent for review`);
       } else if (caseData.status === 'In review') {
-        if (onOpenClosureTab) {
-          onOpenClosureTab();
-        } else {
-          await closeCase(caseData.id, {
-            rootCause: 'Verified and resolved by field technician',
-            resolutionNotes: 'Inspection confirmed clearance and hardware integrity',
-            closedBy: 'Field Team',
-          });
-        }
-      } else if (caseData.status === 'Closed') {
-        await reopenCase(caseData.id);
+        onOpenClosureTab?.();
       }
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    if (isPending) return;
+    setIsPending(true);
+    try {
+      await reopenCase(caseData.id);
+      addToast('info', `Case ${formatId(caseData.id)} reopened.`);
     } finally {
       setIsPending(false);
     }
@@ -122,7 +125,7 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
     }
   };
 
-  // Determine Primary Action label & icon
+  // Determine Primary Action label & icon (Section 5.1)
   const isUnassigned = !caseData.assignee || caseData.assignee.toLowerCase() === 'unassigned';
 
   const renderPrimaryAction = () => {
@@ -130,12 +133,8 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
       "font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer",
       isTablet ? "h-11 px-4 text-sm gap-2" : "gap-2 text-xs h-8 px-3"
     );
-    const reopenBtnClass = cn(
-      "font-semibold border-border hover:bg-muted text-foreground cursor-pointer",
-      isTablet ? "h-11 px-4 text-sm gap-2" : "gap-2 text-xs h-8 px-3"
-    );
 
-    if (isUnassigned) {
+    if (isUnassigned && caseData.status === 'Open') {
       return (
         <AssignPopover
           open={isAssignOpen}
@@ -200,62 +199,38 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
           disabled={isPending}
           className={primaryBtnClass}
         >
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <CheckCircle className="size-4" />
-          )}
-          <span>Close case</span>
+          <CheckCircle className="size-4" />
+          <span>Go to Closure</span>
         </Button>
       );
     }
 
-    if (caseData.status === 'Closed') {
-      return (
-        <Button
-          variant="outline"
-          onClick={handlePrimaryAction}
-          disabled={isPending}
-          className={reopenBtnClass}
-        >
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <RotateCcw className="size-4" />
-          )}
-          <span>Reopen case</span>
-        </Button>
-      );
-    }
-
+    // Closed: no primary action (Section 5.1)
     return null;
   };
 
   return (
-    <div className="space-y-3">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Back to cases"
-          >
-            <ArrowLeft className="size-3.5" />
-            <span>Cases</span>
-          </button>
-          <span>/</span>
-          <span className="font-mono font-semibold text-foreground">{caseData.id}</span>
+    <div className="space-y-4">
+      {/* Title Row (Section 4.2) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Left: Title + Status Badge */}
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            <span className="font-mono">{formatId(caseData.id)}</span>
+            <span className="mx-2 text-muted-foreground/60 font-normal">·</span>
+            <span>{caseData.title}</span>
+          </h1>
+
+          <CaseStatusBadge status={caseData.status} size="default" />
         </div>
 
-        {/* Desktop & Landscape Tablet Secondary Buttons */}
+        {/* Right: Back to Cases (secondary), Primary State Action, Overflow Menu */}
         <div className="hidden sm:flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleBack}
-            className={cn("border-border hover:bg-muted", isTablet ? "h-11 px-4 text-sm" : "text-xs h-8 px-2.5")}
+            className={cn("border-border hover:bg-muted text-foreground", isTablet ? "h-11 px-4 text-sm" : "text-xs h-8 px-2.5")}
           >
             <span>Back to Cases</span>
           </Button>
@@ -298,55 +273,47 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
                 className={cn("gap-2 cursor-pointer", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
               >
                 <ExternalLink className="size-3.5 text-muted-foreground" />
-                <span>View source event</span>
+                <span>Open source event</span>
               </DropdownMenuItem>
+
+              {caseData.status === 'Closed' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleReopen}
+                    className={cn("gap-2 cursor-pointer text-primary focus:text-primary", isTablet ? "h-12 text-sm" : "h-8 text-xs")}
+                  >
+                    <RotateCcw className="size-3.5" />
+                    <span>Reopen case</span>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Title, Badge & Source Event Chip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            <span className="font-mono">{caseData.id}</span>
-            <span className="mx-2 text-muted-foreground/60 font-normal">·</span>
-            <span>{caseData.title}</span>
-          </h1>
-
-          <CaseStatusBadge status={caseData.status} size="default" />
-
-          {/* Source event chip */}
-          <Link
-            to={`/events/${caseData.sourceEventId}`}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/70 hover:bg-muted border border-border text-foreground hover:text-primary font-mono text-xs font-semibold transition-colors"
-            title={`View source event ${caseData.sourceEventId}`}
-          >
-            <span>{caseData.sourceEventId}</span>
-            <ExternalLink className="size-3 text-muted-foreground" />
-          </Link>
-        </div>
-      </div>
-
       {/* Mobile & Portrait Tablet Sticky Bottom Action Bar */}
-      <div className={cn(
-        "fixed bottom-0 left-0 right-0 p-3 bg-card border-t border-border z-40 flex items-center justify-between gap-3 shadow-2xl",
-        isPortrait ? "flex" : "flex sm:hidden"
-      )}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBack}
-          className={cn("border-border", isTablet ? "h-11 px-4 text-sm" : "text-xs h-9 px-3")}
-        >
-          <ArrowLeft className="size-4 mr-1" />
-          <span>Back</span>
-        </Button>
+      {renderPrimaryAction() && (
+        <div className={cn(
+          "fixed bottom-0 left-0 right-0 p-3 bg-card border-t border-border z-40 flex items-center justify-between gap-3 shadow-2xl",
+          isPortrait ? "flex" : "flex sm:hidden"
+        )}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBack}
+            className={cn("border-border", isTablet ? "h-11 px-4 text-sm" : "text-xs h-9 px-3")}
+          >
+            <ArrowLeft className="size-4 mr-1" />
+            <span>Back</span>
+          </Button>
 
-        <div className="flex-1 flex justify-end">
-          {renderPrimaryAction()}
+          <div className="flex-1 flex justify-end">
+            {renderPrimaryAction()}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
