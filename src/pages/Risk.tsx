@@ -10,6 +10,9 @@ import { RiskMapCard } from '@/components/risk/RiskMapCard';
 import { RiskSegmentsColumn } from '@/components/risk/RiskSegmentsColumn';
 import { RiskTableView } from '@/components/risk/RiskTableView';
 import { RiskBulkActionBar } from '@/components/risk/RiskBulkActionBar';
+import { Layers, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { SegmentDetailContent } from '@/components/risk/SegmentDetailContent';
 import { SegmentDetailSheet } from '@/components/risk/SegmentDetailSheet';
 import { DismissSegmentDialog } from '@/components/risk/DismissSegmentDialog';
@@ -49,6 +52,7 @@ export default function Risk() {
   const [activeKpi, setActiveKpi] = useState<RiskKpiKey | null>(initialKpi);
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(initialSegment);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [segmentsDrawerOpen, setSegmentsDrawerOpen] = useState(false);
 
   // Pagination for ranked list view
   const [currentPage, setCurrentPage] = useState(1);
@@ -326,23 +330,41 @@ export default function Risk() {
           )}
         >
           {currentTab === 'map' ? (
-            <RiskMapCard
-              segments={sortedSegments}
-              selectedSegmentId={selectedSegmentId}
-              onSelectSegment={setSelectedSegmentId}
-              onInvestigate={handleInvestigate}
-              onDismiss={openDismissDialog}
-              renderPopup={(segment, onClose) => (
-                <div className="w-[360px] sm:w-[420px] max-h-[540px] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col">
-                  <SegmentDetailContent
-                    segment={segment}
-                    onClose={onClose}
-                    onInvestigate={handleInvestigate}
-                    onDismiss={openDismissDialog}
-                  />
-                </div>
-              )}
-            />
+            <div className="relative w-full h-full">
+              {/* Tablet / Collapsible Segments Button (Section 7) */}
+              <div className="absolute top-3 left-3 z-20 xl:hidden">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSegmentsDrawerOpen(true)}
+                  className="bg-card/90 dark:bg-card/95 backdrop-blur-md border border-border shadow-md gap-2 h-9 px-3 rounded-xl font-medium text-xs text-foreground cursor-pointer"
+                >
+                  <Layers className="size-4 text-primary" />
+                  <span>Segments</span>
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
+                    {sortedSegments.length}
+                  </span>
+                </Button>
+              </div>
+
+              <RiskMapCard
+                segments={sortedSegments}
+                selectedSegmentId={selectedSegmentId}
+                onSelectSegment={setSelectedSegmentId}
+                onInvestigate={handleInvestigate}
+                onDismiss={openDismissDialog}
+                renderPopup={(segment, onClose) => (
+                  <div className="w-[360px] sm:w-[420px] max-h-[540px] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col">
+                    <SegmentDetailContent
+                      segment={segment}
+                      onClose={onClose}
+                      onInvestigate={handleInvestigate}
+                      onDismiss={openDismissDialog}
+                    />
+                  </div>
+                )}
+              />
+            </div>
           ) : (
             <RiskTableView
               segments={sortedSegments}
@@ -364,7 +386,7 @@ export default function Risk() {
         </div>
 
         {currentTab === 'map' && (
-          <div className="xl:col-span-4 h-[640px] overflow-hidden">
+          <div className="hidden xl:block xl:col-span-4 h-[640px] overflow-hidden">
             <RiskSegmentsColumn
               segments={sortedSegments}
               selectedSegmentId={selectedSegmentId}
@@ -376,6 +398,46 @@ export default function Risk() {
           </div>
         )}
       </div>
+
+      {/* 7. Tablet / Mobile Bottom Drawer for Segments to inspect (Section 7) */}
+      <Sheet open={segmentsDrawerOpen} onOpenChange={setSegmentsDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          className="h-[80vh] p-0 rounded-t-3xl border-t border-border bg-card shadow-2xl flex flex-col z-50"
+        >
+          <div className="p-3 border-b border-border flex items-center justify-between px-4 bg-muted/40">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                Segments to inspect
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground">
+                {sortedSegments.length}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSegmentsDrawerOpen(false)}
+              className="size-8 p-0 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden p-2">
+            <RiskSegmentsColumn
+              segments={sortedSegments}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={(id) => {
+                setSelectedSegmentId(id);
+                setSegmentsDrawerOpen(false);
+              }}
+              onInvestigate={handleInvestigate}
+              onDismiss={openDismissDialog}
+              isLoading={isRefreshing}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* 5.10 Bulk Actions Bar (when rows are selected on ranked list view) */}
       {currentTab === 'list' && (

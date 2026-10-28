@@ -60,7 +60,8 @@ export const RiskTableView: React.FC<RiskTableViewProps> = ({
   sortKey,
   onSortChange,
 }) => {
-  const { isTablet } = useUiMode();
+  const { isTablet, orientation } = useUiMode();
+  const isPortrait = isTablet && orientation === 'portrait';
 
   const totalPages = Math.ceil(segments.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
@@ -79,10 +80,124 @@ export const RiskTableView: React.FC<RiskTableViewProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
-      {/* Table scroll container */}
-      <div className="flex-1 overflow-x-auto min-h-[380px]">
-        <table className="w-full text-left border-collapse text-sm">
-          {/* Sticky Header (Section 5.10) */}
+      {isPortrait ? (
+        <div className="flex-1 overflow-y-auto divide-y divide-border/60 p-3">
+          {paginatedSegments.length === 0 ? (
+            <div className="py-12 text-center">
+              <EmptyState
+                icon={Search}
+                title="No segments match your filters"
+                description="Try clearing search or relaxing priority / confidence filters"
+              />
+            </div>
+          ) : (
+            paginatedSegments.map((s, idx) => {
+              const isSelected = selectedSegmentIds.has(s.id);
+              const rankNum = startIdx + idx + 1;
+
+              return (
+                <div
+                  key={s.id}
+                  onClick={() => onRowClick(s)}
+                  className={cn(
+                    'p-3.5 rounded-xl mb-2 transition-colors cursor-pointer border border-border/80 flex flex-col gap-2.5',
+                    isSelected ? 'bg-primary/5 border-primary/40' : 'bg-card hover:bg-muted/40'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleSelect(s.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded border-border text-primary size-4 cursor-pointer"
+                        aria-label={`Select segment ${formatId(s.id)}`}
+                      />
+                      <span className="font-semibold text-xs text-muted-foreground tabular-nums">
+                        #{rankNum}
+                      </span>
+                      <span className="font-mono font-bold text-sm text-foreground">
+                        {formatId(s.id)}
+                      </span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-muted border border-border/80 text-foreground">
+                        {s.route}
+                      </span>
+                    </div>
+                    <PriorityBadge priority={s.priority} size="sm" />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 font-mono">
+                      <span>{formatId(s.from)}</span>
+                      <span>→</span>
+                      <span>{formatId(s.to)}</span>
+                    </div>
+                    <span>{s.lastIncidentTime || '2h ago'}</span>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground truncate">{s.basis}</div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                    <RiskConfidenceMeter confidence={s.confidence} size="sm" />
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      {s.status !== 'dismissed' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onInvestigate(s)}
+                          className="h-8 px-2.5 text-xs text-primary"
+                        >
+                          Investigate
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="size-8 p-0 text-muted-foreground"
+                            >
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <DropdownMenuContent align="end" className="w-44 z-50">
+                          <DropdownMenuItem onClick={() => onShowOnMap(s)} className="cursor-pointer gap-2">
+                            <Compass className="size-4 text-primary" />
+                            <span>Show on map</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onRowClick(s)} className="cursor-pointer gap-2">
+                            <ExternalLink className="size-4 text-muted-foreground" />
+                            <span>View details</span>
+                          </DropdownMenuItem>
+                          {s.status !== 'dismissed' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onDismiss(s)}
+                                className="cursor-pointer gap-2"
+                              >
+                                <CheckCircle2 className="size-4" />
+                                <span>Dismiss segment</span>
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* Table scroll container */
+        <div className="flex-1 overflow-x-auto min-h-[380px]">
+          <table className="w-full text-left border-collapse text-sm">
+            {/* Sticky Header (Section 5.10) */}
           <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-md border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none">
             <tr className="h-11">
               <th className="w-10 px-3 text-center">
@@ -327,6 +442,7 @@ export const RiskTableView: React.FC<RiskTableViewProps> = ({
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Footer with pagination and rows per page (Section 5.10) */}
       {segments.length > 0 && (
