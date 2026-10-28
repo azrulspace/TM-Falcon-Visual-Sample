@@ -24,6 +24,32 @@
     --font-mono: 'JetBrains Mono', 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
+  /* 10 NEUTRALS Single Source of Truth */
+  :root {
+    --neutral-void: #08090a;
+    --neutral-carbon: #0f1011;
+    --neutral-obsidian: #161718;
+    --neutral-graphite: #23252a;
+    --neutral-smoke: #383b3f;
+    --neutral-ash: #62666d;
+    --neutral-fog: #8a8f98;
+    --neutral-mist: #d0d6e0;
+    --neutral-bone: #e5e5e6;
+    --neutral-paper: #ffffff;
+
+    /* RGB channel variants for alpha compositing */
+    --neutral-void-rgb: 8, 9, 10;
+    --neutral-carbon-rgb: 15, 16, 17;
+    --neutral-obsidian-rgb: 22, 23, 24;
+    --neutral-graphite-rgb: 35, 37, 42;
+    --neutral-smoke-rgb: 56, 59, 63;
+    --neutral-ash-rgb: 98, 102, 109;
+    --neutral-fog-rgb: 138, 143, 152;
+    --neutral-mist-rgb: 208, 214, 224;
+    --neutral-bone-rgb: 229, 229, 230;
+    --neutral-paper-rgb: 255, 255, 255;
+  }
+
   /* Target Tokens from Section 7 */
   :root,
   .theme_light {
@@ -32,14 +58,31 @@
     /* Core palette */
     --background: #F6F8FC;
     --foreground: #0F172A;
+    --canvas: #F6F8FC;
     --card: #FFFFFF;
     --card-foreground: #0F172A;
+    --surface-1: #FFFFFF;
+    --surface-2: #EEF2F8;
+    --surface-bright: #FFFFFF;
+    --navbar: #FFFFFF;
     --popover: #FFFFFF;
     --popover-foreground: #0F172A;
     --border: #DDE3EE;
+    --border-strong: #94A3B8;
+    --divider: #DDE3EE;
+    --separator: #DDE3EE;
     --input: #DDE3EE;
     --muted: #EEF2F8;
     --muted-foreground: #5B6780;
+    --placeholder: #94A3B8;
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-tertiary: #94A3B8;
+    --text-muted: #5B6780;
+    --foreground-high: #0F172A;
+    --heading: #0F172A;
+    --icon-default: #64748B;
+    --icon-inactive: #94A3B8;
     --primary: #1D4ED8;
     --primary-foreground: #FFFFFF;
     --secondary: #EEF2F8;
@@ -108,41 +151,78 @@
 
   .dark,
   .theme_dark,
-  :root.theme_dark {
+  :root.theme_dark,
+  [data-theme="dark"] {
     color-scheme: dark;
 
-    /* Core palette matching Overview page */
-    --background: #0B101B;
-    --foreground: #E2E7EF;
-    --card: #141B23;
-    --card-foreground: #E2E7EF;
-    --popover: #151A22;
-    --popover-foreground: #E2E7EF;
-    --border: #26303D;
-    --input: #2A323D;
-    --muted: #18202B;
-    --muted-foreground: #A3ADBD;
+    /* 1. Void (#08090a): Page canvas & full-bleed background */
+    --background: var(--neutral-void);
+    --canvas: var(--neutral-void);
+
+    /* 2. Carbon (#0f1011): Card surfaces & navigation bars */
+    --card: var(--neutral-carbon);
+    --surface-1: var(--neutral-carbon);
+    --navbar: var(--neutral-carbon);
+    --sidebar: var(--neutral-carbon);
+
+    /* 3. Obsidian (#161718): Elevated surfaces, popovers, dropdowns, sheets, modals, secondary backgrounds */
+    --popover: var(--neutral-obsidian);
+    --surface-2: var(--neutral-obsidian);
+    --elevated: var(--neutral-obsidian);
+    --muted: var(--neutral-obsidian);
+    --secondary: var(--neutral-obsidian);
+    --accent: var(--neutral-obsidian);
+
+    /* 4. Graphite (#23252a): Subtle borders, dividers, ghost outlines */
+    --border: var(--neutral-graphite);
+    --divider: var(--neutral-graphite);
+    --input: var(--neutral-graphite);
+    --sidebar-border: var(--neutral-graphite);
+
+    /* 5. Smoke (#383b3f): Hairline borders, separators, hover/active borders, neutral focus ring */
+    --border-strong: var(--neutral-smoke);
+    --separator: var(--neutral-smoke);
+    --ring: var(--neutral-smoke);
+
+    /* 6. Ash (#62666d): Muted body text, inactive icons, secondary metadata, dim captions */
+    --muted-foreground: var(--neutral-ash);
+    --icon-inactive: var(--neutral-ash);
+    --text-muted: var(--neutral-ash);
+
+    /* 7. Fog (#8a8f98): Tertiary text, placeholders, standard icon fills */
+    --placeholder: var(--neutral-fog);
+    --text-tertiary: var(--neutral-fog);
+    --icon-default: var(--neutral-fog);
+
+    /* 8. Mist (#d0d6e0): Secondary headings, button text on dark surfaces, comfortable primary body text */
+    --secondary-foreground: var(--neutral-mist);
+    --text-secondary: var(--neutral-mist);
+    --card-foreground: var(--neutral-mist);
+    --popover-foreground: var(--neutral-mist);
+    --sidebar-foreground: var(--neutral-mist);
+
+    /* 9. Bone (#e5e5e6): Near-white surface fills, high-contrast button text, active table/list text */
+    --foreground-high: var(--neutral-bone);
+    --surface-bright: var(--neutral-bone);
+
+    /* 10. Paper (#ffffff): Primary headings, hero type, key metric digits, max-contrast text */
+    --foreground: var(--neutral-paper);
+    --text-primary: var(--neutral-paper);
+    --heading: var(--neutral-paper);
+    --accent-foreground: var(--neutral-paper);
+    --sidebar-accent-foreground: var(--neutral-paper);
+
+    /* Brand and Action Colors (Preserved) */
     --primary: #2F6FED;
     --primary-foreground: #FFFFFF;
-    --secondary: #18202B;
-    --secondary-foreground: #E2E7EF;
-    --accent: #1E2632;
-    --accent-foreground: #E2E7EF;
-    --destructive: #EF4444;
-    --destructive-foreground: #FFFFFF;
-    --ring: #4C86F5;
-
-    /* Sidebar matching AppShell */
-    --sidebar: #151A22;
-    --sidebar-foreground: #E2E7EF;
     --sidebar-primary: #2F6FED;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #1E2632;
-    --sidebar-accent-foreground: #E2E7EF;
-    --sidebar-border: #2A323D;
+    --sidebar-accent: var(--neutral-obsidian);
     --sidebar-ring: #4C86F5;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
 
-    /* Semantic Status Tokens */
+    /* Semantic Status Tokens (Preserved) */
     --status-online: #22C55E;
     --status-online-tint: rgba(34, 197, 94, 0.14);
     --status-online-border: rgba(34, 197, 94, 0.35);
@@ -163,7 +243,7 @@
     --status-info-tint: rgba(56, 189, 248, 0.14);
     --status-info-border: rgba(56, 189, 248, 0.35);
 
-    /* Severity Tokens */
+    /* Severity Tokens (Preserved) */
     --severity-critical: #EF4444;
     --severity-critical-tint: rgba(239, 68, 68, 0.14);
     --severity-high: #F97316;
@@ -179,13 +259,13 @@
     --row-height-default: 36px;
     --row-height-compact: 28px;
 
-    /* Glass Overlay Tokens matching Overview */
-    --overlay-bg: rgba(20, 27, 35, 0.88);
-    --overlay-border: rgba(255, 255, 255, 0.08);
+    /* Glass Overlay Tokens matching Neutrals (Carbon / Graphite base) */
+    --overlay-bg: rgba(15, 16, 17, 0.92);
+    --overlay-border: rgba(35, 37, 42, 0.85);
     --overlay-blur: 16px;
-    --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-    --scrim-top: linear-gradient(to bottom, rgba(11, 16, 27, 0.85) 0%, rgba(11, 16, 27, 0) 100%);
-    --scrim-bottom: linear-gradient(to top, rgba(11, 16, 27, 0.90) 0%, rgba(11, 16, 27, 0) 100%);
+    --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    --scrim-top: linear-gradient(to bottom, rgba(8, 9, 10, 0.88) 0%, rgba(8, 9, 10, 0) 100%);
+    --scrim-bottom: linear-gradient(to top, rgba(8, 9, 10, 0.92) 0%, rgba(8, 9, 10, 0) 100%);
   }
 
   * {

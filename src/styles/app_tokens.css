@@ -26,23 +26,26 @@
   --tracking_wide: 0.06em;
 }
 
-:root.theme_dark {
-  --bg_sidebar: var(--color_brand_950);
-  --bg_sidebar_hover: var(--color_brand_900);
-  --bg_sidebar_active: var(--color_brand_800);
-  --text_sidebar: var(--color_brand_100);
-  --text_sidebar_muted: var(--color_brand_300);
-  --text_sidebar_active: var(--color_white);
-  --border_sidebar: var(--color_brand_900);
-  --bg_auth_panel: var(--color_brand_950);
-  --bg_auth_glow: var(--color_brand_800);
+:root.theme_dark,
+.theme_dark,
+.dark,
+[data-theme="dark"] {
+  --bg_sidebar: var(--neutral-carbon, #0f1011);
+  --bg_sidebar_hover: var(--neutral-obsidian, #161718);
+  --bg_sidebar_active: var(--neutral-obsidian, #161718);
+  --text_sidebar: var(--neutral-mist, #d0d6e0);
+  --text_sidebar_muted: var(--neutral-ash, #62666d);
+  --text_sidebar_active: var(--neutral-paper, #ffffff);
+  --border_sidebar: var(--neutral-graphite, #23252a);
+  --bg_auth_panel: var(--neutral-carbon, #0f1011);
+  --bg_auth_glow: var(--neutral-obsidian, #161718);
 
   --border_warning_solid: var(--color_warning_400);
-  --bg_neutral_solid: var(--color_neutral_500);
+  --bg_neutral_solid: var(--neutral-smoke, #383b3f);
 
-  --bg_map: var(--color_neutral_900);
-  --map_block: var(--color_neutral_950);
-  --map_road: var(--color_neutral_800);
-  --map_label: var(--color_neutral_400);
+  --bg_map: var(--neutral-carbon, #0f1011);
+  --map_block: var(--neutral-void, #08090a);
+  --map_road: var(--neutral-obsidian, #161718);
+  --map_label: var(--neutral-ash, #62666d);
   --map_route: var(--color_brand_300);
 }

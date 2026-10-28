@@ -236,17 +236,20 @@
 }
 
 /* Dark theme */
-:root.theme_dark{
+:root.theme_dark,
+.theme_dark,
+.dark,
+[data-theme="dark"] {
   color-scheme:dark;
 
-  /* Text */
-  --text_primary:var(--color_neutral_50);
-  --text_secondary:var(--color_neutral_200);
-  --text_tertiary:var(--color_neutral_300);
-  --text_quaternary:var(--color_neutral_400);
-  --text_placeholder:var(--color_neutral_400);
-  --text_disabled:var(--color_neutral_500);
-  --text_white:var(--color_white);
+  /* Text mapped to Neutrals */
+  --text_primary:var(--neutral-paper, #ffffff);
+  --text_secondary:var(--neutral-mist, #d0d6e0);
+  --text_tertiary:var(--neutral-fog, #8a8f98);
+  --text_quaternary:var(--neutral-ash, #62666d);
+  --text_placeholder:var(--neutral-fog, #8a8f98);
+  --text_disabled:var(--neutral-ash, #62666d);
+  --text_white:#ffffff;
   --text_brand:var(--color_brand_200);
   --text_brand_secondary:var(--color_brand_200);
   --text_success:var(--color_success_400);
@@ -256,17 +259,17 @@
   --text_link:var(--color_brand_300);
   --text_link_hover:var(--color_brand_200);
   --icon_brand:var(--color_brand_400);
-  --text_sidebar:var(--color_white);
-  --text_sidebar_muted:var(--color_brand_200);
-  --text_sidebar_label:var(--color_brand_300);
+  --text_sidebar:var(--neutral-mist, #d0d6e0);
+  --text_sidebar_muted:var(--neutral-ash, #62666d);
+  --text_sidebar_label:var(--neutral-fog, #8a8f98);
 
-  /* Background */
-  --bg_primary:var(--color_neutral_950);
-  --bg_secondary:var(--color_neutral_900);
-  --bg_tertiary:var(--color_neutral_800);
-  --bg_quaternary:var(--color_neutral_700);
-  --bg_elevated:var(--color_neutral_800);
-  --bg_disabled:var(--color_neutral_800);
+  /* Background mapped to Neutrals */
+  --bg_primary:var(--neutral-void, #08090a);
+  --bg_secondary:var(--neutral-carbon, #0f1011);
+  --bg_tertiary:var(--neutral-obsidian, #161718);
+  --bg_quaternary:var(--neutral-obsidian, #161718);
+  --bg_elevated:var(--neutral-obsidian, #161718);
+  --bg_disabled:var(--neutral-obsidian, #161718);
   --bg_brand_solid:var(--color_brand_500);
   --bg_brand_solid_hover:var(--color_brand_600);
   --bg_brand_primary:var(--color_brand_700);
@@ -280,22 +283,22 @@
   --bg_error_primary:var(--color_error_950);
   --bg_error_solid:var(--color_error_600);
   --bg_overlay:rgba(0,0,0,0.7);
-  --bg_selected:var(--color_brand_800);
+  --bg_selected:rgba(255,255,255,0.06);
   --bg_row_hover:rgba(255,255,255,0.04);
-  --bg_segment:var(--color_neutral_900);
-  --bg_segment_active:var(--color_neutral_700);
-  --bg_sidebar:#151A22;
-  --bg_sidebar_hover:#1E2632;
-  --bg_sidebar_active:#1E2632;
+  --bg_segment:var(--neutral-obsidian, #161718);
+  --bg_segment_active:var(--neutral-graphite, #23252a);
+  --bg_sidebar:var(--neutral-carbon, #0f1011);
+  --bg_sidebar_hover:var(--neutral-obsidian, #161718);
+  --bg_sidebar_active:var(--neutral-obsidian, #161718);
 
-  /* Border */
-  --border_primary:#26303D;
-  --border_secondary:#222B38;
-  --border_tertiary:#1E2632;
-  --border_control:#2A323D;
-  --border_control_hover:var(--color_neutral_400);
-  --border_hover:var(--color_neutral_500);
-  --border_disabled:var(--color_neutral_800);
+  /* Border mapped to Neutrals */
+  --border_primary:var(--neutral-graphite, #23252a);
+  --border_secondary:var(--neutral-smoke, #383b3f);
+  --border_tertiary:var(--neutral-smoke, #383b3f);
+  --border_control:var(--neutral-graphite, #23252a);
+  --border_control_hover:var(--neutral-smoke, #383b3f);
+  --border_hover:var(--neutral-smoke, #383b3f);
+  --border_disabled:var(--neutral-graphite, #23252a);
   --border_brand:var(--color_brand_400);
   --border_brand_solid:var(--color_brand_500);
   --border_success:var(--color_success_700);
