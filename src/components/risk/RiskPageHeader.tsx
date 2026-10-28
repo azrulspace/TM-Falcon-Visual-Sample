@@ -13,6 +13,7 @@ export interface RiskPageHeaderProps {
   computedAtMYT?: string;
   isRefreshing?: boolean;
   onRefresh?: () => void;
+  onExport?: () => void;
 }
 
 export const RiskPageHeader: React.FC<RiskPageHeaderProps> = ({
@@ -21,11 +22,16 @@ export const RiskPageHeader: React.FC<RiskPageHeaderProps> = ({
   computedAtMYT = '10:30 PM MYT',
   isRefreshing = false,
   onRefresh,
+  onExport,
 }) => {
   const [infoOpen, setInfoOpen] = useState(false);
   const { addToast } = useToast();
 
   const handleExport = () => {
+    if (onExport) {
+      onExport();
+      return;
+    }
     if (filteredSegments.length === 0) {
       addToast('info', 'No risk segments to export for current filter criteria.');
       return;
