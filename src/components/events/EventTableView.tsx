@@ -180,7 +180,7 @@ export const EventTableView: React.FC<EventTableViewProps> = ({
       <div className={cn("overflow-x-auto min-h-[340px] max-h-[calc(100vh-320px)] overflow-y-auto", isTabletPortrait ? "hidden" : "hidden lg:block")}>
         <table className="w-full border-collapse text-left text-xs">
           {/* Sticky Header */}
-          <thead className="sticky top-0 bg-card/95 backdrop-blur-md border-b border-border z-20 shadow-xs">
+          <thead className="sticky top-0 bg-card border-b border-border z-20 shadow-xs">
             <tr className="border-b border-border">
               {/* Checkbox column (40px desktop, 56px tablet for 44px touch area) */}
               <th className={cn("text-center", isTablet ? "w-14 py-1.5 px-1" : "w-10 py-2.5 px-3")}>

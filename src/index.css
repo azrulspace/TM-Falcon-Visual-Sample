@@ -140,10 +140,10 @@
     --row-height-default: 36px;
     --row-height-compact: 28px;
 
-    /* Glass Overlay Tokens (H3) */
-    --overlay-bg: rgba(255, 255, 255, 0.88);
+    /* Overlay Tokens (Solid Opaque System) */
+    --overlay-bg: #FFFFFF;
     --overlay-border: rgba(100, 116, 139, 0.14);
-    --overlay-blur: 16px;
+    --overlay-blur: 0px;
     --overlay-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
     --scrim-top: linear-gradient(to bottom, rgba(246, 248, 252, 0.85) 0%, rgba(246, 248, 252, 0) 100%);
     --scrim-bottom: linear-gradient(to top, rgba(246, 248, 252, 0.90) 0%, rgba(246, 248, 252, 0) 100%);
@@ -259,10 +259,10 @@
     --row-height-default: 36px;
     --row-height-compact: 28px;
 
-    /* Glass Overlay Tokens matching Neutrals (Carbon / Graphite base) */
-    --overlay-bg: rgba(15, 16, 17, 0.92);
-    --overlay-border: rgba(35, 37, 42, 0.85);
-    --overlay-blur: 16px;
+    /* Solid Overlay Tokens matching Neutrals (Carbon / Graphite base) */
+    --overlay-bg: var(--neutral-carbon);
+    --overlay-border: var(--neutral-graphite);
+    --overlay-blur: 0px;
     --overlay-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     --scrim-top: linear-gradient(to bottom, rgba(8, 9, 10, 0.88) 0%, rgba(8, 9, 10, 0) 100%);
     --scrim-bottom: linear-gradient(to top, rgba(8, 9, 10, 0.92) 0%, rgba(8, 9, 10, 0) 100%);
@@ -281,10 +281,8 @@
 
 @layer utilities {
   .glass-panel {
-    background-color: var(--overlay-bg);
-    border: 1px solid var(--overlay-border);
-    backdrop-filter: blur(var(--overlay-blur));
-    -webkit-backdrop-filter: blur(var(--overlay-blur));
+    background-color: var(--card);
+    border: 1px solid var(--border);
     box-shadow: var(--overlay-shadow);
     border-radius: 12px;
   }

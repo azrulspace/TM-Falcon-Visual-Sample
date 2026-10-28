@@ -303,7 +303,7 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
         {/* Scrollable Table Area */}
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10 border-b border-border">
+            <TableHeader className="sticky top-0 bg-card z-10 border-b border-border">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -399,7 +399,7 @@ export const DeviceStatusDrawer: React.FC<DeviceStatusDrawerProps> = ({
       {isExpanded && (
         <div className="h-[280px] border-t border-border overflow-y-auto overflow-x-auto bg-card animate-in slide-in-from-bottom-2 duration-150">
           <Table>
-            <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10 border-b border-border">
+            <TableHeader className="sticky top-0 bg-card z-10 border-b border-border">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (

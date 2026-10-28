@@ -282,10 +282,10 @@ export const CaseEvidenceCard: React.FC<CaseEvidenceCardProps> = ({ caseData }) 
           role="dialog"
           aria-modal="true"
           aria-label="Evidence Snapshot Lightbox"
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200"
         >
           {/* Lightbox Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/60">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
             <div>
               <h3 className="text-sm font-semibold text-foreground">
                 {caseData.id} · Evidence Snapshot
@@ -340,7 +340,7 @@ export const CaseEvidenceCard: React.FC<CaseEvidenceCardProps> = ({ caseData }) 
           </div>
 
           {/* Lightbox Footer */}
-          <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-card/60 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-card text-xs text-muted-foreground">
             <span>Press Escape or click Close to exit · Double click to toggle zoom</span>
             <span className="font-mono">{Math.round(zoomLevel * 100)}%</span>
           </div>

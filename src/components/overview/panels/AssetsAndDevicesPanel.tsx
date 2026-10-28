@@ -95,7 +95,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       className="flex flex-col w-[300px] max-h-[calc(100vh-220px)] text-foreground select-none overflow-hidden"
     >
       {/* 1. Sticky Header */}
-      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card/80">
+      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-foreground tracking-tight">
             Assets and devices
@@ -125,7 +125,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 2. Search Field and Helper Text */}
-      <div className="p-3 pb-2 border-b border-border shrink-0 space-y-1.5 bg-background/50">
+      <div className="p-3 pb-2 border-b border-border shrink-0 space-y-1.5 bg-card">
         <div className="relative flex items-center">
           <Search className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none" />
           <input
@@ -154,13 +154,13 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 3. Type Filter Chips */}
-      <div className="flex items-center px-3 py-1.5 gap-1 overflow-x-auto no-scrollbar border-b border-border shrink-0">
+      <div className="flex items-center px-3 py-1.5 gap-1 overflow-x-auto no-scrollbar border-b border-border shrink-0 bg-popover">
         <button
           onClick={() => handleSelectType('all')}
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'all'
               ? 'bg-primary text-primary-foreground font-semibold'
-              : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+              : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
           All ({featureCounts.total})
@@ -170,7 +170,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'pole'
               ? 'bg-primary text-primary-foreground font-semibold'
-              : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+              : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
           Poles ({featureCounts.poles})
@@ -180,7 +180,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'span'
               ? 'bg-primary text-primary-foreground font-semibold'
-              : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+              : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
           Cable spans ({featureCounts.spans})
@@ -190,7 +190,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
             typeFilter === 'device'
               ? 'bg-primary text-primary-foreground font-semibold'
-              : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+              : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
           Devices ({featureCounts.devices})
@@ -198,7 +198,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 4. Results Count */}
-      <div className="px-3.5 py-1 text-[10.5px] text-muted-foreground shrink-0 border-b border-border/40 flex justify-between items-center">
+      <div className="px-3.5 py-1 text-[10.5px] text-muted-foreground shrink-0 border-b border-border/40 flex justify-between items-center bg-popover">
         <span>Showing {filteredFeatures.length} features</span>
         {rawSearch && (
           <span className="font-mono text-[10px]">Filter: &quot;{rawSearch}&quot;</span>
@@ -206,7 +206,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       </div>
 
       {/* 5. Virtualized / Performant Scrollable List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1 no-scrollbar min-h-[220px]">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1 no-scrollbar min-h-[220px] bg-popover">
         {filteredFeatures.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-1">
             <Search className="size-6 text-muted-foreground/40 mb-1" />
@@ -235,7 +235,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
                 className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
                     ? 'border-l-2 border-l-primary border-primary/50 bg-primary/10 shadow-sm'
-                    : 'bg-card border-border/60 hover:bg-muted'
+                    : 'bg-card border border-border hover:border-border-strong'
                 }`}
               >
                 {/* Left: Icon, Type label, Mono ID */}

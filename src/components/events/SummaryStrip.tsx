@@ -72,7 +72,7 @@ export const SummaryStrip: React.FC<SummaryStripProps> = ({
   return (
     <div
       className={cn(
-        'w-full rounded-xl border border-border/80 bg-card/60 shadow-xs mb-4 select-none shrink-0 overflow-hidden',
+        'w-full rounded-xl border border-border bg-card shadow-xs mb-4 select-none shrink-0 overflow-hidden',
         isTabletPortrait
           ? 'grid grid-cols-2 divide-x divide-y divide-border min-h-[140px]'
           : 'h-[74px] flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-4 divide-x divide-border'

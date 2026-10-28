@@ -214,13 +214,6 @@ html[data-ui-mode="tablet"] [role="button"]:active {
   transition: transform 0.08s ease-out, opacity 0.08s ease-out;
 }
 
-/* Glass overlay blur capping at 8px max for tablet GPU efficiency */
-html[data-ui-mode="tablet"] .backdrop-blur-md,
-html[data-ui-mode="tablet"] .backdrop-blur-lg,
-html[data-ui-mode="tablet"] .backdrop-blur-xl {
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-}
 
 /* Enhanced focus ring for touch/keyboard */
 html[data-ui-mode="tablet"] *:focus-visible {

@@ -147,7 +147,7 @@ export const CaseActivityTab: React.FC<CaseActivityTabProps> = ({ activities = [
             {groupedByDay.map((group) => (
               <div key={group.dayLabel} className="space-y-3">
                 {/* Day Header */}
-                <div className="sticky top-0 z-10 py-1 bg-card/90 backdrop-blur-xs flex items-center gap-2">
+                <div className="sticky top-0 z-10 py-1 bg-card flex items-center gap-2">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {group.dayLabel}
                   </span>

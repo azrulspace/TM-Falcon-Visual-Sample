@@ -18,7 +18,7 @@ export const AssetsPill: React.FC<AssetsPillProps> = ({ isOpen, onToggle, classN
   return (
     <button
       onClick={onToggle}
-      className={`glass-panel px-3.5 py-1.5 flex items-center gap-2.5 text-xs font-medium cursor-pointer shadow-2xl transition-all border border-border/80 hover:bg-card/90 select-none rounded-lg ${
+      className={`bg-card px-3.5 py-1.5 flex items-center gap-2.5 text-xs font-medium cursor-pointer shadow-2xl transition-all border border-border hover:border-border-strong select-none rounded-lg ${
         isOpen ? 'ring-1 ring-primary bg-card text-foreground' : 'text-foreground'
       } ${className}`}
       aria-label="Toggle assets and devices drawer"

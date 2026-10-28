@@ -118,13 +118,13 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
     <>
       <div
         style={{ width: '280px' }}
-        className="pointer-events-auto flex flex-col rounded-[12px] border border-border bg-popover/95 backdrop-blur-md shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
+        className="pointer-events-auto flex flex-col rounded-[12px] border border-border bg-popover shadow-2xl overflow-hidden transition-all duration-200 select-none z-30"
         data-node-id="138:13630"
         data-name="Incidents and attention"
       >
         {/* Header (42px) */}
         <div
-          className="flex items-center justify-between h-[42px] px-[15px] border-b border-border shrink-0"
+          className="flex items-center justify-between h-[42px] px-[15px] border-b border-border bg-card shrink-0"
           data-node-id="138:13631"
           data-name="Incident panel header"
         >
@@ -143,7 +143,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
         </div>
 
         {/* Incident Rows (61px tall each matching Figma node 138:13643) */}
-        <div className="flex flex-col p-2 gap-1.5">
+        <div className="flex flex-col p-2 gap-1.5 bg-popover">
           {displayedIncidents.map((incident) => {
             const isSelected = selectedId && formatId(selectedId) === formatId(incident.id);
             const isOffline = incident.badge === 'Offline';
@@ -155,7 +155,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                 className={`flex flex-col justify-between h-[61px] p-2.5 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
                     ? 'bg-primary/10 border-primary ring-1 ring-primary/40'
-                    : 'bg-card border-border/60 hover:bg-muted shadow-xs'
+                    : 'bg-card border border-border hover:border-border-strong shadow-xs'
                 }`}
                 tabIndex={0}
                 role="button"

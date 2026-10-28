@@ -73,7 +73,7 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
         {/* Zoom controls: Stacked 48px buttons in tablet mode, horizontal pill in desktop */}
         {isTablet ? (
           <div
-            className="flex flex-col gap-1.5 p-1 rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors"
+            className="flex flex-col gap-1.5 p-1 rounded-xl border border-border bg-popover shadow-xl transition-colors"
             data-node-id="138:13849"
             data-name="Zoom controls tablet"
           >
@@ -97,7 +97,7 @@ export const MapScaleZoom: React.FC<MapScaleZoomProps> = ({
           </div>
         ) : (
           <div
-            className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors"
+            className="flex items-center h-[42px] w-[200px] p-1 rounded-xl border border-border bg-popover shadow-xl transition-colors"
             data-node-id="138:13849"
             data-name="Zoom controls"
           >

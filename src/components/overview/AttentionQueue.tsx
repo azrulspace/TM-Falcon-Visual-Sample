@@ -209,7 +209,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
 
   return (
     <div
-      className="flex flex-col h-full bg-card/95 backdrop-blur-md rounded-xl border border-border/80 overflow-hidden select-none outline-none shadow-2xl"
+      className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden select-none outline-none shadow-2xl"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       role="region"
@@ -439,7 +439,7 @@ export const AttentionQueue: React.FC<AttentionQueueProps> = ({
       )}
 
       {/* Footer Meta / Audit Counter in quiet sans text (D6) */}
-      <div className="px-3.5 py-2 border-t border-border bg-card/60 text-[11px] text-muted-foreground flex items-center justify-between shrink-0 font-sans select-none">
+      <div className="px-3.5 py-2 border-t border-border bg-card text-[11px] text-muted-foreground flex items-center justify-between shrink-0 font-sans select-none">
         <span>Active triage queue</span>
         <span className="text-[10px] text-muted-foreground/70">Keyboard: ↑/↓ select • Esc</span>
       </div>

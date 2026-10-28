@@ -337,7 +337,7 @@ export default function Risk() {
                   variant="outline"
                   size="sm"
                   onClick={() => setSegmentsDrawerOpen(true)}
-                  className="bg-card/90 dark:bg-card/95 backdrop-blur-md border border-border shadow-md gap-2 h-9 px-3 rounded-xl font-medium text-xs text-foreground cursor-pointer"
+                  className="bg-card border border-border shadow-md gap-2 h-9 px-3 rounded-xl font-medium text-xs text-foreground cursor-pointer"
                 >
                   <Layers className="size-4 text-primary" />
                   <span>Segments</span>

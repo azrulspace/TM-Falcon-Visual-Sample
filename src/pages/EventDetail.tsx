@@ -384,7 +384,7 @@ export default function EventDetail() {
       </main>
 
       {/* Sticky Bottom Action Bar (<768px mobile or Portrait Tablet) */}
-      <div className={`fixed bottom-0 inset-x-0 z-30 ${isPortrait ? 'flex' : 'flex md:hidden'} p-3 bg-card/95 backdrop-blur-md border-t border-border items-center justify-between gap-3 shadow-lg`}>
+      <div className={`fixed bottom-0 inset-x-0 z-30 ${isPortrait ? 'flex' : 'flex md:hidden'} p-3 bg-card border-t border-border items-center justify-between gap-3 shadow-lg`}>
         {/* Primary Action: Create Case */}
         <Button
           size="sm"

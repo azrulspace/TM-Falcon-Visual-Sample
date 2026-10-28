@@ -240,7 +240,7 @@ export const RiskToolbar: React.FC<RiskToolbarProps> = ({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               className={cn(
-                'w-full pl-9 pr-14 text-xs rounded-lg border border-border/80 bg-card/80 text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary',
+                'w-full pl-9 pr-14 text-xs rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary',
                 isTablet ? 'h-11 text-sm' : 'h-9'
               )}
             />

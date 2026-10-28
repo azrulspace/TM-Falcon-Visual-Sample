@@ -453,7 +453,7 @@ export const RiskMapCard: React.FC<RiskMapCardProps> = ({
           if (!s) return null;
           return (
             <div
-              className="fixed pointer-events-none z-50 px-2.5 py-1.5 rounded-lg bg-popover/95 backdrop-blur border border-border shadow-xl text-xs flex flex-col gap-1 text-foreground"
+              className="fixed pointer-events-none z-50 px-2.5 py-1.5 rounded-lg bg-popover border border-border shadow-xl text-xs flex flex-col gap-1 text-foreground"
               style={{
                 left: `${tooltipPos.x + 14}px`,
                 top: `${tooltipPos.y + 14}px`,
@@ -487,7 +487,7 @@ export const RiskMapCard: React.FC<RiskMapCardProps> = ({
 
       {/* 5. Floating Map Controls (Top Right) */}
       <div className="absolute right-3.5 top-3.5 flex flex-col gap-1.5 z-20">
-        <div className="flex flex-col rounded-lg bg-card/90 backdrop-blur-md border border-border/80 shadow-md overflow-hidden">
+        <div className="flex flex-col rounded-lg bg-card border border-border shadow-md overflow-hidden">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger render={
@@ -547,7 +547,7 @@ export const RiskMapCard: React.FC<RiskMapCardProps> = ({
         </div>
 
         {/* Basemap Switcher & Legend Popover */}
-        <div className="flex flex-col rounded-lg bg-card/90 backdrop-blur-md border border-border/80 shadow-md overflow-hidden">
+        <div className="flex flex-col rounded-lg bg-card border border-border shadow-md overflow-hidden">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger render={
@@ -587,7 +587,7 @@ export const RiskMapCard: React.FC<RiskMapCardProps> = ({
             <PopoverContent
               side="left"
               align="start"
-              className="w-56 p-3 bg-popover/95 backdrop-blur-md border border-border shadow-xl z-50 text-xs"
+              className="w-56 p-3 bg-popover border border-border shadow-xl z-50 text-xs"
             >
               <div className="font-semibold text-foreground pb-1.5 mb-2 border-b border-border flex items-center justify-between">
                 <span>Map Legend</span>
@@ -667,7 +667,7 @@ export const RiskMapCard: React.FC<RiskMapCardProps> = ({
       </div>
 
       {/* 6. Classification & Attribution Bar (Bottom Right, Section 5.6) */}
-      <div className="absolute bottom-2 right-2.5 z-20 flex items-center gap-2 pointer-events-none text-[10px] text-muted-foreground/80 font-mono bg-card/65 backdrop-blur-sm px-2 py-0.5 rounded border border-border/40">
+      <div className="absolute bottom-2 right-2.5 z-20 flex items-center gap-2 pointer-events-none text-[10px] text-muted-foreground font-mono bg-card px-2 py-0.5 rounded border border-border">
         <span>RESTRICTED // TM INTERNAL USE ONLY</span>
         <span>•</span>
         <span>© Esri, Maxar, OpenStreetMap</span>

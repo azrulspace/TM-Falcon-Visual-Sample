@@ -92,7 +92,7 @@ export const RiskKpiStrip: React.FC<RiskKpiStripProps> = ({
 
   if (isLoading) {
     return (
-      <div className="h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 animate-pulse">
+      <div className="h-[74px] w-full rounded-xl border border-border bg-card shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 animate-pulse">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex flex-col justify-center px-4 h-full min-w-[160px] lg:min-w-0">
             <div className="h-3 w-24 bg-muted rounded mb-2" />
@@ -114,7 +114,7 @@ export const RiskKpiStrip: React.FC<RiskKpiStripProps> = ({
               type="button"
               onClick={() => onSelectKpi(isActive ? null : cell.key)}
               className={cn(
-                'flex flex-col justify-center p-3 rounded-xl border border-border/80 bg-card/60 shadow-xs text-left transition-all cursor-pointer min-h-[64px]',
+                'flex flex-col justify-center p-3 rounded-xl border border-border bg-card shadow-xs text-left transition-all cursor-pointer min-h-[64px]',
                 isActive ? cell.activeClass : 'hover:bg-muted/40'
               )}
               title={cell.description}
@@ -143,7 +143,7 @@ export const RiskKpiStrip: React.FC<RiskKpiStripProps> = ({
   return (
     <div
       className={cn(
-        'h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0',
+        'h-[74px] w-full rounded-xl border border-border bg-card shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0',
         isTablet && 'h-[80px]'
       )}
     >

@@ -102,7 +102,7 @@ export const CaseLocationCard: React.FC<CaseLocationCardProps> = ({ caseData }) 
         )}
 
         {/* Map overlay controls */}
-        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1 bg-card/90 backdrop-blur-xs border border-border rounded-md p-0.5 shadow-md">
+        <div className="absolute right-2 top-2 z-10 flex flex-col gap-1 bg-card border border-border rounded-md p-0.5 shadow-md">
           <button
             type="button"
             onClick={() => setZoomSignal((z) => z + 1)}

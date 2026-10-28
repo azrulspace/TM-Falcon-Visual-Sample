@@ -44,7 +44,7 @@ export const CaseBulkActionBar: React.FC<CaseBulkActionBarProps> = ({
       )}
     >
       <div className={cn(
-        "flex flex-wrap items-center gap-2 sm:gap-3 rounded-full bg-card/95 dark:bg-card/90 backdrop-blur-md border border-border shadow-2xl text-card-foreground",
+        "flex flex-wrap items-center gap-2 sm:gap-3 rounded-full bg-card border border-border shadow-2xl text-card-foreground",
         isTablet ? "px-5 py-3" : "px-4 py-2.5"
       )}>
         {/* Count indicator */}

@@ -198,7 +198,7 @@ export const RiskTableView: React.FC<RiskTableViewProps> = ({
         <div className="flex-1 overflow-x-auto min-h-[380px]">
           <table className="w-full text-left border-collapse text-sm">
             {/* Sticky Header (Section 5.10) */}
-          <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-md border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none">
+          <thead className="sticky top-0 z-10 bg-card border-b border-border text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none">
             <tr className="h-11">
               <th className="w-10 px-3 text-center">
                 <input

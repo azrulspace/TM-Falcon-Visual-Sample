@@ -330,7 +330,7 @@ export const CaseWorkspaceHeader: React.FC<CaseWorkspaceHeaderProps> = ({
 
       {/* Mobile & Portrait Tablet Sticky Bottom Action Bar */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 p-3 bg-card/95 backdrop-blur-md border-t border-border z-40 flex items-center justify-between gap-3 shadow-2xl",
+        "fixed bottom-0 left-0 right-0 p-3 bg-card border-t border-border z-40 flex items-center justify-between gap-3 shadow-2xl",
         isPortrait ? "flex" : "flex sm:hidden"
       )}>
         <Button

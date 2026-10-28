@@ -84,7 +84,7 @@ export const CaseKpiStrip: React.FC<CaseKpiStripProps> = ({
               type="button"
               onClick={() => onSelectKpi(isActive ? null : cell.key)}
               className={cn(
-                'flex flex-col justify-center p-3 rounded-xl border border-border/80 bg-card/60 shadow-xs text-left transition-all cursor-pointer min-h-[64px]',
+                'flex flex-col justify-center p-3 rounded-xl border border-border bg-card shadow-xs text-left transition-all cursor-pointer min-h-[64px]',
                 isActive ? cell.activeClass : 'hover:bg-muted/40'
               )}
               title={`Filter by ${cell.label}`}
@@ -111,7 +111,7 @@ export const CaseKpiStrip: React.FC<CaseKpiStripProps> = ({
   }
 
   return (
-    <div className={`h-[74px] w-full rounded-xl border border-border/80 bg-card/60 shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0 ${isTablet ? 'h-[80px]' : ''}`}>
+    <div className={`h-[74px] w-full rounded-xl border border-border bg-card shadow-xs flex overflow-x-auto no-scrollbar lg:grid lg:grid-cols-5 divide-x divide-border mb-4 select-none shrink-0 ${isTablet ? 'h-[80px]' : ''}`}>
       {cells.map((cell) => {
         const isActive = activeKpi === cell.key;
         return (

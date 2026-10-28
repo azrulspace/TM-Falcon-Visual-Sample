@@ -89,7 +89,7 @@ export const RiskSegmentsColumn: React.FC<RiskSegmentsColumnProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       className={cn(
-        'app_card p-0 flex flex-col h-full overflow-hidden focus:outline-none select-none bg-card/90 border border-border/80 shadow-xs',
+        'app_card p-0 flex flex-col h-full overflow-hidden focus:outline-none select-none bg-card border border-border shadow-xs',
         className
       )}
       aria-label="Segments to inspect list"

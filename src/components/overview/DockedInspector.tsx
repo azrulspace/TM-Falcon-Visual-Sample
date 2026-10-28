@@ -75,7 +75,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
     'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=800&auto=format&fit=crop&q=80';
 
   return (
-    <div className="flex flex-col h-full bg-card/95 backdrop-blur-md rounded-panel border border-border overflow-hidden select-none animate-in fade-in-50 duration-150">
+    <div className="flex flex-col h-full bg-card rounded-panel border border-border overflow-hidden select-none animate-in fade-in-50 duration-150">
       {/* 1. Header with Back button, Type chip, Mono ID, Status/Priority Badge, and Close button */}
       <div className="p-3 border-b border-border flex items-center justify-between shrink-0 bg-muted/40">
         <div className="flex items-center gap-2 min-w-0">
@@ -290,7 +290,7 @@ export const DockedInspector: React.FC<DockedInspectorProps> = ({
       </div>
 
       {/* 3. Sticky Footer Actions */}
-      <div className="p-3 border-t border-border bg-card/90 backdrop-blur-xs flex items-center gap-2 shrink-0">
+      <div className="p-3 border-t border-border bg-card flex items-center gap-2 shrink-0">
         <Button
           variant={acknowledged ? 'outline' : 'default'}
           size="sm"

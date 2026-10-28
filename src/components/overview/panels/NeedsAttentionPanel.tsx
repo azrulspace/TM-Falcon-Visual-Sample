@@ -141,7 +141,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       className="flex flex-col w-[300px] max-h-[calc(100vh-220px)] text-foreground select-none overflow-hidden"
     >
       {/* 1. Sticky Header */}
-      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card/80">
+      <div className="flex items-center justify-between h-[42px] px-3.5 border-b border-border shrink-0 bg-card">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-foreground tracking-tight">
             Needs attention
@@ -163,13 +163,13 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       </div>
 
       {/* 2. Type Tabs (Shown only for types that have items) */}
-      <div className="flex items-center px-3 pt-2 gap-1.5 border-b border-border shrink-0">
+      <div className="flex items-center px-3 pt-2 gap-1.5 border-b border-border shrink-0 bg-popover">
         <button
           onClick={() => setActiveTab('devices')}
           className={`flex items-center gap-1.5 pb-2 px-2 text-xs font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'devices'
               ? 'border-primary text-foreground font-semibold'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+              : 'border-transparent text-secondary/70 hover:text-foreground'
           }`}
         >
           <span>Devices</span>
@@ -177,7 +177,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
               activeTab === 'devices'
                 ? 'bg-primary/20 text-primary'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-card border border-border text-secondary/80'
             }`}
           >
             {attentionDevicesList.length}
@@ -189,7 +189,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
           className={`flex items-center gap-1.5 pb-2 px-2 text-xs font-medium border-b-2 transition-all cursor-pointer ${
             activeTab === 'events'
               ? 'border-primary text-foreground font-semibold'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+              : 'border-transparent text-secondary/70 hover:text-foreground'
           }`}
         >
           <span>Events</span>
@@ -197,7 +197,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
               activeTab === 'events'
                 ? 'bg-primary/20 text-primary'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-card border border-border text-secondary/80'
             }`}
           >
             {attentionEventsList.length}
@@ -206,7 +206,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       </div>
 
       {/* 3. Scrolling Body with Rich 2-Line Rows */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar min-h-[160px]">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar min-h-[160px] bg-popover">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-1.5">
             <CheckCircle className="size-6 text-emerald-500" />
@@ -237,7 +237,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
                 className={`flex flex-col justify-between p-2.5 rounded-lg border transition-all cursor-pointer relative ${
                   isSelected
                     ? 'border-l-2 border-l-primary border-primary/50 bg-primary/10 shadow-sm'
-                    : 'bg-card border-border/60 hover:bg-muted'
+                    : 'bg-card border border-border hover:border-border-strong'
                 }`}
               >
                 {/* Line 1: Semantic icon, Mono ID, Status badge, and Age */}
@@ -285,7 +285,7 @@ export const NeedsAttentionPanel: React.FC<NeedsAttentionPanelProps> = ({ onClos
       </div>
 
       {/* 4. Sticky Footer with Navigation Link */}
-      <div className="p-2.5 px-3.5 border-t border-border shrink-0 bg-card/90 flex items-center justify-between">
+      <div className="p-2.5 px-3.5 border-t border-border shrink-0 bg-card flex items-center justify-between">
         {activeTab === 'devices' ? (
           <Link
             to="/assets/inventory"

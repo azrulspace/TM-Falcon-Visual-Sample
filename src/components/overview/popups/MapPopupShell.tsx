@@ -90,7 +90,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
         role="dialog"
         aria-modal="false"
         aria-label={`${typeChip} ${id} details`}
-        className={`pointer-events-auto fixed bottom-0 left-0 right-0 max-h-[52vh] z-40 flex flex-col rounded-t-2xl border-t border-border bg-popover/98 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in slide-in-from-bottom duration-200 ${className}`}
+        className={`pointer-events-auto fixed bottom-0 left-0 right-0 max-h-[52vh] z-40 flex flex-col rounded-t-2xl border-t border-border bg-popover shadow-2xl text-foreground select-none overflow-hidden animate-in slide-in-from-bottom duration-200 ${className}`}
       >
         {/* Drag handle */}
         <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30 mx-auto my-2.5 shrink-0" />
@@ -104,7 +104,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
         )}
 
         {/* 1. Header (44px) */}
-        <div className="flex items-center justify-between h-[44px] px-4 border-b border-border bg-card/80 shrink-0 z-10">
+        <div className="flex items-center justify-between h-[44px] px-4 border-b border-border bg-card shrink-0 z-10">
           <div className="flex items-center gap-2 min-w-0">
             <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider border font-sans ${chipColorClass}`}>
               {typeChip}
@@ -126,7 +126,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
         {/* 2. Scrollable Body */}
         <div
           ref={bodyRef}
-          className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs font-sans divide-y divide-border/40 *:pt-3.5 first:*:pt-0 no-scrollbar relative"
+          className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs font-sans divide-y divide-border/40 *:pt-3.5 first:*:pt-0 no-scrollbar relative bg-popover"
         >
           {title && (
             <div className="space-y-0.5 pb-0.5">
@@ -138,7 +138,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
 
         {/* 3. Footer */}
         {footerActions && (
-          <div className="p-3.5 border-t border-border bg-card/95 flex items-center justify-between gap-3 shrink-0 z-10">
+          <div className="p-3.5 border-t border-border bg-card flex items-center justify-between gap-3 shrink-0 z-10">
             {footerActions}
           </div>
         )}
@@ -154,7 +154,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       style={style}
       className={`pointer-events-auto absolute z-40 ${
         isTabletLandscape ? 'w-[340px]' : 'w-[320px] sm:w-[380px]'
-      } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
+      } max-w-[calc(100vw-32px)] max-h-[70vh] flex flex-col rounded-xl border border-border bg-popover shadow-2xl text-foreground select-none overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${className}`}
     >
       {/* Visual Tail pointing to marker */}
       {side === 'top' && !unlocated && (
@@ -179,7 +179,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       )}
 
       {/* 1. Sticky Non-Overlapping Header (Strict 44px height) */}
-      <div className="flex items-center justify-between h-[44px] px-3.5 border-b border-border bg-card/80 shrink-0 z-10">
+      <div className="flex items-center justify-between h-[44px] px-3.5 border-b border-border bg-card shrink-0 z-10">
         <div className="flex items-center gap-2 min-w-0">
           {/* Type Chip */}
           <span
@@ -210,7 +210,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
       {/* 2. Scrollable Body (Only body scrolls, no nested scroll) */}
       <div
         ref={bodyRef}
-        className="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs font-sans divide-y divide-border/40 *:pt-3.5 first:*:pt-0 no-scrollbar relative"
+        className="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs font-sans divide-y divide-border/40 *:pt-3.5 first:*:pt-0 no-scrollbar relative bg-popover"
       >
         {title && (
           <div className="space-y-0.5 pb-0.5">
@@ -227,7 +227,7 @@ export const MapPopupShell: React.FC<MapPopupShellProps> = ({
 
       {/* 3. Sticky Non-Overlapping Footer (Never covers body content) */}
       {footerActions && (
-        <div className="p-3 border-t border-border bg-card/90 flex items-center justify-between gap-2 shrink-0 z-10">
+        <div className="p-3 border-t border-border bg-card flex items-center justify-between gap-2 shrink-0 z-10">
           {footerActions}
         </div>
       )}

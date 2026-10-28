@@ -249,7 +249,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         <TabsContent value="history" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
           {relatedHistory.length > 0 ? (
             relatedHistory.map((item) => (
-              <div key={item.id} className="p-2.5 rounded-md border border-border bg-card/60 flex flex-col gap-1">
+              <div key={item.id} className="p-2.5 rounded-md border border-border bg-card flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-semibold text-primary">{item.id}</span>
                   <span className="text-[10px] text-muted-foreground font-mono">{item.captured}</span>
@@ -270,14 +270,14 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
 
         {/* Tab 4: Related Assets */}
         <TabsContent value="assets" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0 text-xs">
-          <div className="p-2.5 rounded border border-border bg-card/60 space-y-1">
+          <div className="p-2.5 rounded border border-border bg-card space-y-1">
             <div className="font-semibold text-foreground flex items-center gap-1.5">
               <Layers className="size-3.5 text-primary" />
               <span>Pole Structure {pole}</span>
             </div>
             <p className="text-[11px] text-muted-foreground">Steel composite pole with grounding lightning arrestor.</p>
           </div>
-          <div className="p-2.5 rounded border border-border bg-card/60 space-y-1">
+          <div className="p-2.5 rounded border border-border bg-card space-y-1">
             <div className="font-semibold text-foreground flex items-center gap-1.5">
               <Cable className="size-3.5 text-info" />
               <span>Cable Span {cableRoute}</span>

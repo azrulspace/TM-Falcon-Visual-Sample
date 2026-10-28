@@ -29,7 +29,7 @@ export const KpiStrip: React.FC<KpiStripProps> = ({
 
   return (
     <div
-      className={`glass-panel h-[88px] px-3 py-2 flex items-center gap-1 select-none shadow-2xl border border-border/80 rounded-xl overflow-x-auto no-scrollbar w-fit max-w-full ${className}`}
+      className={`bg-card h-[88px] px-3 py-2 flex items-center gap-1 select-none shadow-2xl border border-border rounded-xl overflow-x-auto no-scrollbar w-fit max-w-full ${className}`}
     >
       {/* Group 1: Device Health Telemetry (CEO_REFERENCE) */}
       <div className="flex items-center gap-1 shrink-0">

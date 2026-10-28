@@ -998,7 +998,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             left: `${Math.min(hoverPos.x + 14, (containerSize.width || 1200) - 260)}px`,
             top: `${Math.min(hoverPos.y - 45, (containerSize.height || 700) - 150)}px`,
           }}
-          className="absolute z-40 w-60 rounded-lg border border-border/80 glass-panel p-2.5 text-foreground shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in-50 duration-150 select-none"
+          className="absolute z-40 w-60 rounded-lg border border-border bg-popover p-2.5 text-foreground shadow-2xl pointer-events-none animate-in fade-in-50 duration-150 select-none"
         >
           <div className="flex items-center justify-between border-b border-border/60 pb-1 mb-1.5">
             <span className="font-mono text-xs font-bold text-primary">{hoveredMarker.id}</span>
@@ -1043,7 +1043,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             left: `${Math.min(hoverRoutePos.x + 16, (containerSize.width || 1200) - 280)}px`,
             top: `${Math.min(hoverRoutePos.y - 30, (containerSize.height || 700) - 120)}px`,
           }}
-          className="absolute z-40 w-64 rounded-lg border border-border bg-popover/95 p-3 text-foreground shadow-2xl backdrop-blur-md pointer-events-none animate-in fade-in-50 duration-150 select-none"
+          className="absolute z-40 w-64 rounded-lg border border-border bg-popover p-3 text-foreground shadow-2xl pointer-events-none animate-in fade-in-50 duration-150 select-none"
         >
           <div className="flex items-center justify-between border-b border-border pb-1.5 mb-2">
             <span className="font-mono text-xs font-bold text-sky-400">{hoveredRoute.id}</span>
@@ -1146,7 +1146,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
       {/* Layer Auto-On Toast Notification */}
       {toastNotification && (
-        <div className="absolute top-6 left-6 z-50 bg-popover/95 border border-primary/40 text-foreground px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
+        <div className="absolute top-6 left-6 z-50 bg-popover border border-primary/40 text-foreground px-4 py-2.5 rounded-lg shadow-2xl text-xs font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
           <span className="size-2 rounded-full bg-primary animate-pulse" />
           <span>{toastNotification}</span>
         </div>

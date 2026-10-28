@@ -118,7 +118,7 @@ export const MapLayersToolbar: React.FC<MapLayersToolbarProps> = ({
     <div
       className={`pointer-events-auto flex items-center ${
         isTablet ? 'h-[56px] px-1.5 py-1.5 gap-1.5' : 'h-[42px] px-1 py-1 gap-1'
-      } rounded-xl border border-border bg-popover/95 backdrop-blur-md shadow-xl transition-colors select-none overflow-x-auto no-scrollbar max-w-[calc(100vw-32px)] ${className}`}
+      } rounded-xl border border-border bg-popover shadow-xl transition-colors select-none overflow-x-auto no-scrollbar max-w-[calc(100vw-32px)] ${className}`}
       data-testid="map-layers-toolbar"
       data-name="Map layers toolbar"
       role="toolbar"

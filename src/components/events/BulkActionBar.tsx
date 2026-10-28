@@ -52,7 +52,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
       aria-label="Bulk actions toolbar"
       className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[95vw] animate-in fade-in slide-in-from-bottom-4 duration-200"
     >
-      <div className={`flex flex-wrap items-center gap-2 sm:gap-3 ${isTablet ? 'px-4 py-3' : 'px-4 py-2.5'} rounded-2xl sm:rounded-full bg-card/95 dark:bg-card/90 backdrop-blur-md border border-border shadow-2xl text-card-foreground`}>
+      <div className={`flex flex-wrap items-center gap-2 sm:gap-3 ${isTablet ? 'px-4 py-3' : 'px-4 py-2.5'} rounded-2xl sm:rounded-full bg-card border border-border shadow-2xl text-card-foreground`}>
         {/* Count indicator */}
         <div className="flex items-center gap-2 pr-2 border-r border-border">
           <span className={`flex items-center justify-center ${isTablet ? 'size-7 text-xs font-bold' : 'size-6 text-xs font-bold'} rounded-full bg-primary text-primary-foreground tabular-nums`}>

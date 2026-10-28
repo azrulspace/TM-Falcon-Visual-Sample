@@ -874,7 +874,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               {(sidebarMinimized || isTabletLandscape) && activeFlyoutItem && (
                 <div
                   style={{ top: `${activeFlyoutItem.top}px`, left: isTabletLandscape ? '80px' : '72px' }}
-                  className="absolute w-64 glass-panel p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
+                  className="absolute w-64 bg-popover rounded-xl p-3 z-50 animate-in fade-in-50 slide-in-from-left-2 duration-150 shadow-2xl border border-border"
                   onMouseEnter={handleFlyoutMouseEnter}
                   onMouseLeave={handleFlyoutMouseLeave}
                 >

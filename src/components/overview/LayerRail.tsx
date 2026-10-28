@@ -46,7 +46,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
 
   return (
     <aside
-      className={`glass-panel w-[72px] py-2 px-1 flex flex-col items-center gap-1 select-none shadow-2xl border border-border/80 rounded-xl ${className}`}
+      className={`bg-card w-[72px] py-2 px-1 flex flex-col items-center gap-1 select-none shadow-2xl border border-border rounded-xl ${className}`}
       aria-label="Map Tools and Layers Rail"
     >
       {/* Quick Search Button at Top */}
@@ -87,7 +87,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
             </button>
           }
         />
-        <PopoverContent side="right" sideOffset={12} className="w-60 glass-panel p-3 text-xs z-50">
+        <PopoverContent side="right" sideOffset={12} className="w-60 bg-popover border border-border rounded-xl shadow-2xl p-3 text-xs z-50">
           <div className="text-xs font-bold text-foreground mb-2 pb-1.5 border-b border-border">
             Map Overlays & Layers
           </div>
@@ -302,7 +302,7 @@ export const LayerRail: React.FC<LayerRailProps> = ({
             </button>
           }
         />
-        <PopoverContent side="right" sideOffset={12} className="w-64 glass-panel p-3 text-xs z-50">
+        <PopoverContent side="right" sideOffset={12} className="w-64 bg-popover border border-border rounded-xl shadow-2xl p-3 text-xs z-50">
           <div className="text-xs font-bold text-foreground mb-2 pb-1.5 border-b border-border">
             GIS Symbology Legend
           </div>
