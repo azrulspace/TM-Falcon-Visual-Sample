@@ -8,6 +8,7 @@ import { AssetsModuleTabs } from '@/components/assets/AssetsModuleTabs';
 import { PolesKpiStrip, type PoleKpiKey } from '@/components/assets/PolesKpiStrip';
 import { PolesToolbar } from '@/components/assets/PolesToolbar';
 import { PolesTableView } from '@/components/assets/PolesTableView';
+import { PolesMapView } from '@/components/assets/PolesMapView';
 import { PolesBulkActionBar } from '@/components/assets/PolesBulkActionBar';
 import {
   filterPoles,
@@ -383,9 +384,16 @@ export default function Poles() {
       />
 
       {filters.statusTab === 'active' && filters.viewMode === 'map' ? (
-        <div className="rounded-xl border border-border bg-card shadow-xs p-8 text-center text-xs text-muted-foreground">
-          Poles Map view will be implemented in Phase 3.
-        </div>
+        <PolesMapView
+          poles={sortedPoles}
+          cableSpans={cableSpans}
+          sites={sites}
+          activeSiteFilter={filters.site}
+          selectedPoleId={selectedPoleId}
+          onSelectPole={setSelectedPoleId}
+          onRelocate={handleRelocateOpen}
+          permissions={permissions}
+        />
       ) : (
         <PolesTableView
           poles={sortedPoles}
