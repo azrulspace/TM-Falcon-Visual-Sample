@@ -9,6 +9,7 @@ import { PolesKpiStrip, type PoleKpiKey } from '@/components/assets/PolesKpiStri
 import { PolesToolbar } from '@/components/assets/PolesToolbar';
 import { PolesTableView } from '@/components/assets/PolesTableView';
 import { PolesMapView } from '@/components/assets/PolesMapView';
+import { PolesDeletedView } from '@/components/assets/PolesDeletedView';
 import { PolesBulkActionBar } from '@/components/assets/PolesBulkActionBar';
 import { RegisterPoleDialog } from '@/components/assets/RegisterPoleDialog';
 import { RelocatePoleDialog } from '@/components/assets/dialogs/RelocatePoleDialog';
@@ -39,6 +40,7 @@ export default function Poles() {
     sites,
     poles,
     cableSpans,
+    capabilities,
     permissions,
     hasTestFlag,
     isLoading,
@@ -47,6 +49,7 @@ export default function Poles() {
     recentlyCreatedId,
     refreshAssets,
     retryLoad,
+    restorePole,
   } = useAssets();
   const { addToast } = useToast();
 
@@ -383,7 +386,23 @@ export default function Poles() {
         defaultSite={selectedSite}
       />
 
-      {filters.statusTab === 'active' && filters.viewMode === 'map' ? (
+      {filters.statusTab === 'deleted' ? (
+        <PolesDeletedView
+          poles={sortedPoles}
+          capabilities={capabilities}
+          permissions={permissions}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          onRestore={async (pole) => {
+            const res = await restorePole(pole.identifier);
+            if (res.ok) {
+              addToast('success', `Restored pole ${pole.identifier}.`);
+            } else {
+              addToast('error', res.error || 'Unable to restore pole.');
+            }
+          }}
+        />
+      ) : filters.statusTab === 'active' && filters.viewMode === 'map' ? (
         <PolesMapView
           poles={sortedPoles}
           cableSpans={cableSpans}

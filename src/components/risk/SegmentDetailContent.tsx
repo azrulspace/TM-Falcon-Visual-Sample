@@ -101,14 +101,14 @@ export const SegmentDetailContent: React.FC<SegmentDetailContentProps> = ({
           <div className="flex items-center justify-between gap-2 mb-1">
             <h3 className="text-sm sm:text-base font-bold text-foreground">
               <a
-                href={`/overview?asset=${segment.from}`}
+                href={`/assets/poles/${encodeURIComponent(formatId(segment.from))}`}
                 className="hover:underline text-primary font-mono"
               >
                 {formatId(segment.from)}
               </a>
               <span className="text-muted-foreground mx-1.5 font-sans font-normal">to</span>
               <a
-                href={`/overview?asset=${segment.to}`}
+                href={`/assets/poles/${encodeURIComponent(formatId(segment.to))}`}
                 className="hover:underline text-primary font-mono"
               >
                 {formatId(segment.to)}

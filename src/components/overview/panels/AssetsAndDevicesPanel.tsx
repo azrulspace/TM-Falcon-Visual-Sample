@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { allFeatures, featureCounts, type FeatureItem } from '@/data/features.ts';
 import { useOverview } from '@/contexts/OverviewContext';
+import { useAppContext } from '@/contexts/AppContext';
+import { useAssets } from '@/contexts/AssetsContext';
 
 export interface AssetsAndDevicesPanelProps {
   onClose: () => void;
@@ -20,6 +22,8 @@ export type FeatureTypeFilter = 'all' | 'pole' | 'span' | 'device';
 
 export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ onClose }) => {
   const { selectEntity, selectedEntity, selectedId, assetTypeFilter, setAssetTypeFilter } = useOverview();
+  const { previewDataMode } = useAppContext();
+  const { poles, cableSpans, devices: storeDevices } = useAssets();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [rawSearch, setRawSearch] = useState('');
@@ -65,9 +69,65 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const effectiveSource = useMemo(() => {
+    if (!previewDataMode) {
+      return { items: allFeatures, counts: featureCounts };
+    }
+    const mapLifecycleStatus = (lifecycle: string): FeatureItem['status'] => {
+      const l = lifecycle.toLowerCase();
+      if (l === 'active' || l === 'maintenance' || l === 'planned') return l;
+      return undefined;
+    };
+    const items: FeatureItem[] = [
+      ...poles
+        .filter((p) => p.lifecycle !== 'Deleted')
+        .map((p) => ({
+          id: p.identifier,
+          rawId: p.identifier,
+          type: 'pole' as const,
+          name: p.name !== p.identifier ? p.name : `Pole ${p.identifier}`,
+          site: p.siteName,
+          unlocated: !p.location,
+          hasLocation: Boolean(p.location),
+          coordinates: p.canvasPoint || undefined,
+          status: mapLifecycleStatus(p.lifecycle),
+        })),
+      ...cableSpans.map((s) => ({
+        id: s.identifier,
+        rawId: s.identifier,
+        type: 'span' as const,
+        name: s.name || s.identifier,
+        site: s.siteName,
+        unlocated: false,
+        hasLocation: true,
+        status: mapLifecycleStatus(s.lifecycle),
+      })),
+      ...storeDevices.map((d) => ({
+        id: d.id,
+        rawId: d.id,
+        type: 'device' as const,
+        name: d.name,
+        site: d.site,
+        unlocated: !d.location,
+        hasLocation: Boolean(d.location),
+        status: (d.status as FeatureItem['status']),
+      })),
+    ];
+    return {
+      items,
+      counts: {
+        total: items.length,
+        poles: poles.filter((p) => p.lifecycle !== 'Deleted').length,
+        spans: cableSpans.length,
+        devices: storeDevices.length,
+        attentionDevices: storeDevices.filter((d) => d.status !== 'online').length,
+      },
+    };
+  }, [previewDataMode, poles, cableSpans, storeDevices]);
+
   // Filter features by type and debounced search
   const filteredFeatures = useMemo(() => {
-    return allFeatures.filter((item) => {
+    return effectiveSource.items.filter((item) => {
       // 1. Type filter
       if (typeFilter !== 'all' && item.type !== typeFilter) return false;
 
@@ -81,7 +141,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
       }
       return true;
     });
-  }, [typeFilter, debouncedSearch]);
+  }, [effectiveSource.items, typeFilter, debouncedSearch]);
 
   const renderTypeIcon = (type: FeatureItem['type']) => {
     if (type === 'pole') return <MapPin className="size-3.5 text-emerald-400 shrink-0" />;
@@ -100,16 +160,16 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
           <span className="text-xs font-semibold text-foreground tracking-tight">
             Assets and devices
           </span>
-          {/* Total feature count badge: 238 */}
+          {/* Total feature count badge */}
           <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono bg-primary text-primary-foreground">
-            {featureCounts.total}
+            {effectiveSource.counts.total}
           </span>
-          {/* Small danger dot with troubled device count: 4 */}
-          {featureCounts.attentionDevices > 0 && (
-            <div className="flex items-center gap-1 pl-0.5" title={`${featureCounts.attentionDevices} devices need attention`}>
+          {/* Small danger dot with troubled device count */}
+          {effectiveSource.counts.attentionDevices > 0 && (
+            <div className="flex items-center gap-1 pl-0.5" title={`${effectiveSource.counts.attentionDevices} devices need attention`}>
               <span className="size-1.5 rounded-full bg-[#e33f50] animate-pulse" />
               <span className="text-[10px] font-mono font-bold text-[#e33f50]">
-                {featureCounts.attentionDevices}
+                {effectiveSource.counts.attentionDevices}
               </span>
             </div>
           )}
@@ -163,7 +223,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
               : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
-          All ({featureCounts.total})
+          All ({effectiveSource.counts.total})
         </button>
         <button
           onClick={() => handleSelectType('pole')}
@@ -173,7 +233,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
               : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
-          Poles ({featureCounts.poles})
+          Poles ({effectiveSource.counts.poles})
         </button>
         <button
           onClick={() => handleSelectType('span')}
@@ -183,7 +243,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
               : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
-          Cable spans ({featureCounts.spans})
+          Cable spans ({effectiveSource.counts.spans})
         </button>
         <button
           onClick={() => handleSelectType('device')}
@@ -193,7 +253,7 @@ export const AssetsAndDevicesPanel: React.FC<AssetsAndDevicesPanelProps> = ({ on
               : 'bg-card border border-border text-secondary/80 hover:text-foreground hover:bg-muted'
           }`}
         >
-          Devices ({featureCounts.devices})
+          Devices ({effectiveSource.counts.devices})
         </button>
       </div>
 

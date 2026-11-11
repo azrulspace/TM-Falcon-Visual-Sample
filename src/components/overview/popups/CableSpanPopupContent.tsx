@@ -141,11 +141,11 @@ export const CableSpanPopupContent: React.FC<CableSpanPopupContentProps> = ({
           size="sm"
           onClick={() => {
             onClose();
-            navigate(`/inventory?asset=${entity.id}`);
+            navigate(`/assets/cable-spans?selected=${encodeURIComponent(entity.id)}`);
           }}
           className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
         >
-          <span>View route in inventory</span>
+          <span>View cable span</span>
           <ExternalLink className="size-3" />
         </Button>
       </div>

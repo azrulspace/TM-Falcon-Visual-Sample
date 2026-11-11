@@ -8,10 +8,12 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { formatId } from '@/lib/utils';
+import { formatCoordinates } from '@/lib/geo';
 import { useOverview } from '@/contexts/OverviewContext';
+import { useAssets } from '@/contexts/AssetsContext';
 import type { ResolvedEntity } from '@/lib/selection';
-import { devices } from '@/data/devices';
 
 export interface PolePopupContentProps {
   entity: ResolvedEntity;
@@ -21,32 +23,41 @@ export interface PolePopupContentProps {
 export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onClose }) => {
   const navigate = useNavigate();
   const { selectEntity } = useOverview();
+  const { getPoleById } = useAssets();
 
-  // Find installed devices mounted on this pole
-  const installedDevs = devices.filter(
-    (d) => d.asset === entity.rawId || formatId(d.asset) === entity.id
-  );
+  const storePole = getPoleById(entity.id) || (entity.rawId ? getPoleById(entity.rawId) : undefined);
 
-  const site = entity.data?.site || 'Teluk Panglima Garang';
-  const protection = (entity.data as any)?.protection || 'No protection recorded';
+  const displayId = storePole?.identifier || entity.id;
+  const displayName =
+    storePole && storePole.name !== storePole.identifier
+      ? storePole.name
+      : `Distribution Pole ${displayId}`;
+  const site = storePole?.siteName || entity.data?.site || 'Teluk Panglima Garang';
+  const protection = storePole?.protection || (entity.data as any)?.protection || 'No protection recorded';
   const coords = entity.coordinates;
-
-  // Connected spans for this pole (e.g. AST-002 -> CBL-001, CBL-002)
-  const poleNum = parseInt(entity.id.replace(/\D/g, ''), 10) || 1;
-  const connectedSpans = [
-    `CBL-${String(Math.max(1, poleNum - 1)).padStart(3, '0')}`,
-    `CBL-${String(poleNum).padStart(3, '0')}`,
-  ];
+  const connectedSpans = storePole
+    ? storePole.connectedSpans.map((s) => s.identifier)
+    : (() => {
+        const poleNum = parseInt(entity.id.replace(/\D/g, ''), 10) || 1;
+        return [
+          `CBL-${String(Math.max(1, poleNum - 1)).padStart(3, '0')}`,
+          `CBL-${String(poleNum).padStart(3, '0')}`,
+        ];
+      })();
+  const installedDevs = storePole?.linkedDevices || [];
 
   return (
     <div className="space-y-3.5" data-testid="pole-popup-content">
       {/* 1. Pole Classification */}
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <MapPin className="size-4 text-emerald-400 shrink-0" />
-          <h3 className="text-sm font-bold text-foreground leading-snug">
-            Distribution Pole {entity.id}
-          </h3>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <MapPin className="size-4 text-emerald-400 shrink-0" />
+            <h3 className="text-sm font-bold text-foreground leading-snug truncate">
+              {displayName}
+            </h3>
+          </div>
+          {storePole && <StatusBadge status={storePole.lifecycle} size="sm" />}
         </div>
         <p className="text-[11px] text-muted-foreground">{site}</p>
       </div>
@@ -55,21 +66,25 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
       <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 border border-border text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block">Asset ID</span>
-          <span className="font-mono font-medium text-emerald-400">{entity.id}</span>
+          <span className="font-mono font-medium text-emerald-400">{displayId}</span>
         </div>
         <div>
-          <span className="text-[10px] text-muted-foreground block">Surge protection</span>
-          <span className="text-muted-foreground text-[11px] italic">{protection}</span>
+          <span className="text-[10px] text-muted-foreground block">Protection</span>
+          <span className="text-muted-foreground text-[11px]">{protection}</span>
         </div>
         <div className="col-span-2 border-t border-border/40 pt-1.5">
           <span className="text-[10px] text-muted-foreground block">Coordinates</span>
-          {coords ? (
+          {storePole?.location ? (
+            <span className="font-mono text-foreground text-[11px]">
+              {formatCoordinates(storePole.location)}
+            </span>
+          ) : coords ? (
             <span className="font-mono text-muted-foreground text-[11px]">
               X: {coords.x.toFixed(1)}, Y: {coords.y.toFixed(1)}
             </span>
           ) : (
             <span className="text-muted-foreground text-[11px] italic">
-              No coordinates surveyed
+              Not recorded
             </span>
           )}
         </div>
@@ -140,11 +155,11 @@ export const PolePopupContent: React.FC<PolePopupContentProps> = ({ entity, onCl
           size="sm"
           onClick={() => {
             onClose();
-            navigate(`/inventory?asset=${entity.id}`);
+            navigate(`/assets/poles/${encodeURIComponent(displayId)}`);
           }}
           className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
         >
-          <span>View asset in inventory</span>
+          <span>Open pole</span>
           <ExternalLink className="size-3" />
         </Button>
       </div>
