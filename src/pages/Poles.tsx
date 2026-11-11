@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAssets } from '@/contexts/AssetsContext';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -7,7 +7,8 @@ import { PolesPageHeader } from '@/components/assets/PolesPageHeader';
 import { AssetsModuleTabs } from '@/components/assets/AssetsModuleTabs';
 import { PolesKpiStrip, type PoleKpiKey } from '@/components/assets/PolesKpiStrip';
 import { PolesToolbar } from '@/components/assets/PolesToolbar';
-import { StatusBadge } from '@/components/common/StatusBadge';
+import { PolesTableView } from '@/components/assets/PolesTableView';
+import { PolesBulkActionBar } from '@/components/assets/PolesBulkActionBar';
 import {
   filterPoles,
   sortPoles,
@@ -17,9 +18,13 @@ import {
   buildPolesSearchParams,
   exportPolesToCsv,
 } from '@/data/poleSelectors';
-import { formatCoordinates } from '@/lib/geo';
 import { getServerNow } from '@/lib/dateTime';
-import type { PoleFilterState, PoleSortKey, PoleSortDir } from '@/types/assets';
+import type {
+  PoleFilterState,
+  PoleSortKey,
+  PoleSortDir,
+  PoleWithRelations,
+} from '@/types/assets';
 
 export default function Poles() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,7 +37,10 @@ export default function Poles() {
     hasTestFlag,
     isLoading,
     isRefreshing,
+    errorMessage,
+    recentlyCreatedId,
     refreshAssets,
+    retryLoad,
   } = useAssets();
   const { addToast } = useToast();
 
@@ -46,11 +54,12 @@ export default function Poles() {
   const [sortKey, setSortKey] = useState<PoleSortKey>(initial.sortKey);
   const [sortDir, setSortDir] = useState<PoleSortDir>(initial.sortDir);
   const [currentPage, setCurrentPage] = useState<number>(initial.page);
-  const [rowsPerPage] = useState<number>(initial.limit);
-  const [selectedPoleId] = useState<string | null>(initial.selectedPoleId);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(initial.limit);
+  const [selectedPoleId, setSelectedPoleId] = useState<string | null>(initial.selectedPoleId);
   const [activeKpi, setActiveKpi] = useState<PoleKpiKey | null>(
     (initial.activeKpi as PoleKpiKey) || null
   );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Sync site filter when header site dropdown changes
   const prevHeaderSiteRef = useRef(selectedSite);
@@ -104,75 +113,102 @@ export default function Poles() {
     setCurrentPage(1);
   }, []);
 
-  const handleSelectKpi = useCallback(
-    (key: PoleKpiKey | null) => {
-      setActiveKpi(key);
+  const handleHeaderSort = useCallback(
+    (key: PoleSortKey) => {
+      if (sortKey === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortKey(key);
+        setSortDir(key === 'lastUpdatedAt' || key === 'registeredAt' ? 'desc' : 'asc');
+      }
       setCurrentPage(1);
-      if (!key) {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'active',
-          lifecycle: undefined,
-          locationFilter: 'all',
-          linkedDevice: 'all',
-          withEvents30d: false,
-        }));
-        return;
-      }
-      if (key === 'active_poles') {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'active',
-          lifecycle: ['Active'],
-          locationFilter: 'all',
-          linkedDevice: 'all',
-          withEvents30d: false,
-        }));
-      } else if (key === 'missing_location') {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'active',
-          lifecycle: undefined,
-          locationFilter: 'missing_location',
-          linkedDevice: 'all',
-          withEvents30d: false,
-        }));
-      } else if (key === 'with_linked_device') {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'active',
-          lifecycle: undefined,
-          locationFilter: 'all',
-          linkedDevice: 'with',
-          withEvents30d: false,
-        }));
-      } else if (key === 'with_events_30d') {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'active',
-          lifecycle: undefined,
-          locationFilter: 'all',
-          linkedDevice: 'all',
-          withEvents30d: true,
-        }));
-      } else if (key === 'deleted') {
-        setFilters((prev) => ({
-          ...prev,
-          statusTab: 'deleted',
-          viewMode: 'table',
-          lifecycle: undefined,
-          locationFilter: 'all',
-          linkedDevice: 'all',
-          withEvents30d: false,
-        }));
-      }
     },
-    []
+    [sortKey]
   );
+
+  const handleSelectKpi = useCallback((key: PoleKpiKey | null) => {
+    setActiveKpi(key);
+    setCurrentPage(1);
+    if (!key) {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'active',
+        lifecycle: undefined,
+        locationFilter: 'all',
+        linkedDevice: 'all',
+        withEvents30d: false,
+      }));
+      return;
+    }
+    if (key === 'active_poles') {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'active',
+        lifecycle: ['Active'],
+        locationFilter: 'all',
+        linkedDevice: 'all',
+        withEvents30d: false,
+      }));
+    } else if (key === 'missing_location') {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'active',
+        lifecycle: undefined,
+        locationFilter: 'missing_location',
+        linkedDevice: 'all',
+        withEvents30d: false,
+      }));
+    } else if (key === 'with_linked_device') {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'active',
+        lifecycle: undefined,
+        locationFilter: 'all',
+        linkedDevice: 'with',
+        withEvents30d: false,
+      }));
+    } else if (key === 'with_events_30d') {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'active',
+        lifecycle: undefined,
+        locationFilter: 'all',
+        linkedDevice: 'all',
+        withEvents30d: true,
+      }));
+    } else if (key === 'deleted') {
+      setFilters((prev) => ({
+        ...prev,
+        statusTab: 'deleted',
+        viewMode: 'table',
+        lifecycle: undefined,
+        locationFilter: 'all',
+        linkedDevice: 'all',
+        withEvents30d: false,
+      }));
+    }
+  }, []);
 
   const handleClearKpi = useCallback(() => {
     setActiveKpi(null);
   }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setActiveKpi(null);
+    setFilters((prev) => ({
+      ...prev,
+      search: undefined,
+      lifecycle: undefined,
+      site: selectedSite,
+      locationFilter: 'all',
+      protection: undefined,
+      linkedDevice: 'all',
+      withEvents30d: false,
+      updatedRange: 'all',
+      hideTestRecords: false,
+    }));
+    setCurrentPage(1);
+  }, [selectedSite]);
 
   const kpis = useMemo(
     () => getPoleKpiCounts(poles, filters.site),
@@ -212,6 +248,50 @@ export default function Poles() {
     [poles]
   );
 
+  const siteScopedCount = useMemo(() => {
+    return poles.filter((p) => {
+      if (filters.statusTab === 'deleted' ? p.lifecycle !== 'Deleted' : p.lifecycle === 'Deleted') {
+        return false;
+      }
+      if (filters.site && filters.site !== 'ALL' && p.siteName !== filters.site) return false;
+      return true;
+    }).length;
+  }, [poles, filters.statusTab, filters.site]);
+
+  const hasActiveFilters = Boolean(
+    filters.search ||
+      filters.lifecycle?.length ||
+      (filters.locationFilter && filters.locationFilter !== 'all') ||
+      filters.protection?.length ||
+      (filters.linkedDevice && filters.linkedDevice !== 'all') ||
+      filters.withEvents30d ||
+      (filters.updatedRange && filters.updatedRange !== 'all') ||
+      filters.hideTestRecords
+  );
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllPage = useCallback((all: boolean, pageIds: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (all) pageIds.forEach((id) => next.add(id));
+      else pageIds.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllResults = useCallback(() => {
+    setSelectedIds(new Set(sortedPoles.map((p) => p.identifier)));
+    addToast('info', `Selected all ${sortedPoles.length} poles.`);
+  }, [sortedPoles, addToast]);
+
   const handleExport = useCallback(() => {
     if (sortedPoles.length === 0) {
       addToast('info', 'No poles to export for current filter criteria.');
@@ -222,18 +302,53 @@ export default function Poles() {
     addToast('success', `Exported ${sortedPoles.length} poles to CSV.`);
   }, [sortedPoles, addToast]);
 
-  const handleRegisterPlaceholder = useCallback(() => {
+  const handleExportSelected = useCallback(() => {
+    const selectedList = sortedPoles.filter((p) => selectedIds.has(p.identifier));
+    if (selectedList.length === 0) return;
+    const dateStr = new Date().toISOString().split('T')[0];
+    exportPolesToCsv(selectedList, `falcon_poles_selected_${dateStr}.csv`);
+    addToast('success', `Exported ${selectedList.length} selected poles to CSV.`);
+  }, [sortedPoles, selectedIds, addToast]);
+
+  // Action handlers (wired cleanly into dialogs in Phases 3, 4, 7)
+  const handleRegisterOpen = useCallback(() => {
     addToast('info', 'Register pole modal will be connected in Phase 4.');
   }, [addToast]);
 
+  const handleViewOnMap = useCallback((pole: PoleWithRelations) => {
+    setSelectedPoleId(pole.identifier);
+    setFilters((prev) => ({ ...prev, statusTab: 'active', viewMode: 'map' }));
+  }, []);
+
+  const handleRelocateOpen = useCallback(
+    (pole: PoleWithRelations) => {
+      addToast('info', `Relocate flow for ${pole.identifier} will open in Phase 7.`);
+    },
+    [addToast]
+  );
+
+  const handleEditOpen = useCallback(
+    (pole: PoleWithRelations) => {
+      addToast('info', `Edit flow for ${pole.identifier} will open in Phase 7.`);
+    },
+    [addToast]
+  );
+
+  const handleDeleteOpen = useCallback(
+    (pole: PoleWithRelations) => {
+      addToast('info', `Delete impact dialog for ${pole.identifier} will open in Phase 7.`);
+    },
+    [addToast]
+  );
+
   return (
-    <div className="w-full max-w-[1600px] mx-auto pb-10">
+    <div className="w-full max-w-[1600px] mx-auto pb-16">
       <PolesPageHeader
         isRefreshing={isRefreshing}
         onRefresh={refreshAssets}
         onExport={handleExport}
         exportDisabled={sortedPoles.length === 0}
-        onRegisterPole={handleRegisterPlaceholder}
+        onRegisterPole={handleRegisterOpen}
         permissions={permissions}
       />
 
@@ -267,52 +382,50 @@ export default function Poles() {
         defaultSite={selectedSite}
       />
 
-      {/* Phase 1 content preview container (full Table View in Phase 2, Map View in Phase 3, Deleted View in Phase 8) */}
-      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between text-xs">
-          <span className="font-semibold text-foreground">
-            {filters.statusTab === 'deleted'
-              ? 'Deleted poles'
-              : filters.viewMode === 'map'
-              ? 'Poles map view (Phase 3)'
-              : 'Poles table view'}
-          </span>
-          <span className="font-mono text-muted-foreground">
-            {sortedPoles.length} matching records
-          </span>
+      {filters.statusTab === 'active' && filters.viewMode === 'map' ? (
+        <div className="rounded-xl border border-border bg-card shadow-xs p-8 text-center text-xs text-muted-foreground">
+          Poles Map view will be implemented in Phase 3.
         </div>
-        <div className="divide-y divide-border">
-          {sortedPoles.slice(0, 10).map((p) => (
-            <div
-              key={p.identifier}
-              className="px-4 py-3 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors text-xs"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Link
-                  to={`/assets/poles/${encodeURIComponent(p.identifier)}`}
-                  className="font-mono font-semibold text-primary hover:underline"
-                >
-                  {p.identifier}
-                </Link>
-                {p.name !== p.identifier && (
-                  <span className="text-muted-foreground truncate">{p.name}</span>
-                )}
-                <StatusBadge status={p.lifecycle} size="sm" />
-              </div>
-              <div className="flex items-center gap-4 text-muted-foreground font-mono shrink-0">
-                <span>{p.siteName}</span>
-                <span>{formatCoordinates(p.location)}</span>
-              </div>
-            </div>
-          ))}
-          {sortedPoles.length === 0 && (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              No poles match the current filter criteria.
-            </div>
-          )}
-        </div>
-      </div>
+      ) : (
+        <PolesTableView
+          poles={sortedPoles}
+          totalActiveDatasetCount={siteScopedCount}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAllPage={handleSelectAllPage}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleHeaderSort}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          rowsPerPage={rowsPerPage}
+          setRowsPerPage={setRowsPerPage}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+          onRegisterPole={handleRegisterOpen}
+          onViewOnMap={handleViewOnMap}
+          onRelocate={handleRelocateOpen}
+          onEdit={handleEditOpen}
+          onDelete={handleDeleteOpen}
+          permissions={permissions}
+          recentlyCreatedId={recentlyCreatedId}
+          isLoading={isLoading}
+          errorMessage={errorMessage}
+          onRetry={retryLoad}
+        />
+      )}
+
+      <PolesBulkActionBar
+        selectedCount={selectedIds.size}
+        totalCount={sortedPoles.length}
+        isAllResultsSelected={
+          sortedPoles.length > 0 && selectedIds.size >= sortedPoles.length
+        }
+        onSelectAllResults={handleSelectAllResults}
+        onExportSelected={handleExportSelected}
+        onClear={() => setSelectedIds(new Set())}
+        permissions={permissions}
+      />
     </div>
   );
 }
-
