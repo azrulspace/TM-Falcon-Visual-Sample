@@ -18,6 +18,10 @@ import {
 import { PoleInfoCard } from '@/components/assets/PoleInfoCard';
 import { PoleLocationCard } from '@/components/assets/PoleLocationCard';
 import { PoleSiteCard } from '@/components/assets/PoleSiteCard';
+import { PoleHistoryTab } from '@/components/assets/detail/PoleHistoryTab';
+import { PoleDevicesTab } from '@/components/assets/detail/PoleDevicesTab';
+import { PoleEventsTab } from '@/components/assets/detail/PoleEventsTab';
+import { PoleSpansTab } from '@/components/assets/detail/PoleSpansTab';
 import { cn } from '@/lib/utils';
 
 const VALID_TABS: PoleDetailTabKey[] = ['history', 'devices', 'events', 'spans'];
@@ -195,30 +199,12 @@ export default function PoleDetail() {
             </div>
 
             <div className="p-5">
-              {/* Phase 5 Tab Body Placeholder — replaced by rich Phase 6 tab components */}
-              <div className="text-xs text-muted-foreground space-y-2">
-                {activeTab === 'history' && (
-                  <p>
-                    Merged History view ({pole.timeline.length} timeline events across{' '}
-                    {pole.lifecycleHistory.length} lifecycle periods) will render full structured Timeline and Status periods in Phase 6.
-                  </p>
-                )}
-                {activeTab === 'devices' && (
-                  <p>
-                    Linked devices ({pole.linkedDevicesCount}) panel will render full device table and empty state in Phase 6.
-                  </p>
-                )}
-                {activeTab === 'events' && (
-                  <p>
-                    Events ({pole.allEventsCount} total, {pole.events30dCount} in last 30 days) on pole and connected spans will render in Phase 6.
-                  </p>
-                )}
-                {activeTab === 'spans' && (
-                  <p>
-                    Connected cable spans ({pole.cableSpansCount}) table will render in Phase 6.
-                  </p>
-                )}
-              </div>
+              {activeTab === 'history' && <PoleHistoryTab pole={pole} />}
+              {activeTab === 'devices' && (
+                <PoleDevicesTab pole={pole} capabilities={capabilities} />
+              )}
+              {activeTab === 'events' && <PoleEventsTab pole={pole} />}
+              {activeTab === 'spans' && <PoleSpansTab pole={pole} />}
             </div>
           </div>
         </div>

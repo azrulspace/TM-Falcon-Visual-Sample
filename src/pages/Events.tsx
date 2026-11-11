@@ -12,12 +12,14 @@ import { AssignEventDialog } from '@/components/events/dialogs/AssignEventDialog
 import { KeyboardShortcutsDialog } from '@/components/events/dialogs/KeyboardShortcutsDialog';
 import { LightboxModal } from '@/components/events/dialogs/LightboxModal';
 import { useEvents } from '@/contexts/EventsContext';
+import { useAssets } from '@/contexts/AssetsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { SearchX, History, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
 import type { FalconEvent } from '@/data/events';
 import { filterEvents, sortEvents, exportEventsToCsv, type EventFilterState } from '@/data/eventSelectors';
+import { getEventsForPole } from '@/data/poleSelectors';
 
 export default function Events() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,7 +29,9 @@ export default function Events() {
     activeEventId,
     bulkAcknowledge,
   } = useEvents();
+  const { getPoleById } = useAssets();
   const { addToast } = useToast();
+  const scopedPoleId = searchParams.get('pole') || undefined;
 
   // 1. Filter State (synced with URL)
   const [filters, setFilters] = useState<InboxFilters>(() => ({
@@ -231,6 +235,18 @@ export default function Events() {
   };
 
   // 6. Filter & Sorting via eventSelectors Single Source of Truth
+  const poleScopeEventIds = useMemo(() => {
+    if (!scopedPoleId) return undefined;
+    const poleObj = getPoleById(scopedPoleId);
+    if (!poleObj) return [] as string[];
+    return getEventsForPole(
+      poleObj,
+      poleObj.connectedSpans,
+      poleObj.linkedDevices,
+      events
+    ).allEvents.map((ev) => ev.id);
+  }, [scopedPoleId, getPoleById, events]);
+
   const filterState: EventFilterState = useMemo(() => {
     return {
       tab: filters.tab,
@@ -241,17 +257,19 @@ export default function Events() {
       timeRange: filters.timeRange,
       device: filters.device,
       asset: filters.asset,
+      poleScopeEventIds,
       source: filters.source ? filters.source.split(',') : undefined,
       capturedBefore: filters.capturedBefore || searchParams.get('captured_before') || undefined,
       fromEventId: filters.fromEventId || searchParams.get('from') || undefined,
     };
-  }, [filters, searchParams]);
+  }, [filters, poleScopeEventIds, searchParams]);
 
-  // Alert History Scoped Context Evaluation (Section 6)
+  // Alert History or Pole Scoped Context Evaluation
   const isContextScoped = Boolean(
-    (filters.asset || filters.device) && (filterState.capturedBefore || filterState.fromEventId)
+    scopedPoleId ||
+      ((filters.asset || filters.device) && (filterState.capturedBefore || filterState.fromEventId))
   );
-  const contextScopeLabel = formatId(filters.asset || filters.device || 'CBL-005');
+  const contextScopeLabel = scopedPoleId || formatId(filters.asset || filters.device || 'CBL-005');
   const contextFromEventId = filterState.fromEventId || filterState.capturedBefore || null;
 
   const scopedEventsForKpis = useMemo(() => {
@@ -259,13 +277,21 @@ export default function Events() {
       return filterEvents(events, {
         asset: filters.asset,
         device: filters.device,
+        poleScopeEventIds,
         capturedBefore: filterState.capturedBefore,
       });
     }
     return events;
-  }, [events, isContextScoped, filters.asset, filters.device, filterState.capturedBefore]);
+  }, [events, isContextScoped, filters.asset, filters.device, poleScopeEventIds, filterState.capturedBefore]);
 
   const handleClearContextFilter = () => {
+    if (scopedPoleId) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('pole');
+        return next;
+      });
+    }
     setFilters((prev) => {
       const next = { ...prev };
       delete next.asset;
@@ -368,16 +394,41 @@ export default function Events() {
                 <History className="size-3.5" />
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-semibold text-foreground">
-                  Alert history for {contextScopeLabel}: {filteredEvents.length} events captured before {formatId(contextFromEventId || 'EVT-0258')}
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  (Counts are scoped to this {filters.device ? 'device' : 'span'})
-                </span>
+                {scopedPoleId ? (
+                  <>
+                    <span className="font-semibold text-foreground">
+                      Events for pole <span className="font-mono">{scopedPoleId}</span>:{' '}
+                      {filteredEvents.length} events
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      (Includes events directly on this pole, mounted devices, and connected cable spans)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-foreground">
+                      Alert history for {contextScopeLabel}: {filteredEvents.length} events captured before {formatId(contextFromEventId || 'EVT-0258')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      (Counts are scoped to this {filters.device ? 'device' : 'span'})
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              {scopedPoleId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/assets/poles/${encodeURIComponent(scopedPoleId)}`)}
+                  className="h-7 px-2.5 text-xs border-border hover:bg-muted text-foreground gap-1.5 cursor-pointer font-medium"
+                >
+                  <ArrowLeft className="size-3" />
+                  <span>Back to {scopedPoleId}</span>
+                </Button>
+              )}
               {contextFromEventId && (
                 <Button
                   variant="outline"

@@ -13,6 +13,7 @@ export interface EventFilterState {
   source?: string[] | string;
   device?: string;
   asset?: string;
+  poleScopeEventIds?: string[];
   capturedBefore?: string; // for Alert history scoped view
   fromEventId?: string;
 }
@@ -63,9 +64,10 @@ export function matchEvent(
   filters: EventFilterState,
   options?: { ignoreStatus?: boolean }
 ): boolean {
-  // 1. Scoped context filters (Asset, Device, Captured Before)
+  // 1. Scoped context filters (Asset, Device, Pole scope, Captured Before)
   if (filters.asset && e.asset !== filters.asset) return false;
   if (filters.device && e.device !== filters.device) return false;
+  if (filters.poleScopeEventIds && !filters.poleScopeEventIds.includes(e.id)) return false;
   if (filters.capturedBefore) {
     if (filters.capturedBefore.startsWith('EVT-')) {
       const targetNum = parseInt(filters.capturedBefore.replace(/\D/g, ''), 10);
