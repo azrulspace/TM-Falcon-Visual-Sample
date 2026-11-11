@@ -102,13 +102,14 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingPin, setIsDraggingPin] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ clientX: 0, clientY: 0, panX: 0, panY: 0 });
   const [hoveredPole, setHoveredPole] = useState<PoleWithRelations | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 900, height: 540 });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const worldGroupRef = useRef<SVGGElement>(null);
   const mouseStartPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -181,7 +182,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
     }
     if (locatedPoles.length === 1) {
       const { pt } = locatedPoles[0];
-      setPan({ x: (500 - pt.x) * 0.75, y: (350 - pt.y) * 0.75 });
+      setPan({ x: 500 - pt.x, y: 350 - pt.y });
       setScale(1.45);
       return;
     }
@@ -199,8 +200,8 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
     const midY = (minY + maxY) / 2;
     const spanX = Math.max(80, maxX - minX);
     const spanY = Math.max(80, maxY - minY);
-    const nextScale = Math.min(2.2, Math.max(0.8, Math.min(680 / spanX, 460 / spanY)));
-    setPan({ x: (500 - midX) * 0.75, y: (350 - midY) * 0.75 });
+    const nextScale = Math.min(2.2, Math.max(0.95, Math.min(700 / spanX, 480 / spanY)));
+    setPan({ x: 500 - midX, y: 350 - midY });
     setScale(Number(nextScale.toFixed(2)));
   }, [locatedPoles]);
 
@@ -214,7 +215,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
     if (!selectedPoleId) return;
     const target = locatedPoles.find((l) => l.pole.identifier === selectedPoleId);
     if (!target) return;
-    setPan({ x: (500 - target.pt.x) * 0.75, y: (350 - target.pt.y) * 0.75 });
+    setPan({ x: 500 - target.pt.x, y: 350 - target.pt.y });
     setScale((s) => Math.max(s, 1.5));
   }, [selectedPoleId, locatedPoles]);
 
@@ -270,9 +271,10 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
 
   const clientToSvgPoint = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
-    if (!svg) return null;
+    const group = worldGroupRef.current;
+    if (!svg || !group) return null;
     try {
-      const ctm = svg.getScreenCTM();
+      const ctm = group.getScreenCTM();
       if (!ctm) return null;
       const pt = svg.createSVGPoint();
       pt.x = clientX;
@@ -290,8 +292,8 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
       const h = containerSize.height || 540;
       const baseScale = Math.max(w / 1000, h / 700);
       return {
-        x: w / 2 + scale * ((svgX - 500) * baseScale + pan.x),
-        y: h / 2 + scale * ((svgY - 350) * baseScale + pan.y),
+        x: w / 2 + baseScale * scale * (svgX - 500 + pan.x),
+        y: h / 2 + baseScale * scale * (svgY - 350 + pan.y),
       };
     },
     [containerSize.width, containerSize.height, scale, pan.x, pan.y]
@@ -319,7 +321,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    setDragStart({ clientX: e.clientX, clientY: e.clientY, panX: pan.x, panY: pan.y });
     mouseStartPos.current = { x: e.clientX, y: e.clientY };
   };
 
@@ -332,7 +334,14 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
       return;
     }
     if (isDragging) {
-      setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+      const w = containerSize.width || 900;
+      const h = containerSize.height || 540;
+      const baseScale = Math.max(w / 1000, h / 700);
+      const divisor = baseScale * scale || 1;
+      setPan({
+        x: dragStart.panX + (e.clientX - dragStart.clientX) / divisor,
+        y: dragStart.panY + (e.clientY - dragStart.clientY) / divisor,
+      });
     }
   };
 
@@ -398,8 +407,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
         ref={svgRef}
         viewBox="0 0 1000 700"
         preserveAspectRatio="xMidYMid slice"
-        className="w-full h-full object-cover origin-center transition-transform duration-200 ease-out"
-        style={{ transform: `scale(${scale}) translate(${pan.x}px, ${pan.y}px)` }}
+        className="w-full h-full block"
         role="img"
         aria-label="Falcon Poles Satellite Map"
       >
@@ -410,6 +418,10 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
           height="5000"
           fill={basemap === 'satellite' ? '#070f1a' : '#e2e8f0'}
         />
+        <g
+          ref={worldGroupRef}
+          transform={`translate(500 350) scale(${scale}) translate(${-500 + pan.x} ${-350 + pan.y})`}
+        >
 
         {/* GIS Tiles */}
         <g>
@@ -585,6 +597,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
             />
           </g>
         )}
+        </g>
       </svg>
 
       {/* Top-Left Basemap Switcher */}
@@ -796,7 +809,12 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
       </div>
 
       {pickerMode && (
-        <div className="absolute bottom-2 left-2 z-10 px-2.5 py-1 rounded-md bg-black/75 border border-white/10 text-[11px] text-white flex items-center gap-1.5 pointer-events-none">
+        <div
+          className={cn(
+            'absolute z-10 px-2.5 py-1 rounded-md bg-black/75 border border-white/10 text-[11px] text-white flex items-center gap-1.5 pointer-events-none',
+            compactControls ? 'top-2.5 left-2.5' : 'bottom-2 left-2'
+          )}
+        >
           <MapPin className="size-3 text-primary" />
           <span>Click map or drag pin to set coordinates</span>
         </div>

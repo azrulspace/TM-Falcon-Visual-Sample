@@ -4,15 +4,26 @@ import { X, CheckCircle, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error';
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: string;
   type: ToastType;
   title?: string;
   message: string;
+  action?: ToastAction;
 }
 
 interface ToastContextType {
-  addToast: (type: ToastType, message: string, title?: string) => void;
+  addToast: (
+    type: ToastType,
+    message: string,
+    title?: string,
+    options?: { action?: ToastAction }
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -20,12 +31,17 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = (type: ToastType, message: string, title?: string) => {
+  const addToast = (
+    type: ToastType,
+    message: string,
+    title?: string,
+    options?: { action?: ToastAction }
+  ) => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, message, title }]);
+    setToasts((prev) => [...prev, { id, type, message, title, action: options?.action }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, 5500);
   };
 
   const removeToast = (id: string) => {
@@ -44,7 +60,21 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             {toast.type === 'error' && <AlertCircle className="toast_icon" />}
             <div className="toast_body">
               {toast.title && <div className="toast_title">{toast.title}</div>}
-              <div>{toast.message}</div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span>{toast.message}</span>
+                {toast.action && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.action?.onClick();
+                      removeToast(toast.id);
+                    }}
+                    className="text-xs font-semibold text-primary hover:underline cursor-pointer shrink-0"
+                  >
+                    {toast.action.label}
+                  </button>
+                )}
+              </div>
             </div>
             <button className="toast_close" aria-label="Close" onClick={() => removeToast(toast.id)}>
               <X />

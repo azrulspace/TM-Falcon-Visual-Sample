@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAssets } from '@/contexts/AssetsContext';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -10,6 +10,7 @@ import { PolesToolbar } from '@/components/assets/PolesToolbar';
 import { PolesTableView } from '@/components/assets/PolesTableView';
 import { PolesMapView } from '@/components/assets/PolesMapView';
 import { PolesBulkActionBar } from '@/components/assets/PolesBulkActionBar';
+import { RegisterPoleDialog } from '@/components/assets/RegisterPoleDialog';
 import {
   filterPoles,
   sortPoles,
@@ -29,6 +30,7 @@ import type {
 
 export default function Poles() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { selectedSite } = useAppContext();
   const {
     sites,
@@ -61,6 +63,7 @@ export default function Poles() {
     (initial.activeKpi as PoleKpiKey) || null
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   // Sync site filter when header site dropdown changes
   const prevHeaderSiteRef = useRef(selectedSite);
@@ -311,10 +314,10 @@ export default function Poles() {
     addToast('success', `Exported ${selectedList.length} selected poles to CSV.`);
   }, [sortedPoles, selectedIds, addToast]);
 
-  // Action handlers (wired cleanly into dialogs in Phases 3, 4, 7)
+  // Action handlers
   const handleRegisterOpen = useCallback(() => {
-    addToast('info', 'Register pole modal will be connected in Phase 4.');
-  }, [addToast]);
+    setIsRegisterOpen(true);
+  }, []);
 
   const handleViewOnMap = useCallback((pole: PoleWithRelations) => {
     setSelectedPoleId(pole.identifier);
@@ -433,6 +436,17 @@ export default function Poles() {
         onExportSelected={handleExportSelected}
         onClear={() => setSelectedIds(new Set())}
         permissions={permissions}
+      />
+
+      <RegisterPoleDialog
+        open={isRegisterOpen}
+        onOpenChange={(next) => {
+          setIsRegisterOpen(next);
+          if (!next) {
+            setCurrentPage(1);
+          }
+        }}
+        onOpenPole={(id) => navigate(`/assets/poles/${encodeURIComponent(id)}`)}
       />
     </div>
   );
