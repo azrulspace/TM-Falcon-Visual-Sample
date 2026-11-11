@@ -11,6 +11,9 @@ import { PolesTableView } from '@/components/assets/PolesTableView';
 import { PolesMapView } from '@/components/assets/PolesMapView';
 import { PolesBulkActionBar } from '@/components/assets/PolesBulkActionBar';
 import { RegisterPoleDialog } from '@/components/assets/RegisterPoleDialog';
+import { RelocatePoleDialog } from '@/components/assets/dialogs/RelocatePoleDialog';
+import { EditPoleDialog } from '@/components/assets/dialogs/EditPoleDialog';
+import { DeletePoleDialog } from '@/components/assets/dialogs/DeletePoleDialog';
 import {
   filterPoles,
   sortPoles,
@@ -64,6 +67,9 @@ export default function Poles() {
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [relocateTargetPole, setRelocateTargetPole] = useState<PoleWithRelations | null>(null);
+  const [editTargetPole, setEditTargetPole] = useState<PoleWithRelations | null>(null);
+  const [deleteTargetPole, setDeleteTargetPole] = useState<PoleWithRelations | null>(null);
 
   // Sync site filter when header site dropdown changes
   const prevHeaderSiteRef = useRef(selectedSite);
@@ -324,26 +330,17 @@ export default function Poles() {
     setFilters((prev) => ({ ...prev, statusTab: 'active', viewMode: 'map' }));
   }, []);
 
-  const handleRelocateOpen = useCallback(
-    (pole: PoleWithRelations) => {
-      addToast('info', `Relocate flow for ${pole.identifier} will open in Phase 7.`);
-    },
-    [addToast]
-  );
+  const handleRelocateOpen = useCallback((pole: PoleWithRelations) => {
+    setRelocateTargetPole(pole);
+  }, []);
 
-  const handleEditOpen = useCallback(
-    (pole: PoleWithRelations) => {
-      addToast('info', `Edit flow for ${pole.identifier} will open in Phase 7.`);
-    },
-    [addToast]
-  );
+  const handleEditOpen = useCallback((pole: PoleWithRelations) => {
+    setEditTargetPole(pole);
+  }, []);
 
-  const handleDeleteOpen = useCallback(
-    (pole: PoleWithRelations) => {
-      addToast('info', `Delete impact dialog for ${pole.identifier} will open in Phase 7.`);
-    },
-    [addToast]
-  );
+  const handleDeleteOpen = useCallback((pole: PoleWithRelations) => {
+    setDeleteTargetPole(pole);
+  }, []);
 
   return (
     <div className="w-full max-w-[1600px] mx-auto pb-16">
@@ -447,6 +444,43 @@ export default function Poles() {
           }
         }}
         onOpenPole={(id) => navigate(`/assets/poles/${encodeURIComponent(id)}`)}
+      />
+
+      <RelocatePoleDialog
+        pole={relocateTargetPole}
+        open={Boolean(relocateTargetPole)}
+        onOpenChange={(next) => {
+          if (!next) setRelocateTargetPole(null);
+        }}
+      />
+
+      <EditPoleDialog
+        pole={editTargetPole}
+        open={Boolean(editTargetPole)}
+        onOpenChange={(next) => {
+          if (!next) setEditTargetPole(null);
+        }}
+      />
+
+      <DeletePoleDialog
+        pole={deleteTargetPole}
+        open={Boolean(deleteTargetPole)}
+        onOpenChange={(next) => {
+          if (!next) setDeleteTargetPole(null);
+        }}
+        onViewLinkedDevices={() => {
+          if (deleteTargetPole) {
+            navigate(`/assets/poles/${encodeURIComponent(deleteTargetPole.identifier)}?tab=devices`);
+          }
+        }}
+        onViewCableSpans={() => {
+          if (deleteTargetPole) {
+            navigate(`/assets/poles/${encodeURIComponent(deleteTargetPole.identifier)}?tab=spans`);
+          }
+        }}
+        onDeleted={() => {
+          setFilters((prev) => ({ ...prev, statusTab: 'deleted', viewMode: 'table' }));
+        }}
       />
     </div>
   );

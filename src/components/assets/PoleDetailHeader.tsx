@@ -208,7 +208,7 @@ export const PoleDetailHeader: React.FC<PoleDetailHeaderProps> = ({
                 />
                 {!permissions.canRelocate && (
                   <TooltipContent className="text-xs bg-popover text-popover-foreground border border-border">
-                    Requires Admin or Operator role
+                    {permissions.relocateDisabledReason || 'Permission required to relocate poles.'}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -232,7 +232,7 @@ export const PoleDetailHeader: React.FC<PoleDetailHeaderProps> = ({
                 />
                 {!permissions.canEdit && (
                   <TooltipContent className="text-xs bg-popover text-popover-foreground border border-border">
-                    Requires Admin or Operator role
+                    {permissions.editDisabledReason || 'Permission required to edit poles.'}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -293,7 +293,9 @@ export const PoleDetailHeader: React.FC<PoleDetailHeaderProps> = ({
                   >
                     <Trash2 className="size-3.5" />
                     <span>
-                      {permissions.canDelete ? 'Delete pole' : 'Delete (Admin / Operator only)'}
+                      {permissions.canDelete
+                        ? 'Delete pole'
+                        : permissions.deleteDisabledReason || 'Delete (Admin / System only)'}
                     </span>
                   </DropdownMenuItem>
                 </>
@@ -305,3 +307,4 @@ export const PoleDetailHeader: React.FC<PoleDetailHeaderProps> = ({
     </div>
   );
 };
+

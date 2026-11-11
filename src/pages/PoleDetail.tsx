@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -22,6 +22,9 @@ import { PoleHistoryTab } from '@/components/assets/detail/PoleHistoryTab';
 import { PoleDevicesTab } from '@/components/assets/detail/PoleDevicesTab';
 import { PoleEventsTab } from '@/components/assets/detail/PoleEventsTab';
 import { PoleSpansTab } from '@/components/assets/detail/PoleSpansTab';
+import { RelocatePoleDialog } from '@/components/assets/dialogs/RelocatePoleDialog';
+import { EditPoleDialog } from '@/components/assets/dialogs/EditPoleDialog';
+import { DeletePoleDialog } from '@/components/assets/dialogs/DeletePoleDialog';
 import { cn } from '@/lib/utils';
 
 const VALID_TABS: PoleDetailTabKey[] = ['history', 'devices', 'events', 'spans'];
@@ -41,6 +44,9 @@ export default function PoleDetail() {
 
   const decodedId = id ? decodeURIComponent(id) : '';
   const pole = decodedId ? getPoleById(decodedId) : undefined;
+  const [isRelocateOpen, setIsRelocateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const rawTab = searchParams.get('tab') as PoleDetailTabKey | null;
   const activeTab: PoleDetailTabKey =
@@ -93,17 +99,17 @@ export default function PoleDetail() {
 
   const handleRelocateOpen = () => {
     if (!pole) return;
-    addToast('info', `Relocate dialog for ${pole.identifier} will open in Phase 7.`);
+    setIsRelocateOpen(true);
   };
 
   const handleEditOpen = () => {
     if (!pole) return;
-    addToast('info', `Edit dialog for ${pole.identifier} will open in Phase 7.`);
+    setIsEditOpen(true);
   };
 
   const handleDeleteOpen = () => {
     if (!pole) return;
-    addToast('info', `Delete impact confirmation for ${pole.identifier} will open in Phase 7.`);
+    setIsDeleteOpen(true);
   };
 
   const handleRestore = async () => {
@@ -220,6 +226,27 @@ export default function PoleDetail() {
           <PoleSiteCard pole={pole} />
         </aside>
       </div>
+
+      <RelocatePoleDialog
+        pole={pole}
+        open={isRelocateOpen}
+        onOpenChange={setIsRelocateOpen}
+      />
+
+      <EditPoleDialog
+        pole={pole}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+      />
+
+      <DeletePoleDialog
+        pole={pole}
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        onViewLinkedDevices={() => handleSelectTab('devices')}
+        onViewCableSpans={() => handleSelectTab('spans')}
+        onDeleted={() => navigate('/assets/poles?status_tab=deleted')}
+      />
     </div>
   );
 }
