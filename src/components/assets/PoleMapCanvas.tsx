@@ -803,7 +803,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
 
       {/* Attribution Matching Overview & Risk */}
       <div className="absolute bottom-1.5 right-2 z-10 pointer-events-none">
-        <span className="text-[9px] text-white/80 bg-black/65 px-1.5 py-0.5 rounded">
+        <span className="text-[9px] font-medium bg-card text-muted-foreground border border-border px-1.5 py-0.5 rounded shadow-sm">
           Maxar Technologies, OpenStreetMap contributors | TM FALCON (Internal Use Only)
         </span>
       </div>
@@ -811,7 +811,7 @@ export const PoleMapCanvas: React.FC<PoleMapCanvasProps> = ({
       {pickerMode && (
         <div
           className={cn(
-            'absolute z-10 px-2.5 py-1 rounded-md bg-black/75 border border-white/10 text-[11px] text-white flex items-center gap-1.5 pointer-events-none',
+            'absolute z-10 px-2.5 py-1 rounded-md bg-card border border-border text-[11px] font-medium text-foreground shadow-md flex items-center gap-1.5 pointer-events-none',
             compactControls ? 'top-2.5 left-2.5' : 'bottom-2 left-2'
           )}
         >

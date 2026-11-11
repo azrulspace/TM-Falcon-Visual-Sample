@@ -1,20 +1,115 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  MapPin,
+  History,
+  Cpu,
+  AlertTriangle,
+  Layers,
+} from 'lucide-react';
 import { useAssets } from '@/contexts/AssetsContext';
+import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { formatCoordinates } from '@/lib/geo';
+import {
+  PoleDetailHeader,
+  type PoleDetailTabKey,
+} from '@/components/assets/PoleDetailHeader';
+import { PoleInfoCard } from '@/components/assets/PoleInfoCard';
+import { PoleLocationCard } from '@/components/assets/PoleLocationCard';
+import { PoleSiteCard } from '@/components/assets/PoleSiteCard';
+import { cn } from '@/lib/utils';
+
+const VALID_TABS: PoleDetailTabKey[] = ['history', 'devices', 'events', 'spans'];
 
 export default function PoleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getPoleById } = useAssets();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { addToast } = useToast();
+  const {
+    poles,
+    permissions,
+    capabilities,
+    getPoleById,
+    restorePole,
+  } = useAssets();
 
-  const pole = id ? getPoleById(id) : undefined;
+  const decodedId = id ? decodeURIComponent(id) : '';
+  const pole = decodedId ? getPoleById(decodedId) : undefined;
+
+  const rawTab = searchParams.get('tab') as PoleDetailTabKey | null;
+  const activeTab: PoleDetailTabKey =
+    rawTab && VALID_TABS.includes(rawTab) ? rawTab : 'history';
+
+  const handleSelectTab = (tab: PoleDetailTabKey) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'history') {
+      next.delete('tab');
+    } else {
+      next.set('tab', tab);
+    }
+    setSearchParams(next, { replace: true });
+  };
 
   const handleBack = () => {
     const lastUrl = sessionStorage.getItem('last_poles_url');
     navigate(lastUrl || '/assets/poles');
+  };
+
+  const tabItems = useMemo(() => {
+    if (!pole) return [];
+    return [
+      {
+        key: 'history' as const,
+        label: 'History',
+        count: pole.timeline.length,
+        icon: <History className="size-3.5 shrink-0" />,
+      },
+      {
+        key: 'devices' as const,
+        label: 'Linked devices',
+        count: pole.linkedDevicesCount,
+        icon: <Cpu className="size-3.5 shrink-0" />,
+      },
+      {
+        key: 'events' as const,
+        label: 'Events',
+        count: pole.allEventsCount,
+        icon: <AlertTriangle className="size-3.5 shrink-0" />,
+      },
+      {
+        key: 'spans' as const,
+        label: 'Cable spans',
+        count: pole.cableSpansCount,
+        icon: <Layers className="size-3.5 shrink-0" />,
+      },
+    ];
+  }, [pole]);
+
+  const handleRelocateOpen = () => {
+    if (!pole) return;
+    addToast('info', `Relocate dialog for ${pole.identifier} will open in Phase 7.`);
+  };
+
+  const handleEditOpen = () => {
+    if (!pole) return;
+    addToast('info', `Edit dialog for ${pole.identifier} will open in Phase 7.`);
+  };
+
+  const handleDeleteOpen = () => {
+    if (!pole) return;
+    addToast('info', `Delete impact confirmation for ${pole.identifier} will open in Phase 7.`);
+  };
+
+  const handleRestore = async () => {
+    if (!pole) return;
+    const res = await restorePole(pole.identifier);
+    if (res.ok) {
+      addToast('success', `Restored pole ${pole.identifier}.`);
+    } else {
+      addToast('error', res.error || 'Unable to restore pole.');
+    }
   };
 
   if (!pole) {
@@ -23,9 +118,9 @@ export default function PoleDetail() {
         <MapPin className="size-10 text-muted-foreground mb-3" />
         <h2 className="text-lg font-semibold text-foreground">Pole not found</h2>
         <p className="text-xs text-muted-foreground mt-1 mb-4">
-          The pole identifier &quot;{id}&quot; could not be found.
+          The pole identifier &quot;{decodedId || id}&quot; could not be found in the registry.
         </p>
-        <Button variant="outline" onClick={handleBack} className="gap-2 text-xs">
+        <Button variant="outline" onClick={handleBack} className="gap-2 text-xs cursor-pointer">
           <ArrowLeft className="size-4" />
           <span>Back to Poles</span>
         </Button>
@@ -34,34 +129,111 @@ export default function PoleDetail() {
   }
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto space-y-6 pb-12">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={handleBack} className="gap-1.5 text-xs">
-            <ArrowLeft className="size-3.5" />
-            <span>Back</span>
-          </Button>
-          <h1 className="text-2xl font-bold font-mono text-foreground">{pole.identifier}</h1>
-          <StatusBadge status={pole.lifecycle} />
+    <div className="w-full max-w-[1600px] mx-auto pb-16">
+      <PoleDetailHeader
+        pole={pole}
+        permissions={permissions}
+        capabilities={capabilities}
+        onSelectTab={handleSelectTab}
+        onRelocate={handleRelocateOpen}
+        onEdit={handleEditOpen}
+        onDelete={handleDeleteOpen}
+        onRestore={handleRestore}
+      />
+
+      {/* Responsive 12-Column Detail Grid: 8/12 Main + 4/12 Sticky Side Column */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+        <div className="xl:col-span-8 space-y-5 min-w-0">
+          <PoleInfoCard
+            pole={pole}
+            permissions={permissions}
+            onAddLocation={handleRelocateOpen}
+          />
+
+          {/* 4 Merged Detail Tabs (with honest item counts) */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="border-b border-border px-4">
+              <nav
+                role="tablist"
+                aria-label="Pole detail sections"
+                className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar -mb-px"
+              >
+                {tabItems.map((tab) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => handleSelectTab(tab.key)}
+                      className={cn(
+                        'inline-flex items-center gap-2 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer',
+                        isActive
+                          ? 'border-primary text-foreground font-semibold'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                      )}
+                    >
+                      <span className={isActive ? 'text-primary' : 'text-muted-foreground'}>
+                        {tab.icon}
+                      </span>
+                      <span>{tab.label}</span>
+                      <span
+                        className={cn(
+                          'px-1.5 py-0.5 rounded-full text-[10px] font-mono tabular-nums',
+                          isActive
+                            ? 'bg-primary/15 text-primary font-semibold'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="p-5">
+              {/* Phase 5 Tab Body Placeholder — replaced by rich Phase 6 tab components */}
+              <div className="text-xs text-muted-foreground space-y-2">
+                {activeTab === 'history' && (
+                  <p>
+                    Merged History view ({pole.timeline.length} timeline events across{' '}
+                    {pole.lifecycleHistory.length} lifecycle periods) will render full structured Timeline and Status periods in Phase 6.
+                  </p>
+                )}
+                {activeTab === 'devices' && (
+                  <p>
+                    Linked devices ({pole.linkedDevicesCount}) panel will render full device table and empty state in Phase 6.
+                  </p>
+                )}
+                {activeTab === 'events' && (
+                  <p>
+                    Events ({pole.allEventsCount} total, {pole.events30dCount} in last 30 days) on pole and connected spans will render in Phase 6.
+                  </p>
+                )}
+                {activeTab === 'spans' && (
+                  <p>
+                    Connected cable spans ({pole.cableSpansCount}) table will render in Phase 6.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="rounded-xl border border-border bg-card p-6 text-xs space-y-2">
-        <div>
-          <span className="text-muted-foreground">Site: </span>
-          <span className="font-medium text-foreground">{pole.siteName}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Location: </span>
-          <span className="font-mono text-foreground">{formatCoordinates(pole.location)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Relations: </span>
-          <span className="text-foreground">
-            {pole.linkedDevicesCount} devices, {pole.cableSpansCount} spans, {pole.events30dCount} events (30d)
-          </span>
-        </div>
+
+        {/* Right Side Column: Location Map + Site Context */}
+        <aside className="xl:col-span-4 space-y-5 xl:sticky xl:top-6 min-w-0">
+          <PoleLocationCard
+            pole={pole}
+            allPoles={poles}
+            permissions={permissions}
+            onRelocate={handleRelocateOpen}
+          />
+          <PoleSiteCard pole={pole} />
+        </aside>
       </div>
     </div>
   );
 }
-
