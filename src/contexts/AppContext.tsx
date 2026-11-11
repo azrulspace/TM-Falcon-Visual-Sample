@@ -9,6 +9,10 @@ interface AppContextType {
   setAccountLabel: (val: string | null) => void;
   previewClipStatus: ClipStatus | null;
   setPreviewClipStatus: (status: ClipStatus | null) => void;
+  selectedSite: string;
+  setSelectedSite: (site: string) => void;
+  previewDataMode: boolean;
+  setPreviewDataMode: (val: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -17,6 +21,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [reviewMode, setReviewMode] = useState(false);
   const [accountLabel, setAccountLabel] = useState<string | null>(localStorage.getItem("ds_account"));
   const [previewClipStatus, setPreviewClipStatus] = useState<ClipStatus | null>(null);
+  const [selectedSite, setSelectedSiteState] = useState<string>(
+    () => localStorage.getItem("falcon_selected_site") || "Teluk Panglima Garang"
+  );
+  const [previewDataMode, setPreviewDataModeState] = useState<boolean>(
+    () => localStorage.getItem("falcon_preview_data_mode") === "true"
+  );
 
   const updateAccountLabel = (val: string | null) => {
     if (val) {
@@ -25,6 +35,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem("ds_account");
     }
     setAccountLabel(val);
+  };
+
+  const setSelectedSite = (site: string) => {
+    localStorage.setItem("falcon_selected_site", site);
+    setSelectedSiteState(site);
+  };
+
+  const setPreviewDataMode = (val: boolean) => {
+    localStorage.setItem("falcon_preview_data_mode", String(val));
+    setPreviewDataModeState(val);
   };
 
   return (
@@ -36,6 +56,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setAccountLabel: updateAccountLabel,
         previewClipStatus,
         setPreviewClipStatus,
+        selectedSite,
+        setSelectedSite,
+        previewDataMode,
+        setPreviewDataMode,
       }}
     >
       {children}

@@ -78,21 +78,27 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     styles = 'bg-[#10b981]/10 text-[#059669] dark:text-[#10b981] border-[#10b981]/30';
     Icon = CheckCircle2;
     text = label || 'Resolved';
-  } else if (norm === 'offline' || norm === 'critical') {
+  } else if (norm === 'offline' || norm === 'critical' || norm === 'deleted') {
     styles = 'bg-status-offline-tint text-status-offline border-status-offline-border';
-    Icon = Square;
-  } else if (norm === 'online') {
+    Icon = norm === 'deleted' ? X : Square;
+    if (norm === 'deleted') text = label || 'Deleted';
+  } else if (norm === 'online' || norm === 'active') {
     styles = 'bg-status-online-tint text-status-online border-status-online-border';
     Icon = Circle;
-  } else if (norm === 'stale') {
+    if (norm === 'active') text = label || 'Active';
+  } else if (norm === 'stale' || norm === 'inactive' || norm === 'retired') {
     styles = 'bg-status-stale-tint text-status-stale border-status-stale-border';
     Icon = CircleDot;
-  } else if (norm === 'warning' || norm === 'attention') {
+    if (norm === 'inactive') text = label || 'Inactive';
+    if (norm === 'retired') text = label || 'Retired';
+  } else if (norm === 'warning' || norm === 'attention' || norm === 'maintenance') {
     styles = 'bg-status-warning-tint text-status-warning border-status-warning-border';
     Icon = AlertTriangle;
-  } else if (norm === 'info') {
+    if (norm === 'maintenance') text = label || 'Maintenance';
+  } else if (norm === 'info' || norm === 'planned') {
     styles = 'bg-status-info-tint text-status-info border-status-info-border';
     Icon = Info;
+    if (norm === 'planned') text = label || 'Planned';
   }
 
   return (

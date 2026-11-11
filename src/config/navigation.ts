@@ -143,9 +143,21 @@ export const navigationConfig: NavSection[] = [
         id: 'assets-devices',
         label: 'Assets & devices',
         icon: MapPinned,
-        route: '/assets/inventory',
+        route: '/assets/poles',
         description: 'Poles, fibre cables, spans, and telemetry IoT devices',
         children: [
+          {
+            id: 'assets-poles',
+            label: 'Poles',
+            icon: MapPinned,
+            route: '/assets/poles',
+          },
+          {
+            id: 'assets-cable-spans',
+            label: 'Cable spans',
+            icon: Layers,
+            route: '/assets/cable-spans',
+          },
           {
             id: 'inventory-register',
             label: 'Inventory register',

@@ -39,20 +39,32 @@ import { GlobalSearchCommand } from './GlobalSearchCommand';
 import { navigationConfig, type NavItem } from '@/config/navigation';
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
-  const { accountLabel, setAccountLabel, previewClipStatus, setPreviewClipStatus } = useAppContext();
+  const {
+    accountLabel,
+    setAccountLabel,
+    previewClipStatus,
+    setPreviewClipStatus,
+    selectedSite,
+    setSelectedSite,
+    previewDataMode,
+    setPreviewDataMode,
+  } = useAppContext();
   const { modeSetting, setModeSetting, resolvedMode, orientation, viewportWidth } = useUiMode();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [selectedLocation, setSelectedLocation] = useState('Teluk Panglima Garang');
-  const locations = [
-    'Teluk Panglima Garang',
-    'Kuching Central',
-    'Kuching North',
-    'Samarahan',
-    'Shah Alam',
-    'Petaling Jaya',
-  ];
+  const locations = useMemo(
+    () => [
+      ...(previewDataMode ? ['Jalan Bandar Lama'] : []),
+      'Teluk Panglima Garang',
+      'Kuching Central',
+      'Kuching North',
+      'Samarahan',
+      'Shah Alam',
+      'Petaling Jaya',
+    ],
+    [previewDataMode]
+  );
 
   const isOverview = location.pathname === '/overview';
 
@@ -163,9 +175,15 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (path === '/overview') return ['Overview'];
     if (path.startsWith('/events')) return ['Events', 'Event inbox'];
     if (path.startsWith('/risk')) return ['Risk & preventive', 'Risk overview'];
-    if (path.startsWith('/assets/inventory/devices/new')) return ['Assets & devices', 'Inventory', 'New device'];
-    if (path.startsWith('/assets/inventory/devices')) return ['Assets & devices', 'Inventory', 'Device detail'];
-    if (path.startsWith('/assets/inventory')) return ['Assets & devices', 'Inventory register'];
+    if (path === '/assets/poles') return ['Assets and devices', 'Poles'];
+    if (path.startsWith('/assets/poles/')) {
+      const poleId = decodeURIComponent(path.split('/')[3] || '');
+      return ['Assets and devices', 'Poles', poleId];
+    }
+    if (path.startsWith('/assets/cable-spans')) return ['Assets and devices', 'Cable spans'];
+    if (path.startsWith('/assets/inventory/devices/new')) return ['Assets and devices', 'Inventory', 'New device'];
+    if (path.startsWith('/assets/inventory/devices')) return ['Assets and devices', 'Inventory', 'Device detail'];
+    if (path.startsWith('/assets/inventory')) return ['Assets and devices', 'Inventory register'];
     if (path === '/cases') return ['Cases'];
     if (path.startsWith('/cases/')) {
       const caseId = path.split('/')[2];
@@ -435,7 +453,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 aria-label="Select location"
               >
                 <MapPin className="size-3.5 text-muted-foreground shrink-0" />
-                <span className="truncate max-w-[150px] sm:max-w-none">{selectedLocation}</span>
+                <span className="truncate max-w-[150px] sm:max-w-none">{selectedSite}</span>
                 <ChevronDown className="size-3 text-muted-foreground shrink-0" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-xs z-50">
@@ -447,11 +465,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   {locations.map((loc) => (
                     <DropdownMenuItem
                       key={loc}
-                      onClick={() => setSelectedLocation(loc)}
+                      onClick={() => setSelectedSite(loc)}
                       className="cursor-pointer flex items-center justify-between text-xs"
                     >
                       <span>{loc}</span>
-                      {selectedLocation === loc && <span className="text-primary text-[10px] font-bold">✓</span>}
+                      {selectedSite === loc && <span className="text-primary text-[10px] font-bold">✓</span>}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuGroup>
@@ -556,6 +574,28 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       <span>Desktop Mode</span>
                     </div>
                     {modeSetting === 'desktop' && <span className="text-[10px] text-primary">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                <DropdownMenuSeparator />
+
+                {/* Preview Data Mode (Jalan Bandar Lama & Simulated Endpoints) */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+                    <span>Preview Data Mode</span>
+                    {previewDataMode && <span className="text-[9px] font-mono text-amber-500 font-bold">PREVIEW</span>}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const next = !previewDataMode;
+                      setPreviewDataMode(next);
+                      if (next) setSelectedSite('Jalan Bandar Lama');
+                      else if (selectedSite === 'Jalan Bandar Lama') setSelectedSite('Teluk Panglima Garang');
+                    }}
+                    className="cursor-pointer text-xs flex items-center justify-between"
+                  >
+                    <span>Jalan Bandar Lama demo</span>
+                    {previewDataMode && <span className="text-[10px] text-primary">✓</span>}
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
 
@@ -672,8 +712,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     {sec.items.map((item) => {
                       const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
                       const isCasesRoute = (location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases';
-                      const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute;
-                      const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute;
+                      const isAssetsRoute = location.pathname.startsWith('/assets') && item.id === 'assets-devices';
+                      const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute || isAssetsRoute;
+                      const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute || isAssetsRoute;
                       const hasChildren = item.children && item.children.length > 0;
                       const isExpanded = openGroups[item.id] !== false; // default open
 
@@ -1077,7 +1118,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
           {/* Main Workspace: Full Bleed for Overview (p-0) */}
           <main className={`flex-1 flex flex-col min-w-0 h-full max-h-full ${isOverview ? 'overflow-hidden p-0 relative' : 'overflow-y-auto p-4 lg:p-6'}`}>
-            {!isOverview && !location.pathname.startsWith('/events') && (
+            {!isOverview &&
+              !location.pathname.startsWith('/events') &&
+              !location.pathname.startsWith('/assets/poles') &&
+              !location.pathname.startsWith('/assets/cable-spans') && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 select-none">
                 <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
                   Falcon
