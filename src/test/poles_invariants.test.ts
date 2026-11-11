@@ -234,4 +234,36 @@ describe('Pole Detail Events Parity, Geo Validation & RBAC Permissions', () => {
     const previewAdminPerms = getPolePermissions('Admin', PREVIEW_BACKEND_CAPABILITIES);
     assert.equal(previewAdminPerms.canRestore, true);
   });
+
+  it('scales cleanly and fast across 500 poles without invariant drift', () => {
+    const start = performance.now();
+    const synthetic = Array.from({ length: 500 }, (_, i) =>
+      enrichPoleWithRelations(
+        {
+          ...initialPoles[0],
+          identifier: `PERF_P${String(i + 1).padStart(4, '0')}`,
+          name: i % 5 === 0 ? `Sector ${i}` : `PERF_P${String(i + 1).padStart(4, '0')}`,
+          lifecycle: i % 20 === 0 ? 'Deleted' : i % 7 === 0 ? 'Maintenance' : 'Active',
+          location: i % 10 === 0 ? null : { lat: 2.92 + (i % 50) * 0.0001, lng: 101.45 + (i % 50) * 0.0001 },
+        },
+        devices,
+        initialCableSpans,
+        initialEvents,
+        SITES
+      )
+    );
+    const active = filterPoles(synthetic, { statusTab: 'active', viewMode: 'table', site: 'ALL' });
+    const deleted = filterPoles(synthetic, { statusTab: 'deleted', viewMode: 'table', site: 'ALL' });
+    const kpis = getPoleKpiCounts(synthetic, 'ALL');
+    const tabs = getPoleStatusTabCounts(synthetic, { site: 'ALL' });
+    const sorted = sortPoles(active, 'identifier', 'asc');
+    const elapsedMs = performance.now() - start;
+
+    assert.equal(active.length + deleted.length, 500);
+    assert.equal(tabs.active, active.length);
+    assert.equal(tabs.deleted, deleted.length);
+    assert.equal(kpis.deleted, deleted.length);
+    assert.equal(sorted.length, active.length);
+    assert.ok(elapsedMs < 1500, `Expected < 1500ms for 500 poles, took ${elapsedMs.toFixed(1)}ms`);
+  });
 });

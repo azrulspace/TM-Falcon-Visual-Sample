@@ -397,7 +397,7 @@ export const PolesTableView: React.FC<PolesTableViewProps> = ({
     <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden flex flex-col">
       {/* Compact Desktop (1024-1279px) Column Visibility Strip */}
       {isCompactDesktop && !isPortrait && (
-        <div className="px-4 py-2 border-b border-border bg-muted/20 flex items-center justify-between text-xs">
+        <div className="px-4 py-2 border-b border-border bg-muted flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
             Compact layout (1024–1279 px): Site, Protection, and Cable spans are accessible in row details or via Columns.
           </span>
@@ -508,8 +508,12 @@ export const PolesTableView: React.FC<PolesTableViewProps> = ({
                     </button>
                   )}
                   <div className="flex items-center gap-3 text-muted-foreground font-mono text-xs">
-                    <span>{pole.linkedDevicesCount} dev</span>
-                    <span>{pole.cableSpansCount} spans</span>
+                    <span>
+                      {pole.linkedDevicesCount} {pole.linkedDevicesCount === 1 ? 'device' : 'devices'}
+                    </span>
+                    <span>
+                      {pole.cableSpansCount} {pole.cableSpansCount === 1 ? 'span' : 'spans'}
+                    </span>
                   </div>
                 </div>
               </div>

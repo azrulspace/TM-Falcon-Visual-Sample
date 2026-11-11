@@ -347,6 +347,9 @@ export default function Poles() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto pb-16">
+      <div className="sr-only" role="status" aria-live="polite">
+        {`Showing ${sortedPoles.length} ${filters.statusTab} ${sortedPoles.length === 1 ? 'pole' : 'poles'} in ${filters.viewMode} view.`}
+      </div>
       <PolesPageHeader
         isRefreshing={isRefreshing}
         onRefresh={refreshAssets}

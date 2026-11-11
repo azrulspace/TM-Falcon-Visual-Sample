@@ -135,12 +135,11 @@ export const PolesKpiStrip: React.FC<PolesKpiStripProps> = ({
   return (
     <div
       className={cn(
-        'w-full rounded-xl border border-border bg-card shadow-xs flex overflow-x-auto no-scrollbar lg:grid divide-x divide-border mb-4 select-none shrink-0',
-        cells.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
-        isTablet ? 'h-[80px]' : 'h-[74px]'
+        'w-full rounded-xl border border-border bg-card shadow-xs grid grid-cols-2 sm:grid-cols-3 mb-4 select-none overflow-hidden',
+        cells.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
       )}
     >
-      {cells.map((cell) => {
+      {cells.map((cell, idx) => {
         const isActive = activeKpi === cell.key;
         return (
           <button
@@ -150,9 +149,14 @@ export const PolesKpiStrip: React.FC<PolesKpiStripProps> = ({
             aria-pressed={isActive}
             title={cell.hint}
             className={cn(
-              'flex flex-col justify-center px-4 h-full text-left transition-all cursor-pointer group shrink-0 min-w-[160px] lg:min-w-0 lg:shrink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary',
-              isActive ? cell.activeClass : 'hover:bg-muted/40',
-              isTablet && 'min-h-[44px]'
+              'flex flex-col justify-center px-4 py-3 text-left transition-all cursor-pointer group border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary',
+              isTablet ? 'min-h-[80px]' : 'min-h-[74px]',
+              idx > 0 && 'lg:border-l',
+              idx % 2 === 1 && 'border-l sm:border-l-0',
+              idx >= 2 && 'border-t sm:border-t lg:border-t-0',
+              idx % 3 !== 0 && 'sm:border-l',
+              idx === cells.length - 1 && cells.length % 2 === 1 && 'col-span-2 sm:col-span-1',
+              isActive ? cell.activeClass : 'hover:bg-muted/40'
             )}
           >
             <div className="flex items-center justify-between text-xs text-muted-foreground group-hover:text-foreground">
