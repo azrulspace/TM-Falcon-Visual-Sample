@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DeviceDetailHeader } from '@/components/devices/detail/DeviceDetailHeader';
 import { DeviceDetailTabs, type DeviceDetailTabKey } from '@/components/devices/detail/DeviceDetailTabs';
 import { DeviceOverviewTab } from '@/components/devices/detail/DeviceOverviewTab';
+import { DeviceConfigurationTab } from '@/components/devices/detail/DeviceConfigurationTab';
 import { DeviceHistoryTab } from '@/components/devices/detail/DeviceHistoryTab';
 import { DeviceInstallationTab } from '@/components/devices/detail/DeviceInstallationTab';
 import { DeviceEventsTab } from '@/components/devices/detail/DeviceEventsTab';
@@ -113,9 +114,16 @@ export default function DeviceDetail() {
       )}
 
       {activeTab === 'configuration' && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-          Configuration tab will be rendered in Phase 8.
-        </div>
+        <DeviceConfigurationTab
+          device={device}
+          onOpenVersionHistory={() => {
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev);
+              next.set('view_history', 'true');
+              return next;
+            });
+          }}
+        />
       )}
 
       {activeTab === 'history' && (
