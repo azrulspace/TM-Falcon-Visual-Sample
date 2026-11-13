@@ -5,7 +5,6 @@ import { OverviewProvider } from './contexts/OverviewContext';
 import { EventsProvider } from './contexts/EventsContext';
 import { CasesProvider } from './contexts/CasesContext';
 import { AssetsProvider } from './contexts/AssetsContext';
-import { DevicesProvider } from './contexts/DevicesContext';
 import { AppShell } from './components/AppShell';
 import { TooltipProvider } from './components/ui/tooltip';
 import { PreviewFrameModal } from './components/common/PreviewFrameModal';
@@ -18,10 +17,10 @@ import Risk from './pages/Risk';
 import Poles from './pages/Poles';
 import PoleDetail from './pages/PoleDetail';
 import CableSpans from './pages/CableSpans';
-import Devices from './pages/Devices';
+import Inventory from './pages/Inventory';
+import VendorDiscovery from './pages/VendorDiscovery';
 import CreateDevice from './pages/CreateDevice';
 import DeviceDetail from './pages/DeviceDetail';
-import VendorDiscovery from './pages/VendorDiscovery';
 import PlannedPage from './pages/PlannedPage';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
@@ -46,8 +45,7 @@ export default function App() {
           <EventsProvider>
             <CasesProvider>
               <AssetsProvider>
-                <DevicesProvider>
-                  <TooltipProvider>
+                <TooltipProvider>
                   <Routes>
                     <Route path="/" element={<DefaultRedirect />} />
                     <Route path="/signin" element={<SignIn />} />
@@ -64,13 +62,10 @@ export default function App() {
                     <Route path="/assets/poles" element={<ProtectedRoute><Poles /></ProtectedRoute>} />
                     <Route path="/assets/poles/:id" element={<ProtectedRoute><PoleDetail /></ProtectedRoute>} />
                     <Route path="/assets/cable-spans" element={<ProtectedRoute><CableSpans /></ProtectedRoute>} />
-                    <Route path="/assets/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
-                    <Route path="/assets/devices/vendor-discovery" element={<ProtectedRoute><VendorDiscovery /></ProtectedRoute>} />
-                    <Route path="/assets/inventory" element={<Navigate to="/assets/devices" replace />} />
-                    <Route path="/assets/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-                    <Route path="/assets/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
-                    <Route path="/assets/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/devices/new" element={<Navigate to="/assets/devices/new" replace />} />
+                    <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                    <Route path="/assets/devices" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                    <Route path="/assets/inventory/vendor-discovery" element={<ProtectedRoute><VendorDiscovery /></ProtectedRoute>} />
+                    <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
                     <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     
@@ -78,8 +73,7 @@ export default function App() {
                   </Routes>
                   <PreviewFrameModal />
                 </TooltipProvider>
-              </DevicesProvider>
-            </AssetsProvider>
+              </AssetsProvider>
             </CasesProvider>
           </EventsProvider>
         </OverviewProvider>

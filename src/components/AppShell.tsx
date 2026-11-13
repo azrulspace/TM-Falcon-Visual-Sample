@@ -181,9 +181,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       return ['Assets and devices', 'Poles', poleId];
     }
     if (path.startsWith('/assets/cable-spans')) return ['Assets and devices', 'Cable spans'];
-    if (path.startsWith('/assets/inventory/devices/new')) return ['Assets and devices', 'Inventory', 'New device'];
-    if (path.startsWith('/assets/inventory/devices')) return ['Assets and devices', 'Inventory', 'Device detail'];
-    if (path.startsWith('/assets/inventory')) return ['Assets and devices', 'Inventory register'];
+    if (path.startsWith('/assets/inventory/vendor-discovery')) return ['Assets and devices', 'Devices', 'Vendor discovery'];
+    if (path.startsWith('/assets/inventory/devices/new')) return ['Assets and devices', 'Devices', 'Register device'];
+    if (path.startsWith('/assets/inventory/devices')) return ['Assets and devices', 'Devices', 'Device detail'];
+    if (path.startsWith('/assets/inventory') || path.startsWith('/assets/devices')) return ['Assets and devices', 'Devices'];
     if (path === '/cases') return ['Cases'];
     if (path.startsWith('/cases/')) {
       const caseId = path.split('/')[2];
@@ -1121,7 +1122,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             {!isOverview &&
               !location.pathname.startsWith('/events') &&
               !location.pathname.startsWith('/assets/poles') &&
-              !location.pathname.startsWith('/assets/cable-spans') && (
+              !location.pathname.startsWith('/assets/cable-spans') &&
+              !location.pathname.startsWith('/assets/inventory') &&
+              !location.pathname.startsWith('/assets/devices') && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 select-none">
                 <span className="hover:text-foreground cursor-pointer transition-colors" onClick={() => navigate('/overview')}>
                   Falcon

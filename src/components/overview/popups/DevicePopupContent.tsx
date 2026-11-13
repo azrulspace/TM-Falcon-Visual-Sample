@@ -16,8 +16,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { formatId } from '@/lib/utils';
 import { useOverview } from '@/contexts/OverviewContext';
+import { useAssets } from '@/contexts/AssetsContext';
 import type { ResolvedEntity } from '@/lib/selection';
 import { devices } from '@/data/devices';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
 
 export interface DevicePopupContentProps {
   entity: ResolvedEntity;
@@ -27,27 +29,45 @@ export interface DevicePopupContentProps {
 export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, onClose }) => {
   const navigate = useNavigate();
   const { selectEntity } = useOverview();
+  const { getDeviceById } = useAssets();
 
-  // Find underlying device record
+  const richDev = getDeviceById(entity.rawId) || getDeviceById(entity.id);
+
+  // Find underlying device record (prefer live AssetsContext registry)
   const dev =
     devices.find((d) => d.id === entity.rawId || formatId(d.id) === entity.id) ||
     entity.device ||
     null;
 
-  const deviceType = dev?.type || 'Camera';
-  const poleId = dev?.asset ? formatId(dev.asset) : 'AST-006';
-  const serialNumber = dev?.serial || entity.deviceSerial || 'SN_DEV_004';
-  const siteName = dev?.site || entity.data?.site || 'Teluk Panglima Garang';
-  const model = dev?.model || 'Pilot sensor';
-  const manufacturer = dev?.manufacturer || 'Sample vendor';
+  const displayId = richDev?.identifier || entity.id;
+  const deviceType = richDev?.type || dev?.type || 'Camera';
+  const poleId = richDev?.installedPoleId || (dev?.asset ? formatId(dev.asset) : 'AST-006');
+  const serialNumber = richDev?.serial || dev?.serial || entity.deviceSerial || 'SN_DEV_004';
+  const siteName = richDev?.siteName || dev?.site || entity.data?.site || 'Teluk Panglima Garang';
+  const model = richDev?.model || dev?.model || 'Pilot sensor';
+  const manufacturer = richDev?.manufacturer || dev?.manufacturer || 'Sample vendor';
 
-  // Accurate wording logic (STRICT: NO FABRICATIONS)
-  const lastContactDisplay = dev?.lastContact ? dev.lastContact : 'No contact recorded';
-  const batteryDisplay = (dev as any)?.battery ? `${(dev as any).battery}%` : 'Not reported';
+  const lastContactDisplay = richDev?.lastContactAt
+    ? formatAbsoluteMYT(richDev.lastContactAt, { showSeconds: false })
+    : dev?.lastContact
+    ? dev.lastContact
+    : 'No contact recorded';
+  const batteryDisplay =
+    richDev?.batteryPercent !== undefined && richDev?.batteryPercent !== null
+      ? `${richDev.batteryPercent}%`
+      : (dev as any)?.battery
+      ? `${(dev as any).battery}%`
+      : 'Not reported';
   const protectionDisplay = (dev as any)?.protection || 'No protection recorded';
 
-  // Event counts for this device
-  const eventCount = entity.id === 'DEV-004' ? 117 : entity.id === 'DEV-001' ? 8 : 0;
+  const eventCount =
+    richDev !== undefined
+      ? richDev.allEventsCount
+      : entity.id === 'DEV-004'
+      ? 117
+      : entity.id === 'DEV-001'
+      ? 11
+      : 0;
 
   const renderSemanticIcon = () => {
     const t = deviceType.toLowerCase();
@@ -159,7 +179,7 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
           size="sm"
           onClick={() => {
             onClose();
-            navigate(`/inventory?device=${entity.id}`);
+            navigate(`/assets/inventory/devices/${encodeURIComponent(displayId)}`);
           }}
           className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
         >

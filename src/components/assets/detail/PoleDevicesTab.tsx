@@ -13,7 +13,6 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEvents } from '@/contexts/EventsContext';
 import { normalizeRelationKey } from '@/data/poles';
-import { formatId } from '@/lib/utils';
 import type { PoleWithRelations, BackendCapabilities } from '@/types/assets';
 
 export interface PoleDevicesTabProps {
@@ -128,8 +127,13 @@ export const PoleDevicesTab: React.FC<PoleDevicesTabProps> = ({
                         to={`/assets/inventory/devices/${encodeURIComponent(dev.id)}`}
                         className="text-primary hover:underline"
                       >
-                        {formatId(dev.id)}
+                        {dev.id}
                       </Link>
+                      {dev.serial && (
+                        <div className="text-[10px] font-normal text-muted-foreground">
+                          {dev.serial}
+                        </div>
+                      )}
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">

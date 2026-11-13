@@ -152,5 +152,13 @@ export interface BackendCapabilities {
   serverImpactCheck: boolean;
   serverUniquenessCheck: boolean;
   siteBoundary: boolean;
+  /** Optional Devices module capability flags */
+  vendorSyncTrigger?: boolean;
+  vendorRemap?: boolean;
+  connectionCheck?: boolean;
+  deviceConfigSend?: boolean;
+  configVersionCompare?: boolean;
+  deviceDelete?: boolean;
+  deviceBulkActions?: boolean;
 }
 

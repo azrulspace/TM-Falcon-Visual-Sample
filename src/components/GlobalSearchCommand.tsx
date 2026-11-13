@@ -9,13 +9,13 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@/components/ui/command';
-import { devices } from '@/data/devices';
 import { events } from '@/data/events';
 import { cases } from '@/data/cases';
 import { segments } from '@/data/segments';
 import { AlertCircle, Briefcase, Camera, Cable, Compass, Tablet, Laptop, Sparkles } from 'lucide-react';
 import { getFlattenedNavRoutes } from '@/config/navigation';
 import { useUiMode } from '@/hooks/useUiMode';
+import { useAssets } from '@/contexts/AssetsContext';
 
 interface GlobalSearchCommandProps {
   open: boolean;
@@ -31,6 +31,7 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
   const navigate = useNavigate();
   const navRoutes = getFlattenedNavRoutes();
   const { setModeSetting, resolvedMode } = useUiMode();
+  const { richDevices } = useAssets();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -165,21 +166,31 @@ export const GlobalSearchCommand: React.FC<GlobalSearchCommandProps> = ({
         <CommandSeparator />
 
         <CommandGroup heading="Devices">
-          {devices.map((dev) => (
+          {richDevices.map((dev) => (
             <CommandItem
-              key={dev.id}
-              value={`${dev.id} ${dev.name} ${dev.type} ${dev.site} ${dev.asset}`}
-              onSelect={() => handleSelect('device', dev.id, `/assets/inventory/devices/${dev.id}`)}
+              key={dev.identifier}
+              value={`${dev.identifier} ${dev.name} ${dev.type} ${dev.serial} ${dev.siteName || 'Unassigned'} ${dev.installedPoleId || ''}`}
+              onSelect={() =>
+                handleSelect(
+                  'device',
+                  dev.identifier,
+                  `/assets/inventory/devices/${encodeURIComponent(dev.identifier)}`
+                )
+              }
               className="flex items-center gap-2 cursor-pointer"
             >
               <Camera className="size-4 text-primary" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-semibold text-primary">{dev.id}</span>
-                  <span className="text-xs text-foreground">{dev.type} ({dev.status})</span>
+                  <span className="font-mono text-xs font-semibold text-primary">
+                    {dev.identifier}
+                  </span>
+                  <span className="text-xs text-foreground">
+                    {dev.type} ({dev.connectivityState})
+                  </span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">
-                  Site: {dev.site} • Pole/Asset: {dev.asset} • Last: {dev.lastContact}
+                  Site: {dev.siteName || 'Unassigned'} • Pole: {dev.installedPoleId || 'Not installed'} • Serial: {dev.serial}
                 </span>
               </div>
             </CommandItem>

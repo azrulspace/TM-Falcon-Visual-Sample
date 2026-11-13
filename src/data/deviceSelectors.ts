@@ -1,134 +1,318 @@
 import type {
-  DeviceRecord,
-  DeviceFilterState,
-  DeviceSortKey,
-  DeviceSortDir,
-  DeviceAvailabilityMetrics,
+  AvailabilitySummary,
+  DeviceConnectivityPeriod,
   DeviceConnectivityState,
+  DeviceFilterState,
+  DeviceLifecycleState,
+  DevicePolicyConfig,
+  DeviceRecord,
+  DeviceSortDir,
+  DeviceSortKey,
+  DeviceStatusTab,
+  DeviceTypeCategory,
+  DeviceWithRelations,
+  VendorDiscoveryRecord,
 } from '../types/devices.ts';
-import { parseDate, getServerNow, formatAbsoluteMYT, formatRelativeTime } from '../lib/dateTime.ts';
+import type { CableSpanRecord, PoleRecord } from '../types/assets.ts';
+import type { FalconEvent } from './events.ts';
+import { normalizeRelationKey } from './poles.ts';
+import { isEventWithin30Days } from './poleSelectors.ts';
+import {
+  formatAbsoluteMYT,
+  formatRelativeTime,
+  getServerNow,
+  parseDate,
+} from '../lib/dateTime.ts';
 
-/**
- * Standard telemetry freshness threshold in minutes (24 hours).
- * If device has not communicated within 24h, it is considered stale/unfresh.
- */
-export const TELEMETRY_FRESHNESS_THRESHOLD_MINUTES = 24 * 60; // 1440 min
+export function formatDeviceDurationMs(ms: number): string {
+  const safeMs = Math.max(0, ms);
+  const totalMinutes = Math.round(safeMs / 60000);
+  if (totalMinutes < 1) return '< 1m';
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const mins = totalMinutes % 60;
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  if (hours > 0) return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  return `${mins}m`;
+}
 
-/**
- * Evaluates last contact freshness and detects data contradictions.
- * Invariant: If a device is marked "online" but has not reported in > 24 hours,
- * a "No recent contact" warning chip is displayed without altering the underlying telemetry state.
- */
-export function evaluateDeviceFreshness(
-  device: Pick<DeviceRecord, 'state' | 'lastContact' | 'lastContactIso'>,
+export const DEFAULT_DEVICE_POLICY_CONFIG: DevicePolicyConfig = {
+  // Backend gap: staging server does not currently return an automatic staleness cutoff policy
+  staleThresholdHours: null,
+  stalePolicyLabel: null,
+};
+
+export const PREVIEW_DEVICE_POLICY_CONFIG: DevicePolicyConfig = {
+  staleThresholdHours: 48,
+  stalePolicyLabel: '48h no-contact threshold',
+};
+
+export interface LastContactFreshness {
+  relative: string;
+  absoluteMYT: string;
+  ageHours: number | null;
+  isStaleByPolicy: boolean;
+  /** Factual age notice when a device is reported Online despite old last contact (>24h) */
+  isOldWhileOnline: boolean;
+  tooltipSummary: string;
+}
+
+export function normalizeConnectivityState(raw: string | null | undefined): DeviceConnectivityState {
+  const norm = (raw || '').trim().toLowerCase();
+  if (norm === 'offline' || norm === 'disconnected' || norm === 'down') return 'offline';
+  if (norm === 'stale' || norm === 'degraded' || norm === 'delayed') return 'stale';
+  return 'online';
+}
+
+export function normalizeLifecycle(raw: string | null | undefined): DeviceLifecycleState {
+  const norm = (raw || '').trim().toLowerCase();
+  if (norm === 'planned') return 'Planned';
+  if (norm === 'maintenance') return 'Maintenance';
+  if (norm === 'retired' || norm === 'inactive') return 'Retired';
+  return 'Active';
+}
+
+export function formatConnectivityStateLabel(state: DeviceConnectivityState): string {
+  if (state === 'offline') return 'Offline';
+  if (state === 'stale') return 'Stale';
+  return 'Online';
+}
+
+export function getLastContactFreshness(
+  lastContactAt: string | null | undefined,
+  connectivityState: DeviceConnectivityState,
+  policyConfig: DevicePolicyConfig = DEFAULT_DEVICE_POLICY_CONFIG,
   now: Date = getServerNow()
-): {
-  isStaleContact: boolean;
-  hoursSinceLastContact: number;
-  relativeText: string;
-  absoluteText: string;
-  showWarningChip: boolean;
-  contradiction: boolean;
-  contradictionReason?: string;
-} {
-  const parsed = parseDate(device.lastContactIso || device.lastContact);
+): LastContactFreshness {
+  if (!lastContactAt) {
+    return {
+      relative: 'Never',
+      absoluteMYT: 'Not recorded',
+      ageHours: null,
+      isStaleByPolicy: false,
+      isOldWhileOnline: false,
+      tooltipSummary: 'No contact timestamp recorded.',
+    };
+  }
+
+  const parsed = parseDate(lastContactAt);
   if (!parsed) {
     return {
-      isStaleContact: true,
-      hoursSinceLastContact: 9999,
-      relativeText: device.lastContact || 'Never',
-      absoluteText: 'No recorded timestamp',
-      showWarningChip: device.state === 'online',
-      contradiction: device.state === 'online',
-      contradictionReason: 'Device marked Online with no valid telemetry timestamp.',
+      relative: '—',
+      absoluteMYT: '—',
+      ageHours: null,
+      isStaleByPolicy: false,
+      isOldWhileOnline: false,
+      tooltipSummary: 'Invalid contact timestamp.',
     };
   }
 
   const diffMs = Math.max(0, now.getTime() - parsed.getTime());
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const hoursSinceLastContact = Math.floor(diffMinutes / 60);
-  const isStaleContact = diffMinutes > TELEMETRY_FRESHNESS_THRESHOLD_MINUTES;
+  const ageHours = diffMs / (3600 * 1000);
+  const relative = formatRelativeTime(parsed, now);
+  const absoluteMYT = formatAbsoluteMYT(parsed, { showSeconds: false });
 
-  const relativeText = formatRelativeTime(parsed, now);
-  const absoluteText = formatAbsoluteMYT(parsed);
+  const isStaleByPolicy =
+    policyConfig.staleThresholdHours !== null &&
+    connectivityState === 'online' &&
+    ageHours >= policyConfig.staleThresholdHours;
 
-  const contradiction = device.state === 'online' && isStaleContact;
-  const showWarningChip = contradiction;
-  const contradictionReason = contradiction
-    ? `Data contradiction: Device is marked Online but last contact was ${relativeText} (${absoluteText}).`
-    : undefined;
+  const isOldWhileOnline = connectivityState === 'online' && ageHours >= 24;
+
+  const tooltipSummary = isStaleByPolicy
+    ? `Reported Online, but no contact for ${relative} (exceeds ${policyConfig.stalePolicyLabel || `${policyConfig.staleThresholdHours}h policy`}).`
+    : isOldWhileOnline
+    ? `State is reported Online by vendor telemetry; last contact was ${relative} (${absoluteMYT}).`
+    : `Last contact ${relative} (${absoluteMYT}).`;
 
   return {
-    isStaleContact,
-    hoursSinceLastContact,
-    relativeText,
-    absoluteText,
-    showWarningChip,
-    contradiction,
-    contradictionReason,
+    relative,
+    absoluteMYT,
+    ageHours,
+    isStaleByPolicy,
+    isOldWhileOnline,
+    tooltipSummary,
   };
 }
 
 /**
- * Computes truthful availability metrics from stored historical connectivity periods.
- * Never invents numbers: calculates directly from interval durations.
+ * Computes truthful availability breakdown strictly from stored connectivity periods.
+ * Never fabricates periods or percentages if no periods intersect the window.
  */
-export function computeAvailabilityMetrics(
-  periods: DeviceRecord['connectivityHistory']
-): DeviceAvailabilityMetrics {
-  if (!periods || periods.length === 0) {
+export function computeAvailabilitySummary(
+  periods: DeviceConnectivityPeriod[],
+  windowHours: number,
+  now: Date = getServerNow()
+): AvailabilitySummary {
+  const windowEndMs = now.getTime();
+  const windowStartMs = windowEndMs - windowHours * 3600 * 1000;
+
+  let onlineMs = 0;
+  let staleMs = 0;
+  let offlineMs = 0;
+  let longestOfflineMs = 0;
+  let periodsUsedCount = 0;
+  let transitionsCount = 0;
+
+  const clipped: { state: DeviceConnectivityState; start: number; end: number }[] = [];
+
+  for (const period of periods) {
+    const startParsed = parseDate(period.from);
+    if (!startParsed) continue;
+    const rawStart = startParsed.getTime();
+    const rawEnd = period.to ? parseDate(period.to)?.getTime() ?? windowEndMs : windowEndMs;
+    if (rawEnd <= rawStart) continue;
+
+    const overlapStart = Math.max(rawStart, windowStartMs);
+    const overlapEnd = Math.min(rawEnd, windowEndMs);
+    if (overlapEnd <= overlapStart) continue;
+
+    const dur = Math.max(0, overlapEnd - overlapStart);
+    periodsUsedCount += 1;
+    clipped.push({ state: period.state, start: overlapStart, end: overlapEnd });
+
+    if (period.state === 'online') onlineMs += dur;
+    else if (period.state === 'stale') staleMs += dur;
+    else {
+      offlineMs += dur;
+      if (dur > longestOfflineMs) longestOfflineMs = dur;
+    }
+  }
+
+  clipped.sort((a, b) => a.start - b.start);
+  for (let i = 1; i < clipped.length; i++) {
+    if (clipped[i].state !== clipped[i - 1].state) {
+      transitionsCount += 1;
+    }
+  }
+
+  const coveredMs = onlineMs + staleMs + offlineMs;
+  if (coveredMs === 0) {
     return {
-      totalRecordsCount: 0,
-      onlinePercent: 0,
-      stalePercent: 0,
-      offlinePercent: 0,
-      stateChangesCount: 0,
-      longestOfflineMinutes: 0,
-      computationBasis: 'From 0 connectivity records',
+      windowHours,
+      onlinePercent: null,
+      stalePercent: null,
+      offlinePercent: null,
+      onlineMs: 0,
+      staleMs: 0,
+      offlineMs: 0,
+      coveredMs: 0,
+      transitionsCount: 0,
+      longestOfflineMs: 0,
+      periodsUsedCount: 0,
+      basisLabel: `No stored connectivity periods in last ${windowHours}h`,
     };
   }
 
-  let totalMinutes = 0;
-  let onlineMinutes = 0;
-  let staleMinutes = 0;
-  let offlineMinutes = 0;
-  let longestOfflineMinutes = 0;
-  let stateChanges = 0;
-
-  for (let i = 0; i < periods.length; i++) {
-    const p = periods[i];
-    const duration = Math.max(0, p.durationMinutes || 0);
-    totalMinutes += duration;
-
-    if (p.status === 'online') {
-      onlineMinutes += duration;
-    } else if (p.status === 'stale') {
-      staleMinutes += duration;
-    } else if (p.status === 'offline') {
-      offlineMinutes += duration;
-      if (duration > longestOfflineMinutes) {
-        longestOfflineMinutes = duration;
-      }
-    }
-
-    if (i > 0 && periods[i].status !== periods[i - 1].status) {
-      stateChanges++;
-    }
-  }
-
-  const safeTotal = totalMinutes > 0 ? totalMinutes : 1;
-  const onlinePercent = Math.round((onlineMinutes / safeTotal) * 100);
-  const stalePercent = Math.round((staleMinutes / safeTotal) * 100);
-  const offlinePercent = Math.max(0, 100 - onlinePercent - stalePercent);
+  const pct = (ms: number) => Number(((ms / coveredMs) * 100).toFixed(1));
+  const windowLabel = windowHours >= 24 && windowHours % 24 === 0 ? `${windowHours / 24}d` : `${windowHours}h`;
 
   return {
-    totalRecordsCount: periods.length,
-    onlinePercent,
-    stalePercent,
-    offlinePercent,
-    stateChangesCount: stateChanges,
-    longestOfflineMinutes,
-    computationBasis: `From ${periods.length} connectivity records (${Math.round(totalMinutes / 60)} hours tracked)`,
+    windowHours,
+    onlinePercent: pct(onlineMs),
+    stalePercent: pct(staleMs),
+    offlinePercent: pct(offlineMs),
+    onlineMs,
+    staleMs,
+    offlineMs,
+    coveredMs,
+    transitionsCount,
+    longestOfflineMs,
+    periodsUsedCount,
+    basisLabel: `Computed from ${periodsUsedCount} stored telemetry periods (${formatDeviceDurationMs(coveredMs)} covered across last ${windowLabel})`,
+  };
+}
+
+export function getEventsForDevice(
+  device: Pick<DeviceRecord, 'identifier'>,
+  eventsList: FalconEvent[],
+  windowDays = 30,
+  now: Date = getServerNow()
+): { allEvents: FalconEvent[]; recentEvents: FalconEvent[] } {
+  const key = normalizeRelationKey(device.identifier);
+  const matched = eventsList.filter((evt) => {
+    const devKey = normalizeRelationKey(evt.device);
+    return devKey !== '' && devKey === key;
+  });
+
+  const recentEvents =
+    windowDays === 30
+      ? matched.filter((evt) => isEventWithin30Days(evt, now))
+      : matched.filter((evt) => {
+          const parsed = parseDate(evt.captured);
+          if (!parsed) return false;
+          const cutoffMs = now.getTime() - windowDays * 24 * 3600 * 1000;
+          return parsed.getTime() >= cutoffMs;
+        });
+
+  return { allEvents: matched, recentEvents };
+}
+
+export function enrichDeviceWithRelations(
+  device: DeviceRecord,
+  polesList: PoleRecord[],
+  spansList: CableSpanRecord[],
+  eventsList: FalconEvent[],
+  vendorRecords: VendorDiscoveryRecord[] = [],
+  policyConfig: DevicePolicyConfig = DEFAULT_DEVICE_POLICY_CONFIG,
+  now: Date = getServerNow()
+): DeviceWithRelations {
+  const installedPoleKey = normalizeRelationKey(device.installedPoleId);
+  const installedPole = installedPoleKey
+    ? polesList.find((p) => normalizeRelationKey(p.identifier) === installedPoleKey && p.lifecycle !== 'Deleted') ||
+      polesList.find((p) => normalizeRelationKey(p.identifier) === installedPoleKey) ||
+      null
+    : null;
+
+  const isInstalled = Boolean(device.installedPoleId && installedPole && installedPole.lifecycle !== 'Deleted');
+  const location = installedPole?.location || null;
+
+  const poleSpans = installedPoleKey
+    ? spansList.filter(
+        (s) =>
+          s.lifecycle !== 'Deleted' &&
+          (normalizeRelationKey(s.fromPole) === installedPoleKey ||
+            normalizeRelationKey(s.toPole) === installedPoleKey)
+      )
+    : [];
+
+  const { allEvents, recentEvents } = getEventsForDevice(device, eventsList, 30, now);
+
+  const devKey = normalizeRelationKey(device.identifier);
+  const vendorConflict =
+    vendorRecords.find(
+      (vr) =>
+        vr.matchStatus === 'Conflict' &&
+        (normalizeRelationKey(vr.matchedFalconId) === devKey ||
+          normalizeRelationKey(vr.serial) === normalizeRelationKey(device.serial))
+    ) || null;
+
+  const latestVersion = device.configVersions[0];
+  const configIssueCount = latestVersion
+    ? latestVersion.results.filter((r) => r.status === 'Failed' || r.status === 'Pending').length
+    : 0;
+
+  const freshness = getLastContactFreshness(
+    device.lastContactAt,
+    device.connectivityState,
+    policyConfig,
+    now
+  );
+
+  return {
+    ...device,
+    installedPoleName: installedPole?.name || device.installedPoleId || null,
+    installedPoleSiteName: installedPole?.siteName || null,
+    installedPoleLifecycle: installedPole?.lifecycle || null,
+    location,
+    isInstalled,
+    events30dCount: recentEvents.length,
+    allEventsCount: allEvents.length,
+    deviceEvents: allEvents,
+    poleSpans,
+    vendorConflict,
+    configIssueCount,
+    isStaleByPolicy: freshness.isStaleByPolicy,
   };
 }
 
@@ -138,44 +322,46 @@ export interface DeviceKpiCounts {
   offline: number;
   stale: number;
   notInstalled: number;
-  needsAttention: number; // offline + stale
-  configIssues: number; // pending or failed
+  needsAttention: number;
+  configIssues: number;
+  vendorConflicts: number;
 }
 
-export interface DeviceStatusTabCounts {
-  all: number;
-  online: number;
-  offline: number;
-  stale: number;
-}
-
-/**
- * Computes KPI strip counts strictly from real fields.
- */
 export function getDeviceKpiCounts(
-  devices: DeviceRecord[],
+  devicesList: DeviceWithRelations[],
   siteFilter?: string
 ): DeviceKpiCounts {
-  const scoped = !siteFilter || siteFilter === 'ALL'
-    ? devices
-    : devices.filter((d) => d.siteName === siteFilter || d.siteId === siteFilter);
+  const scoped =
+    siteFilter && siteFilter !== 'ALL'
+      ? devicesList.filter((d) => (d.siteName || 'Unassigned') === siteFilter)
+      : devicesList;
 
   let online = 0;
   let offline = 0;
   let stale = 0;
   let notInstalled = 0;
+  let needsAttention = 0;
   let configIssues = 0;
+  let vendorConflicts = 0;
 
   for (const d of scoped) {
-    if (d.state === 'online') online++;
-    else if (d.state === 'offline') offline++;
-    else if (d.state === 'stale') stale++;
+    if (d.connectivityState === 'online') online += 1;
+    else if (d.connectivityState === 'offline') offline += 1;
+    else stale += 1;
 
-    if (!d.installedOnPoleId) notInstalled++;
-
-    if (d.configStatus === 'Failed' || d.configStatus === 'Pending') {
-      configIssues++;
+    if (!d.isInstalled) notInstalled += 1;
+    if (d.configIssueCount > 0 || d.configStatus === 'Failed' || d.configStatus === 'Partly applied') {
+      configIssues += 1;
     }
+    if (d.vendorConflict) vendorConflicts += 1;
+
+    const attention =
+      d.connectivityState === 'offline' ||
+      d.connectivityState === 'stale' ||
+      d.configIssueCount > 0 ||
+      Boolean(d.vendorConflict) ||
+      d.isStaleByPolicy;
+    if (attention) needsAttention += 1;
   }
 
   return {
@@ -184,174 +370,180 @@ export function getDeviceKpiCounts(
     offline,
     stale,
     notInstalled,
-    needsAttention: offline + stale,
+    needsAttention,
     configIssues,
+    vendorConflicts,
   };
 }
 
-/**
- * Computes status tab counts matching the active filters (except statusTab itself).
- */
+export interface DeviceStatusTabCounts {
+  all: number;
+  online: number;
+  offline: number;
+  stale: number;
+  not_installed: number;
+}
+
 export function getDeviceStatusTabCounts(
-  devices: DeviceRecord[],
-  filters: DeviceFilterState,
+  devicesList: DeviceWithRelations[],
   siteFilter?: string
 ): DeviceStatusTabCounts {
-  const filtered = filterDevices(devices, { ...filters, statusTab: 'all' }, siteFilter);
-
-  let online = 0;
-  let offline = 0;
-  let stale = 0;
-
-  for (const d of filtered) {
-    if (d.state === 'online') online++;
-    else if (d.state === 'offline') offline++;
-    else if (d.state === 'stale') stale++;
-  }
-
+  const kpi = getDeviceKpiCounts(devicesList, siteFilter);
   return {
-    all: filtered.length,
-    online,
-    offline,
-    stale,
+    all: kpi.total,
+    online: kpi.online,
+    offline: kpi.offline,
+    stale: kpi.stale,
+    not_installed: kpi.notInstalled,
   };
 }
 
-/**
- * Filter devices list with full toolbar and popover support.
- */
 export function filterDevices(
-  devices: DeviceRecord[],
+  devicesList: DeviceWithRelations[],
   filters: DeviceFilterState,
-  headerSite?: string
-): DeviceRecord[] {
-  const effectiveSite = filters.site && filters.site !== 'ALL'
-    ? filters.site
-    : headerSite && headerSite !== 'ALL'
-    ? headerSite
-    : undefined;
+  now: Date = getServerNow()
+): DeviceWithRelations[] {
+  const query = (filters.search || '').trim().toLowerCase();
 
-  return devices.filter((d) => {
-    // 1. Status tab
-    if (filters.statusTab !== 'all' && d.state !== filters.statusTab) {
+  return devicesList.filter((d) => {
+    if (filters.hideTestRecords && d.isTest) return false;
+
+    if (filters.site && filters.site !== 'ALL') {
+      const devSite = d.siteName || 'Unassigned';
+      if (devSite !== filters.site) return false;
+    }
+
+    if (filters.statusTab === 'online' && d.connectivityState !== 'online') return false;
+    if (filters.statusTab === 'offline' && d.connectivityState !== 'offline') return false;
+    if (filters.statusTab === 'stale' && d.connectivityState !== 'stale') return false;
+    if (filters.statusTab === 'not_installed' && d.isInstalled) return false;
+
+    if (filters.installationFilter === 'installed' && !d.isInstalled) return false;
+    if (filters.installationFilter === 'not_installed' && d.isInstalled) return false;
+
+    if (filters.types && filters.types.length > 0 && !filters.types.includes(d.type)) {
       return false;
     }
 
-    // 2. Site
-    if (effectiveSite && d.siteName !== effectiveSite && d.siteId !== effectiveSite) {
+    if (
+      filters.manufacturers &&
+      filters.manufacturers.length > 0 &&
+      !filters.manufacturers.includes(d.manufacturer)
+    ) {
       return false;
     }
 
-    // 3. Search (identifier, name, model, serial)
-    if (filters.search && filters.search.trim().length > 0) {
-      const q = filters.search.toLowerCase().trim();
-      const matchId = d.identifier.toLowerCase().includes(q);
-      const matchName = d.name.toLowerCase().includes(q);
-      const matchModel = d.model.toLowerCase().includes(q);
-      const matchSerial = (d.serialNumber || '').toLowerCase().includes(q);
-      if (!matchId && !matchName && !matchModel && !matchSerial) {
+    if (
+      filters.libraries &&
+      filters.libraries.length > 0 &&
+      !filters.libraries.includes(d.library)
+    ) {
+      return false;
+    }
+
+    if (filters.lifecycle && filters.lifecycle.length > 0 && !filters.lifecycle.includes(d.lifecycle)) {
+      return false;
+    }
+
+    if (filters.configFilter && filters.configFilter !== 'all') {
+      if (filters.configFilter === 'applied' && d.configStatus !== 'Applied') return false;
+      if (filters.configFilter === 'none' && d.configStatus !== 'None') return false;
+      if (
+        filters.configFilter === 'issues' &&
+        d.configIssueCount === 0 &&
+        d.configStatus !== 'Failed' &&
+        d.configStatus !== 'Partly applied'
+      ) {
         return false;
       }
     }
 
-    // 4. Hardware Type
-    if (filters.type && filters.type.length > 0) {
-      if (!filters.type.includes(d.type)) {
-        return false;
-      }
+    if (filters.needsAttentionOnly) {
+      const attention =
+        d.connectivityState === 'offline' ||
+        d.connectivityState === 'stale' ||
+        d.configIssueCount > 0 ||
+        Boolean(d.vendorConflict) ||
+        d.isStaleByPolicy;
+      if (!attention) return false;
     }
 
-    // 5. Vendor / Manufacturer
-    if (filters.vendor && filters.vendor.length > 0) {
-      if (!filters.vendor.includes(d.manufacturer)) {
-        return false;
-      }
-    }
-
-    // 6. Library
-    if (filters.library && filters.library.length > 0) {
-      if (!filters.library.includes(d.library)) {
-        return false;
-      }
-    }
-
-    // 7. Installation (Installed vs Not installed)
-    if (filters.installation && filters.installation !== 'all') {
-      const isInstalled = !!d.installedOnPoleId;
-      if (filters.installation === 'installed' && !isInstalled) return false;
-      if (filters.installation === 'not_installed' && isInstalled) return false;
-    }
-
-    // 8. Last contact range
     if (filters.lastContactRange && filters.lastContactRange !== 'all') {
-      const freshness = evaluateDeviceFreshness(d);
-      if (filters.lastContactRange === '1h' && freshness.hoursSinceLastContact > 1) return false;
-      if (filters.lastContactRange === '24h' && freshness.hoursSinceLastContact > 24) return false;
-      if (filters.lastContactRange === 'older_24h' && freshness.hoursSinceLastContact <= 24) return false;
-      if (filters.lastContactRange === 'never' && freshness.hoursSinceLastContact < 9990) return false;
+      const parsed = parseDate(d.lastContactAt);
+      if (!parsed) {
+        if (filters.lastContactRange !== 'older_24h') return false;
+      } else {
+        const diffH = (now.getTime() - parsed.getTime()) / (3600 * 1000);
+        if (filters.lastContactRange === '1h' && diffH > 1) return false;
+        if (filters.lastContactRange === '24h' && diffH > 24) return false;
+        if (filters.lastContactRange === '7d' && diffH > 24 * 7) return false;
+        if (filters.lastContactRange === 'older_24h' && diffH <= 24) return false;
+      }
     }
 
-    // 9. Configuration status
-    if (filters.configStatus && filters.configStatus !== 'all') {
-      if (filters.configStatus === 'none' && d.appliedConfigVersion !== null) return false;
-      if (filters.configStatus === 'applied' && d.appliedConfigVersion === null) return false;
-      if (filters.configStatus === 'pending' && d.configStatus !== 'Pending') return false;
-      if (filters.configStatus === 'failed' && d.configStatus !== 'Failed') return false;
+    if (query) {
+      const haystack = [
+        d.identifier,
+        d.name,
+        d.model,
+        d.serial,
+        d.vendorDeviceId,
+        d.installedPoleId || '',
+        d.siteName || 'Unassigned',
+        d.manufacturer,
+        d.library,
+      ]
+        .join(' ')
+        .toLowerCase();
+      if (!haystack.includes(query)) return false;
     }
 
     return true;
   });
 }
 
-/**
- * Sorts devices cleanly and deterministically.
- */
+const STATE_SEVERITY_ORDER: Record<DeviceConnectivityState, number> = {
+  offline: 0,
+  stale: 1,
+  online: 2,
+};
+
 export function sortDevices(
-  devices: DeviceRecord[],
+  devicesList: DeviceWithRelations[],
   sortKey: DeviceSortKey = 'identifier',
   sortDir: DeviceSortDir = 'asc'
-): DeviceRecord[] {
-  const result = [...devices];
-  result.sort((a, b) => {
+): DeviceWithRelations[] {
+  const dir = sortDir === 'desc' ? -1 : 1;
+  return [...devicesList].sort((a, b) => {
     let cmp = 0;
-    switch (sortKey) {
-      case 'identifier':
-        cmp = a.identifier.localeCompare(b.identifier, undefined, { numeric: true, sensitivity: 'base' });
-        break;
-      case 'state': {
-        const order: Record<DeviceConnectivityState, number> = { online: 1, stale: 2, offline: 3 };
-        cmp = (order[a.state] || 99) - (order[b.state] || 99);
-        break;
-      }
-      case 'lastContact': {
-        const dateA = parseDate(a.lastContactIso || a.lastContact)?.getTime() ?? 0;
-        const dateB = parseDate(b.lastContactIso || b.lastContact)?.getTime() ?? 0;
-        cmp = dateA - dateB;
-        break;
-      }
-      case 'events':
-        cmp = (a.events30dCount || 0) - (b.events30dCount || 0);
-        break;
-      case 'type':
-        cmp = a.type.localeCompare(b.type);
-        break;
-      case 'installedOn':
-        cmp = (a.installedOnPoleId || 'ZZZ').localeCompare(b.installedOnPoleId || 'ZZZ');
-        break;
-      default:
-        cmp = 0;
+    if (sortKey === 'identifier') {
+      cmp = a.identifier.localeCompare(b.identifier, undefined, { numeric: true });
+    } else if (sortKey === 'type') {
+      cmp = a.type.localeCompare(b.type);
+    } else if (sortKey === 'connectivityState') {
+      cmp = STATE_SEVERITY_ORDER[a.connectivityState] - STATE_SEVERITY_ORDER[b.connectivityState];
+    } else if (sortKey === 'lastContactAt') {
+      const ta = parseDate(a.lastContactAt)?.getTime() ?? 0;
+      const tb = parseDate(b.lastContactAt)?.getTime() ?? 0;
+      cmp = ta - tb;
+    } else if (sortKey === 'events30dCount') {
+      cmp = a.events30dCount - b.events30dCount;
+    } else if (sortKey === 'configVersion') {
+      cmp = (a.configVersion || '').localeCompare(b.configVersion || '');
+    } else if (sortKey === 'installedPoleId') {
+      cmp = (a.installedPoleId || 'zzz').localeCompare(b.installedPoleId || 'zzz');
     }
-    return sortDir === 'asc' ? cmp : -cmp;
+
+    if (cmp === 0) {
+      cmp = a.identifier.localeCompare(b.identifier, undefined, { numeric: true });
+    }
+    return cmp * dir;
   });
-  return result;
 }
 
-/**
- * Parses URL search params into typed filter and table state.
- */
 export function parseDevicesUrlState(
-  params: URLSearchParams,
-  defaultSite?: string
+  searchParams: URLSearchParams,
+  defaultSite: string
 ): {
   filters: DeviceFilterState;
   sortKey: DeviceSortKey;
@@ -361,36 +553,71 @@ export function parseDevicesUrlState(
   selectedDeviceId: string | null;
   activeKpi: string | null;
 } {
-  const statusTab = (params.get('tab') as any) || 'all';
-  const viewMode = (params.get('view') as any) === 'map' ? 'map' : 'table';
-  const search = params.get('q') || undefined;
-  const site = params.get('site') || defaultSite || undefined;
-  const sortKey = (params.get('sort') as DeviceSortKey) || 'identifier';
-  const sortDir = (params.get('dir') as DeviceSortDir) || 'asc';
-  const page = Math.max(1, parseInt(params.get('page') || '1', 10));
-  const limit = Math.max(5, parseInt(params.get('limit') || '10', 10));
-  const selectedDeviceId = params.get('selected') || null;
-  const activeKpi = params.get('kpi') || null;
-  const installation = (params.get('inst') as any) || 'all';
-  const configStatus = (params.get('cfg') as any) || 'all';
+  const statusParam = searchParams.get('status') as DeviceStatusTab | null;
+  const statusTab: DeviceStatusTab =
+    statusParam && ['all', 'online', 'offline', 'stale', 'not_installed'].includes(statusParam)
+      ? statusParam
+      : 'all';
 
-  const type = params.getAll('type') as any;
-  const vendor = params.getAll('vendor');
-  const library = params.getAll('lib');
-  const lastContactRange = (params.get('contact') as any) || 'all';
+  const viewMode = searchParams.get('view') === 'map' ? 'map' : 'table';
+  const search = searchParams.get('q') || '';
+  const siteParam = searchParams.get('site');
+  const site = siteParam !== null ? siteParam : defaultSite;
+
+  const typesRaw = searchParams.get('type');
+  const types = typesRaw
+    ? (typesRaw.split(',').filter(Boolean) as DeviceTypeCategory[])
+    : [];
+
+  const manufacturers = (searchParams.get('vendor') || '').split(',').filter(Boolean);
+  const libraries = (searchParams.get('library') || '').split(',').filter(Boolean);
+  const lifecycle = ((searchParams.get('lifecycle') || '').split(',').filter(Boolean) as DeviceLifecycleState[]);
+
+  const installationFilter =
+    (searchParams.get('installed') as DeviceFilterState['installationFilter']) || 'all';
+  const lastContactRange =
+    (searchParams.get('contact') as DeviceFilterState['lastContactRange']) || 'all';
+  const configFilter =
+    (searchParams.get('config') as DeviceFilterState['configFilter']) || 'all';
+
+  const needsAttentionOnly = searchParams.get('attention') === '1';
+  const hideTestRecords = searchParams.get('hideTest') === '1';
+
+  const sortKeyRaw = searchParams.get('sort') as DeviceSortKey | null;
+  const validSorts: DeviceSortKey[] = [
+    'identifier',
+    'type',
+    'connectivityState',
+    'lastContactAt',
+    'events30dCount',
+    'configVersion',
+    'installedPoleId',
+  ];
+  const sortKey: DeviceSortKey = sortKeyRaw && validSorts.includes(sortKeyRaw) ? sortKeyRaw : 'identifier';
+  const sortDir: DeviceSortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
+
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const limitRaw = parseInt(searchParams.get('limit') || '25', 10) || 25;
+  const limit = [10, 25, 50, 100].includes(limitRaw) ? limitRaw : 25;
+
+  const selectedDeviceId = searchParams.get('device') || null;
+  const activeKpi = searchParams.get('kpi') || null;
 
   return {
     filters: {
-      statusTab: ['all', 'online', 'offline', 'stale'].includes(statusTab) ? statusTab : 'all',
+      statusTab,
       viewMode,
       search,
+      types,
+      manufacturers,
+      libraries,
+      lifecycle,
       site,
-      type: type.length > 0 ? type : undefined,
-      vendor: vendor.length > 0 ? vendor : undefined,
-      library: library.length > 0 ? library : undefined,
-      installation,
+      installationFilter,
       lastContactRange,
-      configStatus,
+      configFilter,
+      needsAttentionOnly,
+      hideTestRecords,
     },
     sortKey,
     sortDir,
@@ -401,9 +628,6 @@ export function parseDevicesUrlState(
   };
 }
 
-/**
- * Serializes device filters and state to URL search parameters.
- */
 export function buildDevicesSearchParams(params: {
   filters: DeviceFilterState;
   sortKey: DeviceSortKey;
@@ -412,80 +636,104 @@ export function buildDevicesSearchParams(params: {
   limit: number;
   selectedDeviceId?: string | null;
   activeKpi?: string | null;
-  defaultSite?: string;
+  defaultSite: string;
 }): URLSearchParams {
-  const p = new URLSearchParams();
+  const sp = new URLSearchParams();
   const { filters, sortKey, sortDir, page, limit, selectedDeviceId, activeKpi, defaultSite } = params;
 
-  if (filters.statusTab && filters.statusTab !== 'all') p.set('tab', filters.statusTab);
-  if (filters.viewMode === 'map') p.set('view', 'map');
-  if (filters.search) p.set('q', filters.search);
-  if (filters.site && filters.site !== defaultSite && filters.site !== 'ALL') p.set('site', filters.site);
-
-  if (filters.type) {
-    for (const t of filters.type) p.append('type', t);
+  if (filters.statusTab && filters.statusTab !== 'all') sp.set('status', filters.statusTab);
+  if (filters.viewMode === 'map') sp.set('view', 'map');
+  if (filters.search?.trim()) sp.set('q', filters.search.trim());
+  if (filters.site && filters.site !== defaultSite) sp.set('site', filters.site);
+  if (filters.types && filters.types.length > 0) sp.set('type', filters.types.join(','));
+  if (filters.manufacturers && filters.manufacturers.length > 0) {
+    sp.set('vendor', filters.manufacturers.join(','));
   }
-  if (filters.vendor) {
-    for (const v of filters.vendor) p.append('vendor', v);
+  if (filters.libraries && filters.libraries.length > 0) sp.set('library', filters.libraries.join(','));
+  if (filters.lifecycle && filters.lifecycle.length > 0) sp.set('lifecycle', filters.lifecycle.join(','));
+  if (filters.installationFilter && filters.installationFilter !== 'all') {
+    sp.set('installed', filters.installationFilter);
   }
-  if (filters.library) {
-    for (const l of filters.library) p.append('lib', l);
+  if (filters.lastContactRange && filters.lastContactRange !== 'all') {
+    sp.set('contact', filters.lastContactRange);
   }
-  if (filters.installation && filters.installation !== 'all') p.set('inst', filters.installation);
-  if (filters.lastContactRange && filters.lastContactRange !== 'all') p.set('contact', filters.lastContactRange);
-  if (filters.configStatus && filters.configStatus !== 'all') p.set('cfg', filters.configStatus);
+  if (filters.configFilter && filters.configFilter !== 'all') {
+    sp.set('config', filters.configFilter);
+  }
+  if (filters.needsAttentionOnly) sp.set('attention', '1');
+  if (filters.hideTestRecords) sp.set('hideTest', '1');
 
-  if (sortKey !== 'identifier') p.set('sort', sortKey);
-  if (sortDir !== 'asc') p.set('dir', sortDir);
-  if (page > 1) p.set('page', String(page));
-  if (limit !== 10) p.set('limit', String(limit));
-  if (selectedDeviceId) p.set('selected', selectedDeviceId);
-  if (activeKpi) p.set('kpi', activeKpi);
+  if (sortKey !== 'identifier') sp.set('sort', sortKey);
+  if (sortDir !== 'asc') sp.set('dir', sortDir);
+  if (page > 1) sp.set('page', String(page));
+  if (limit !== 25) sp.set('limit', String(limit));
+  if (selectedDeviceId) sp.set('device', selectedDeviceId);
+  if (activeKpi) sp.set('kpi', activeKpi);
 
-  return p;
+  return sp;
 }
 
-/**
- * Exports filtered devices list verbatim to RFC 4180 CSV.
- */
-export function exportDevicesToCsv(devices: DeviceRecord[]): string {
+export function buildDevicesCsvContent(devicesList: DeviceWithRelations[]): string {
+  const escape = (val: string | number | null | undefined) => {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const headers = [
     'Identifier',
     'Name',
     'Type',
     'Manufacturer',
-    'Model',
-    'Serial Number',
     'Library',
-    'State',
-    'Installed On Pole',
+    'Model',
+    'Serial',
     'Site',
-    'Last Contact',
+    'Lifecycle',
+    'State',
+    'Installed On',
+    'Coordinates',
+    'Last Contact (MYT)',
     'Events (30d)',
     'Config Version',
+    'Config Status',
   ];
 
-  const escape = (val: any) => {
-    if (val === null || val === undefined) return '""';
-    const s = String(val).replace(/"/g, '""');
-    return `"${s}"`;
-  };
+  const rows = devicesList.map((d) =>
+    [
+      escape(d.identifier),
+      escape(d.name),
+      escape(d.type),
+      escape(d.manufacturer),
+      escape(d.library),
+      escape(d.model),
+      escape(d.serial),
+      escape(d.siteName || 'Unassigned'),
+      escape(d.lifecycle),
+      escape(formatConnectivityStateLabel(d.connectivityState)),
+      escape(d.installedPoleId || 'Not installed'),
+      escape(d.location ? `${d.location.lat.toFixed(6)}, ${d.location.lng.toFixed(6)}` : 'Not recorded'),
+      escape(formatAbsoluteMYT(d.lastContactAt)),
+      escape(d.events30dCount),
+      escape(d.configVersion || 'None'),
+      escape(d.configStatus),
+    ].join(',')
+  );
 
-  const rows = devices.map((d) => [
-    escape(d.identifier),
-    escape(d.name),
-    escape(d.type),
-    escape(d.manufacturer),
-    escape(d.model),
-    escape(d.serialNumber),
-    escape(d.library),
-    escape(d.state),
-    escape(d.installedOnPoleId || 'Not installed'),
-    escape(d.siteName),
-    escape(d.lastContact),
-    escape(d.events30dCount ?? 0),
-    escape(d.appliedConfigVersion || 'None'),
-  ]);
+  return [headers.join(','), ...rows].join('\n');
+}
 
-  return [headers.map(escape).join(','), ...rows.map((r) => r.join(','))].join('\n');
+export function exportDevicesToCsv(devicesList: DeviceWithRelations[], filenamePrefix = 'falcon_devices') {
+  const csv = buildDevicesCsvContent(devicesList);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

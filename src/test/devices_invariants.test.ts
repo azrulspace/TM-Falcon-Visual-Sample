@@ -1,147 +1,172 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  evaluateDeviceFreshness,
-  computeAvailabilityMetrics,
+  INITIAL_DEVICES_REGISTRY,
+  INITIAL_VENDOR_DISCOVERY_RECORDS,
+  buildJalanBandarLamaPreviewDevices,
+  buildSyntheticBenchmarkDevices,
+} from '../data/devicesRegistry.ts';
+import {
+  DEFAULT_DEVICE_POLICY_CONFIG,
+  enrichDeviceWithRelations,
   getDeviceKpiCounts,
   getDeviceStatusTabCounts,
+  getEventsForDevice,
+  filterDevices,
+  sortDevices,
   parseDevicesUrlState,
   buildDevicesSearchParams,
-  exportDevicesToCsv,
+  buildDevicesCsvContent,
 } from '../data/deviceSelectors.ts';
-import { canonicalDevices, canonicalVendorDevices } from '../data/canonicalDevices.ts';
+import { filterEvents } from '../data/eventSelectors.ts';
+import { initialPoles, initialCableSpans } from '../data/poles.ts';
+import { events as initialEvents } from '../data/events.ts';
+import type { DeviceFilterState } from '../types/devices.ts';
 
-describe('Devices Redesign: Phase 1 Vocabulary & Invariant Tests', () => {
-  it('preserves user identifiers verbatim as stored (never mangled by formatting helpers)', () => {
-    const dev1 = canonicalDevices.find((d) => d.identifier === 'DEV-001');
-    const speaker = canonicalDevices.find((d) => d.identifier === 'GV0032063');
-    const serialDev = canonicalDevices.find((d) => d.identifier === 'GS6306382');
+const SERVER_NOW = new Date('2026-10-21T11:15:00+08:00');
 
-    assert.ok(dev1, 'DEV-001 exists in canonical registry');
-    assert.equal(dev1.identifier, 'DEV-001');
+function getEnrichedDevices() {
+  return INITIAL_DEVICES_REGISTRY.map((d) =>
+    enrichDeviceWithRelations(
+      d,
+      initialPoles,
+      initialCableSpans,
+      initialEvents,
+      INITIAL_VENDOR_DISCOVERY_RECORDS,
+      DEFAULT_DEVICE_POLICY_CONFIG,
+      SERVER_NOW
+    )
+  );
+}
 
-    assert.ok(speaker, 'GV0032063 exists in canonical registry');
-    assert.equal(speaker.identifier, 'GV0032063');
+describe('Phase 10 Devices KPI, Event Parity, URL Sync & Scale Invariants', () => {
+  it('computes consistent KPI totals and Status tab sums across All sites and scoped sites', () => {
+    const rich = getEnrichedDevices();
+    const kpiAll = getDeviceKpiCounts(rich, 'ALL');
+    const tabsAll = getDeviceStatusTabCounts(rich, 'ALL');
 
-    assert.ok(serialDev, 'GS6306382 exists in canonical registry');
-    assert.equal(serialDev.identifier, 'GS6306382');
+    assert.equal(kpiAll.total, 17);
+    assert.equal(kpiAll.online + kpiAll.offline + kpiAll.stale, kpiAll.total);
+    assert.equal(tabsAll.all, kpiAll.total);
+    assert.equal(tabsAll.online + tabsAll.offline + tabsAll.stale, tabsAll.all);
+    assert.equal(tabsAll.not_installed, 2);
+
+    const tpgKpi = getDeviceKpiCounts(rich, 'Teluk Panglima Garang');
+    assert.equal(tpgKpi.online + tpgKpi.offline + tpgKpi.stale, tpgKpi.total);
+
+    const unassignedKpi = getDeviceKpiCounts(rich, 'Unassigned');
+    assert.equal(unassignedKpi.total, 1);
   });
 
-  it('disambiguates Connectivity State from Lifecycle: state is strictly online, offline, or stale', () => {
-    const validStates = new Set(['online', 'offline', 'stale']);
-    for (const d of canonicalDevices) {
-      assert.ok(
-        validStates.has(d.state),
-        `Device ${d.identifier} has invalid connectivity state: ${d.state}`
+  it('agrees 100% between Device Detail event count and Event inbox device filter', () => {
+    const rich = getEnrichedDevices();
+    for (const dev of rich) {
+      const { allEvents } = getEventsForDevice(dev, initialEvents, 30, SERVER_NOW);
+      const inboxMatched = filterEvents(initialEvents, { device: dev.identifier });
+      assert.equal(
+        allEvents.length,
+        inboxMatched.length,
+        `Event count mismatch for device ${dev.identifier}`
       );
+      assert.equal(dev.allEventsCount, inboxMatched.length);
     }
   });
 
-  it('detects last contact freshness contradiction without altering telemetry state (D4 audit finding)', () => {
-    // DEV-002: Marked online, but last contact was Nov 3, 2026 (9 days before Nov 12 reference date)
-    const dev2 = canonicalDevices.find((d) => d.identifier === 'DEV-002')!;
-    const referenceNow = new Date('2026-11-12T08:00:00+08:00');
+  it('round-trips Devices URL query parameters cleanly without losing filter or map mode state', () => {
+    const original: DeviceFilterState = {
+      statusTab: 'not_installed',
+      viewMode: 'map',
+      search: 'GV003',
+      types: ['Speaker'],
+      manufacturers: ['Hikvision'],
+      libraries: ['HIK_OpenAPI'],
+      lifecycle: ['Active'],
+      site: 'ALL',
+      installationFilter: 'not_installed',
+      lastContactRange: '7d',
+      configFilter: 'none',
+      needsAttentionOnly: true,
+      hideTestRecords: false,
+    };
 
-    const freshness = evaluateDeviceFreshness(dev2, referenceNow);
-
-    assert.equal(dev2.state, 'online', 'Telemetry state remains online');
-    assert.ok(freshness.isStaleContact, 'Last contact is flagged as stale (> 24h)');
-    assert.ok(freshness.showWarningChip, 'Warning chip is shown to operator');
-    assert.ok(freshness.contradiction, 'Contradiction is truthfully flagged');
-    assert.ok(
-      freshness.contradictionReason?.includes('Device is marked Online but last contact was'),
-      'Contradiction explanation clearly states the data condition'
-    );
-  });
-
-  it('computes availability metrics strictly from stored periods with basis tooltip (D5)', () => {
-    const speaker = canonicalDevices.find((d) => d.identifier === 'GV0032063')!;
-    assert.ok(speaker.connectivityHistory.length > 0, 'Speaker has stored connectivity history');
-
-    const metrics = computeAvailabilityMetrics(speaker.connectivityHistory);
-
-    assert.ok(metrics.totalRecordsCount > 10, 'Evaluates dozens of stored cycles');
-    assert.ok(metrics.onlinePercent >= 0 && metrics.onlinePercent <= 100);
-    assert.ok(metrics.stalePercent >= 0 && metrics.stalePercent <= 100);
-    assert.ok(metrics.offlinePercent >= 0 && metrics.offlinePercent <= 100);
-    assert.equal(
-      metrics.onlinePercent + metrics.stalePercent + metrics.offlinePercent,
-      100,
-      'Percentages sum to 100%'
-    );
-    assert.ok(metrics.longestOfflineMinutes >= 25, 'Captures the 25 min recurring offline period');
-    assert.ok(metrics.stateChangesCount > 10, 'Counts all historical state transitions');
-    assert.ok(metrics.computationBasis.includes('From'), 'Basis tooltip explicitly states provenance');
-  });
-
-  it('computes KPI strip and status tab counts accurately from single source of truth', () => {
-    const kpis = getDeviceKpiCounts(canonicalDevices);
-
-    assert.equal(kpis.total, canonicalDevices.length);
-    assert.equal(kpis.online + kpis.offline + kpis.stale, kpis.total, 'State sum invariant holds');
-    assert.equal(kpis.needsAttention, kpis.offline + kpis.stale, 'Needs attention = offline + stale');
-    assert.ok(kpis.notInstalled >= 2, 'Uninstalled devices (GS6306382, GV0032063) counted');
-
-    const statusTabs = getDeviceStatusTabCounts(canonicalDevices, {
-      statusTab: 'all',
-      viewMode: 'table',
+    const params = buildDevicesSearchParams({
+      filters: original,
+      sortKey: 'events30dCount',
+      sortDir: 'desc',
+      page: 2,
+      limit: 50,
+      selectedDeviceId: 'GV0032063',
+      activeKpi: 'not_installed',
+      defaultSite: 'Teluk Panglima Garang',
     });
-    assert.equal(statusTabs.all, kpis.total);
-    assert.equal(statusTabs.online, kpis.online);
-    assert.equal(statusTabs.offline, kpis.offline);
-    assert.equal(statusTabs.stale, kpis.stale);
-  });
 
-  it('round-trips URL search params and filter state without data loss', () => {
-    const initialParams = new URLSearchParams(
-      'tab=online&view=map&q=camera&type=Camera&inst=installed&sort=lastContact&dir=desc&page=2&limit=25'
-    );
-
-    const parsed = parseDevicesUrlState(initialParams);
-    assert.equal(parsed.filters.statusTab, 'online');
+    const parsed = parseDevicesUrlState(params, 'Teluk Panglima Garang');
+    assert.equal(parsed.filters.statusTab, 'not_installed');
     assert.equal(parsed.filters.viewMode, 'map');
-    assert.equal(parsed.filters.search, 'camera');
-    assert.deepEqual(parsed.filters.type, ['Camera']);
-    assert.equal(parsed.filters.installation, 'installed');
-    assert.equal(parsed.sortKey, 'lastContact');
+    assert.equal(parsed.filters.search, 'GV003');
+    assert.deepEqual(parsed.filters.types, ['Speaker']);
+    assert.deepEqual(parsed.filters.manufacturers, ['Hikvision']);
+    assert.deepEqual(parsed.filters.libraries, ['HIK_OpenAPI']);
+    assert.equal(parsed.filters.site, 'ALL');
+    assert.equal(parsed.filters.needsAttentionOnly, true);
+    assert.equal(parsed.sortKey, 'events30dCount');
     assert.equal(parsed.sortDir, 'desc');
     assert.equal(parsed.page, 2);
-    assert.equal(parsed.limit, 25);
-
-    const serialized = buildDevicesSearchParams({
-      filters: parsed.filters,
-      sortKey: parsed.sortKey,
-      sortDir: parsed.sortDir,
-      page: parsed.page,
-      limit: parsed.limit,
-    });
-
-    assert.equal(serialized.get('tab'), 'online');
-    assert.equal(serialized.get('view'), 'map');
-    assert.equal(serialized.get('q'), 'camera');
-    assert.equal(serialized.get('type'), 'Camera');
-    assert.equal(serialized.get('inst'), 'installed');
-    assert.equal(serialized.get('sort'), 'lastContact');
-    assert.equal(serialized.get('dir'), 'desc');
-    assert.equal(serialized.get('page'), '2');
-    assert.equal(serialized.get('limit'), '25');
+    assert.equal(parsed.limit, 50);
+    assert.equal(parsed.selectedDeviceId, 'GV0032063');
   });
 
-  it('exports devices to RFC 4180 CSV verbatim without altering identifiers', () => {
-    const csv = exportDevicesToCsv(canonicalDevices);
-    assert.ok(csv.startsWith('"Identifier","Name","Type"'));
-    assert.ok(csv.includes('"DEV-001"'));
-    assert.ok(csv.includes('"GV0032063"'));
-    assert.ok(csv.includes('"GS6306382"'));
+  it('exports CSV rows with verbatim device identifiers and MYT timestamps', () => {
+    const rich = getEnrichedDevices();
+    const csv = buildDevicesCsvContent(rich);
+    assert.ok(csv.includes('DEV-001'));
+    assert.ok(csv.includes('GS6306382'));
+    assert.ok(csv.includes('GV0032063'));
+    assert.ok(csv.includes('MYT'));
   });
 
-  it('verifies Vendor Discovery conflict dataset contract (D11)', () => {
-    const conflictRow = canonicalVendorDevices.find((v) => v.matchStatus === 'Conflict');
-    assert.ok(conflictRow, 'Conflict record exists in vendor discovery');
-    assert.equal(conflictRow.serialNumber, 'GQ7752681');
-    assert.equal(conflictRow.mappedFalconId, 'DEV-001');
-    assert.ok(conflictRow.conflictDetails, 'Conflict details are populated');
-    assert.equal(conflictRow.conflictDetails.currentMappedSerial, 'GQ7752680');
-    assert.equal(conflictRow.conflictDetails.claimedFalconId, 'DEV-001');
+  it('syncs Jalan Bandar Lama 10-device preview mode and scales smoothly across 500 devices', () => {
+    const preview = buildJalanBandarLamaPreviewDevices();
+    assert.equal(preview.devices.length, 10);
+    const enrichedPreview = preview.devices.map((d) =>
+      enrichDeviceWithRelations(
+        d,
+        initialPoles,
+        initialCableSpans,
+        initialEvents,
+        preview.vendorRecords,
+        DEFAULT_DEVICE_POLICY_CONFIG,
+        SERVER_NOW
+      )
+    );
+    const kpiPreview = getDeviceKpiCounts(enrichedPreview, 'Jalan Bandar Lama');
+    assert.equal(kpiPreview.total, 10);
+
+    const benchRaw = buildSyntheticBenchmarkDevices(500);
+    const t0 = performance.now();
+    const enrichedBench = benchRaw.map((d) =>
+      enrichDeviceWithRelations(
+        d,
+        initialPoles,
+        initialCableSpans,
+        initialEvents,
+        [],
+        DEFAULT_DEVICE_POLICY_CONFIG,
+        SERVER_NOW
+      )
+    );
+    const benchKpi = getDeviceKpiCounts(enrichedBench, 'ALL');
+    const filtered = filterDevices(
+      enrichedBench,
+      { statusTab: 'online', viewMode: 'table', site: 'ALL' },
+      SERVER_NOW
+    );
+    const sorted = sortDevices(filtered, 'identifier', 'asc');
+    const elapsedMs = performance.now() - t0;
+
+    assert.equal(benchKpi.total, 500);
+    assert.ok(sorted.length > 0);
+    assert.ok(elapsedMs < 250, `Expected 500-device enrichment/filter/sort < 250ms, got ${elapsedMs.toFixed(1)}ms`);
   });
 });
+

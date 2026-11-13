@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Layers, Radio } from 'lucide-react';
+import { MapPin, Layers, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiMode } from '@/hooks/useUiMode';
+import { useAssets } from '@/contexts/AssetsContext';
 
 export interface AssetsModuleTabsProps {
   activeTab: 'poles' | 'cable_spans' | 'devices';
@@ -15,10 +16,12 @@ export const AssetsModuleTabs: React.FC<AssetsModuleTabsProps> = ({
   activeTab,
   polesCount,
   cableSpansCount,
-  devicesCount = 12,
+  devicesCount,
 }) => {
   const navigate = useNavigate();
   const { isTablet } = useUiMode();
+  const { richDevices } = useAssets();
+  const resolvedDevicesCount = devicesCount ?? richDevices.length;
 
   const tabs: {
     key: 'poles' | 'cable_spans' | 'devices';
@@ -44,9 +47,9 @@ export const AssetsModuleTabs: React.FC<AssetsModuleTabsProps> = ({
     {
       key: 'devices',
       label: 'Devices',
-      count: devicesCount,
-      route: '/assets/devices',
-      icon: <Radio className="size-3.5 shrink-0" />,
+      count: resolvedDevicesCount,
+      route: '/assets/inventory',
+      icon: <Cpu className="size-3.5 shrink-0" />,
     },
   ];
 

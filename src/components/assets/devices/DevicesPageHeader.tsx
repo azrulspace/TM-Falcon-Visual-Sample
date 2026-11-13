@@ -1,43 +1,45 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { RefreshCw, Download, Plus, ChevronRight, Compass, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RefreshCw, Download, Plus, ChevronRight, Radar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppContext } from '@/contexts/AppContext';
 import { useUiMode } from '@/hooks/useUiMode';
 import { cn } from '@/lib/utils';
+import type { DevicePermissions } from '@/lib/permissions';
 
 export interface DevicesPageHeaderProps {
   title?: string;
   subtitle?: string;
-  moduleBreadcrumbLabel?: string;
   isRefreshing: boolean;
   onRefresh: () => void;
   onExport: () => void;
   exportDisabled?: boolean;
-  onRegisterDevice?: () => void;
-  conflictCount?: number;
-  showRegisterAction?: boolean;
+  onOpenVendorDiscovery: () => void;
+  vendorConflictCount: number;
+  vendorUnregisteredCount: number;
+  onRegisterDevice: () => void;
+  permissions: DevicePermissions;
 }
 
 export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
   title = 'Devices',
-  subtitle = 'Cameras and speakers registered on a site.',
-  moduleBreadcrumbLabel = 'Devices',
+  subtitle = 'Cameras, speakers, LiDAR sensors, and gateways registered across sites.',
   isRefreshing,
   onRefresh,
   onExport,
   exportDisabled = false,
+  onOpenVendorDiscovery,
+  vendorConflictCount,
+  vendorUnregisteredCount,
   onRegisterDevice,
-  conflictCount = 0,
-  showRegisterAction = true,
+  permissions,
 }) => {
-  const navigate = useNavigate();
   const { previewDataMode } = useAppContext();
   const { isTablet } = useUiMode();
 
   return (
     <div className="flex flex-col gap-2 mb-4 select-none">
-      {/* Breadcrumb from navigation config: Falcon / Assets and devices / Devices */}
       <nav
         className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium"
         aria-label="Breadcrumb"
@@ -50,16 +52,13 @@ export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
           Assets and devices
         </Link>
         <ChevronRight className="size-3 text-muted-foreground/60" />
-        <span className="text-foreground font-semibold">{moduleBreadcrumbLabel}</span>
+        <span className="text-foreground font-semibold">Devices</span>
       </nav>
 
-      {/* Main Title Row & Right Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {title}
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
             {previewDataMode && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                 Preview data
@@ -69,7 +68,6 @@ export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">{subtitle}</p>
         </div>
 
-        {/* Right Actions: Refresh, Export, Vendor discovery (with badge), Register device (primary blue) */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <Button
             variant="outline"
@@ -80,7 +78,7 @@ export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
               'gap-1.5 border-border bg-card hover:bg-muted font-medium cursor-pointer',
               isTablet ? 'h-11 px-4 text-sm' : 'h-8 px-3 text-xs'
             )}
-            title="Refresh devices telemetry"
+            title="Refresh devices list"
           >
             <RefreshCw
               className={cn(
@@ -109,27 +107,34 @@ export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/assets/devices/vendor-discovery')}
+            onClick={onOpenVendorDiscovery}
             className={cn(
-              'gap-1.5 border-border bg-card hover:bg-muted font-medium cursor-pointer relative',
+              'gap-1.5 border-border bg-card hover:bg-muted font-medium cursor-pointer',
               isTablet ? 'h-11 px-4 text-sm' : 'h-8 px-3 text-xs'
             )}
-            title="Inspect devices held by vendor vs FALCON registry"
+            title="Inspect vendor discovery matches, conflicts, and unregistered Edge hardware"
           >
-            <Compass className="size-3.5 text-muted-foreground" />
+            <Radar className="size-3.5 text-primary shrink-0" />
             <span>Vendor discovery</span>
-            {conflictCount > 0 && (
-              <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
-                <AlertCircle className="size-2.5" />
-                <span>{conflictCount}</span>
+            {vendorConflictCount > 0 && (
+              <span
+                className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30"
+                title={`${vendorConflictCount} vendor mapping conflict`}
+              >
+                {vendorConflictCount}
+              </span>
+            )}
+            {vendorConflictCount === 0 && vendorUnregisteredCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+                {vendorUnregisteredCount}
               </span>
             )}
           </Button>
 
-          {showRegisterAction && (
+          {permissions.canRegisterDevice ? (
             <Button
               size="sm"
-              onClick={onRegisterDevice || (() => navigate('/assets/devices/new'))}
+              onClick={onRegisterDevice}
               className={cn(
                 'gap-1.5 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer',
                 isTablet ? 'h-11 px-4 text-sm' : 'h-8 px-3 text-xs'
@@ -138,9 +143,33 @@ export const DevicesPageHeader: React.FC<DevicesPageHeaderProps> = ({
               <Plus className="size-3.5" />
               <span>Register device</span>
             </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="inline-flex">
+                    <Button
+                      size="sm"
+                      disabled
+                      className={cn(
+                        'gap-1.5 font-semibold',
+                        isTablet ? 'h-11 px-4 text-sm' : 'h-8 px-3 text-xs'
+                      )}
+                    >
+                      <Plus className="size-3.5" />
+                      <span>Register device</span>
+                    </Button>
+                  </span>
+                }
+              />
+              <TooltipContent className="text-xs">
+                {permissions.registerDisabledReason || 'Permission required'}
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
     </div>
   );
 };
+
