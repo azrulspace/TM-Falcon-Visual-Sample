@@ -3,6 +3,10 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { DeviceDetailHeader } from '@/components/devices/detail/DeviceDetailHeader';
 import { DeviceDetailTabs, type DeviceDetailTabKey } from '@/components/devices/detail/DeviceDetailTabs';
 import { DeviceOverviewTab } from '@/components/devices/detail/DeviceOverviewTab';
+import { DeviceHistoryTab } from '@/components/devices/detail/DeviceHistoryTab';
+import { DeviceInstallationTab } from '@/components/devices/detail/DeviceInstallationTab';
+import { DeviceEventsTab } from '@/components/devices/detail/DeviceEventsTab';
+import { DeviceHealthReportsTab } from '@/components/devices/detail/DeviceHealthReportsTab';
 import { useDevices } from '@/contexts/DevicesContext';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -115,27 +119,22 @@ export default function DeviceDetail() {
       )}
 
       {activeTab === 'history' && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-          History tab (Connectivity & Timeline) will be rendered in Phase 7.
-        </div>
+        <DeviceHistoryTab device={device} />
       )}
 
       {activeTab === 'installation' && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-          Installation deployment periods will be rendered in Phase 7.
-        </div>
+        <DeviceInstallationTab
+          device={device}
+          onManageInstallation={handleManageInstallation}
+        />
       )}
 
       {activeTab === 'events' && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-          Filtered device events inbox will be rendered in Phase 7.
-        </div>
+        <DeviceEventsTab device={device} />
       )}
 
       {activeTab === 'health_reports' && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
-          Diagnostic health reports will be rendered in Phase 7.
-        </div>
+        <DeviceHealthReportsTab device={device} />
       )}
     </div>
   );
