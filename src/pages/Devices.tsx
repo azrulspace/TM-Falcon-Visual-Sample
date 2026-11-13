@@ -9,6 +9,7 @@ import { AssetsModuleTabs } from '@/components/assets/AssetsModuleTabs';
 import { DevicesKpiStrip, type DeviceKpiKey } from '@/components/devices/DevicesKpiStrip';
 import { DevicesToolbar } from '@/components/devices/DevicesToolbar';
 import { DevicesTableView } from '@/components/devices/DevicesTableView';
+import { DevicesMapView } from '@/components/devices/DevicesMapView';
 import { DevicesBulkActionBar } from '@/components/devices/DevicesBulkActionBar';
 import {
   filterDevices,
@@ -29,7 +30,7 @@ export default function Devices() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { selectedSite } = useAppContext();
-  const { poles, cableSpans } = useAssets();
+  const { sites, poles, cableSpans } = useAssets();
   const {
     devices,
     vendorDevices,
@@ -55,6 +56,9 @@ export default function Devices() {
     (initial.activeKpi as DeviceKpiKey) || null
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedMapDeviceId, setSelectedMapDeviceId] = useState<string | null>(
+    initial.selectedDeviceId || null
+  );
 
   // Count conflicts in vendor devices for the header badge
   const conflictCount = useMemo(() => {
@@ -79,7 +83,7 @@ export default function Devices() {
       sortDir,
       page: currentPage,
       limit: rowsPerPage,
-      selectedDeviceId: null,
+      selectedDeviceId: selectedMapDeviceId,
       activeKpi,
       defaultSite: selectedSite,
     });
@@ -93,6 +97,7 @@ export default function Devices() {
     sortDir,
     currentPage,
     rowsPerPage,
+    selectedMapDeviceId,
     activeKpi,
     selectedSite,
     setSearchParams,
@@ -277,9 +282,16 @@ export default function Devices() {
 
       {/* View router: Table vs Map */}
       {filters.viewMode === 'map' ? (
-        <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-          Map view will be rendered here in Phase 3.
-        </div>
+        <DevicesMapView
+          devices={sortedDevices}
+          sites={sites}
+          activeSiteFilter={filters.site}
+          selectedDeviceId={selectedMapDeviceId}
+          onSelectDevice={setSelectedMapDeviceId}
+          onManageInstallation={(device) => {
+            navigate(`/assets/devices/${device.identifier}?action=install`);
+          }}
+        />
       ) : (
         <DevicesTableView
           devices={sortedDevices}
