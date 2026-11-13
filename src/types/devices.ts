@@ -51,6 +51,8 @@ export interface ConfigurationVersion {
   results: SettingResult[];
 }
 
+export type DeviceConfigVersion = ConfigurationVersion;
+
 export interface DeviceRecord {
   /** User-entered or registry identifier, displayed verbatim in mono (never through formatId) */
   identifier: string;

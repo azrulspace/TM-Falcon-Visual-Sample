@@ -8,8 +8,13 @@ import { DeviceHistoryTab } from '@/components/devices/detail/DeviceHistoryTab';
 import { DeviceInstallationTab } from '@/components/devices/detail/DeviceInstallationTab';
 import { DeviceEventsTab } from '@/components/devices/detail/DeviceEventsTab';
 import { DeviceHealthReportsTab } from '@/components/devices/detail/DeviceHealthReportsTab';
+import { ManageInstallationDialog } from '@/components/devices/dialogs/ManageInstallationDialog';
+import { EditDeviceDialog } from '@/components/devices/dialogs/EditDeviceDialog';
+import { VersionHistorySheet } from '@/components/devices/dialogs/VersionHistorySheet';
+import { RollbackDialog } from '@/components/devices/dialogs/RollbackDialog';
 import { useDevices } from '@/contexts/DevicesContext';
 import { useToast } from '@/contexts/ToastContext';
+import type { DeviceConfigVersion } from '@/types/devices';
 
 export default function DeviceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +31,16 @@ export default function DeviceDetail() {
   // Tab State synced with URL query param ?tab=
   const initialTab = (searchParams.get('tab') as DeviceDetailTabKey) || 'overview';
   const [activeTab, setActiveTab] = useState<DeviceDetailTabKey>(initialTab);
+  const [selectedRollbackVersion, setSelectedRollbackVersion] = useState<DeviceConfigVersion | null>(null);
+
+  const closeActionParam = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('action');
+      next.delete('view_history');
+      return next;
+    });
+  };
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as DeviceDetailTabKey;
@@ -144,6 +159,33 @@ export default function DeviceDetail() {
       {activeTab === 'health_reports' && (
         <DeviceHealthReportsTab device={device} />
       )}
+
+      {/* 4. Action Dialogs & Drawers */}
+      <ManageInstallationDialog
+        isOpen={searchParams.get('action') === 'install'}
+        onClose={closeActionParam}
+        device={device}
+      />
+
+      <EditDeviceDialog
+        isOpen={searchParams.get('action') === 'edit'}
+        onClose={closeActionParam}
+        device={device}
+      />
+
+      <VersionHistorySheet
+        isOpen={searchParams.get('view_history') === 'true'}
+        onClose={closeActionParam}
+        device={device}
+        onSelectRollback={(ver) => setSelectedRollbackVersion(ver)}
+      />
+
+      <RollbackDialog
+        isOpen={Boolean(selectedRollbackVersion)}
+        onClose={() => setSelectedRollbackVersion(null)}
+        device={device}
+        targetVersion={selectedRollbackVersion}
+      />
     </div>
   );
 }
