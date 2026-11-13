@@ -229,3 +229,4 @@ export const DeviceDetailHeader: React.FC<DeviceDetailHeaderProps> = ({
     </div>
   );
 };
+

@@ -561,3 +561,4 @@ export const DevicesTableView: React.FC<DevicesTableViewProps> = ({
     </div>
   );
 };
+

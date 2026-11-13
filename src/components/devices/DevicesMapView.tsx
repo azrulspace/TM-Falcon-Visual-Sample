@@ -201,3 +201,4 @@ export const DevicesMapView: React.FC<DevicesMapViewProps> = ({
     </div>
   );
 };
+

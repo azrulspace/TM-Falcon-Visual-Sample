@@ -61,3 +61,4 @@ export const DevicesBulkActionBar: React.FC<DevicesBulkActionBarProps> = ({
     </div>
   );
 };
+

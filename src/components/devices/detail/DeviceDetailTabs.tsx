@@ -98,3 +98,4 @@ export const DeviceDetailTabs: React.FC<DeviceDetailTabsProps> = ({
     </div>
   );
 };
+

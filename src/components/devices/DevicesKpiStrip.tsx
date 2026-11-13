@@ -180,3 +180,4 @@ export const DevicesKpiStrip: React.FC<DevicesKpiStripProps> = ({
     </div>
   );
 };
+
