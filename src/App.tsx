@@ -21,6 +21,7 @@ import CableSpans from './pages/CableSpans';
 import Devices from './pages/Devices';
 import CreateDevice from './pages/CreateDevice';
 import DeviceDetail from './pages/DeviceDetail';
+import VendorDiscovery from './pages/VendorDiscovery';
 import PlannedPage from './pages/PlannedPage';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
@@ -64,6 +65,7 @@ export default function App() {
                     <Route path="/assets/poles/:id" element={<ProtectedRoute><PoleDetail /></ProtectedRoute>} />
                     <Route path="/assets/cable-spans" element={<ProtectedRoute><CableSpans /></ProtectedRoute>} />
                     <Route path="/assets/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+                    <Route path="/assets/devices/vendor-discovery" element={<ProtectedRoute><VendorDiscovery /></ProtectedRoute>} />
                     <Route path="/assets/inventory" element={<Navigate to="/assets/devices" replace />} />
                     <Route path="/assets/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     <Route path="/assets/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
