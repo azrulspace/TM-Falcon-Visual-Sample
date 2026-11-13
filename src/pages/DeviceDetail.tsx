@@ -1,125 +1,142 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { PageHeader, StatusBadge } from '../components/Shared';
-import { useAppContext } from '../contexts/AppContext';
-import { devices } from '../data/devices';
-import { Edit2, Terminal, MapPin, Wifi, Cpu, Clock } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { useUiMode } from '@/contexts/UiModeContext';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { DeviceDetailHeader } from '@/components/devices/detail/DeviceDetailHeader';
+import { DeviceDetailTabs, type DeviceDetailTabKey } from '@/components/devices/detail/DeviceDetailTabs';
+import { DeviceOverviewTab } from '@/components/devices/detail/DeviceOverviewTab';
+import { useDevices } from '@/contexts/DevicesContext';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function DeviceDetail() {
-  const { reviewMode } = useAppContext();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isTablet, orientation } = useUiMode();
-  const isPortrait = isTablet && orientation === 'portrait';
-  
-  const device = devices.find(d => d.id === id);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { getDeviceById } = useDevices();
+  const { addToast } = useToast();
+
+  const device = useMemo(() => {
+    if (!id) return undefined;
+    return getDeviceById(id);
+  }, [id, getDeviceById]);
+
+  // Tab State synced with URL query param ?tab=
+  const initialTab = (searchParams.get('tab') as DeviceDetailTabKey) || 'overview';
+  const [activeTab, setActiveTab] = useState<DeviceDetailTabKey>(initialTab);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') as DeviceDetailTabKey;
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleSelectTab = (tab: DeviceDetailTabKey) => {
+    setActiveTab(tab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (tab === 'overview') {
+          next.delete('tab');
+        } else {
+          next.set('tab', tab);
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const handleManageInstallation = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('action', 'install');
+      return next;
+    });
+  };
+
+  const handleEdit = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('action', 'edit');
+      return next;
+    });
+  };
 
   if (!device) {
-    return <div className="p-12 text-center text-secondary">Device not found</div>;
+    return (
+      <div className="w-full max-w-5xl mx-auto px-6 py-16 text-center space-y-4">
+        <h2 className="text-lg font-bold text-foreground">Device not found</h2>
+        <p className="text-xs text-muted-foreground">
+          No device matches identifier &ldquo;{id}&rdquo; in the current registry.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/assets/devices')}
+          className="text-xs text-primary underline cursor-pointer"
+        >
+          Return to devices list
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <PageHeader 
-        title={device.name} 
-        breadcrumbs={[
-          { label: 'Inventory', href: '/assets/inventory' },
-          { label: device.id }
-        ]}
-        openQuestion={reviewMode ? "remote action capabilities." : undefined}
-        pageId="FAL_INV_04"
-        roles="Admin, System, Operator"
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className={cn(isTablet && "h-11 px-4 text-sm")} onClick={() => navigate(`/assets/inventory/devices/${device.id}/edit`)}>
-              <Edit2 className="w-4 h-4 mr-2" /> Edit
-            </Button>
-            <Button size="sm" className={cn(isTablet && "h-11 px-4 text-sm")} onClick={() => alert('Command modal')}>
-              <Terminal className="w-4 h-4 mr-2" /> Send command
-            </Button>
-          </div>
-        }
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* 1. Header with Breadcrumbs, Identifier, Badges, and Action Buttons */}
+      <DeviceDetailHeader
+        device={device}
+        onManageInstallation={handleManageInstallation}
+        onEdit={handleEdit}
+        onViewRawPayload={() => {
+          console.log('[FALCON] Raw Telemetry Payload for', device.identifier, device);
+          addToast('info', `Raw telemetry for ${device.identifier} logged in console.`);
+        }}
       />
 
-      <div className={cn("gap-6 mb-8", isPortrait ? "flex flex-col" : "grid grid-cols-1 lg:grid-cols-3")}>
-        <div className="lg:col-span-2 app_card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-[10px] bg-secondary flex items-center justify-center">
-                <Cpu className="w-6 h-6 text-secondary" />
-              </div>
-              <div>
-                <h4 className="h4">{device.id}</h4>
-                <div className="text_sm text-tertiary">{device.type} · {device.serial}</div>
-              </div>
-            </div>
-            <StatusBadge kind="device" value={device.status} />
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-secondary">
-            <div>
-              <div className="text_sm font-medium text-secondary mb-1">Location</div>
-              <div className="text_md">{device.location}</div>
-            </div>
-            <div>
-              <div className="text_sm font-medium text-secondary mb-1">Last seen</div>
-              <div className="text_md flex items-center gap-2">
-                <Clock className="w-4 h-4 text-tertiary" /> {device.lastContact}
-              </div>
-            </div>
-            <div>
-              <div className="text_sm font-medium text-secondary mb-1">Firmware</div>
-              <div className="text_md">{device.model}</div>
-            </div>
-            <div>
-              <div className="text_sm font-medium text-secondary mb-1">Network</div>
-              <div className="text_md flex items-center gap-2">
-                <Wifi className="w-4 h-4 text-success" /> -68 dBm
-              </div>
-            </div>
-          </div>
+      {/* 2. Unified Tab Bar with counts on every tab */}
+      <DeviceDetailTabs
+        device={device}
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+      />
+
+      {/* 3. Tab Content */}
+      {activeTab === 'overview' && (
+        <DeviceOverviewTab
+          device={device}
+          onManageInstallation={handleManageInstallation}
+          onEdit={handleEdit}
+        />
+      )}
+
+      {activeTab === 'configuration' && (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
+          Configuration tab will be rendered in Phase 8.
         </div>
+      )}
 
-        <div className="app_card p-6 bg-secondary border-dashed border-secondary flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 bg-primary border border-secondary rounded-full flex items-center justify-center mb-4">
-            <MapPin className="w-6 h-6 text-tertiary" />
-          </div>
-          <p className="text_sm text-tertiary max-w-[200px] mb-4">Map view of this specific device's location and coverage.</p>
-          <Button variant="outline" size="sm" className={cn(isTablet && "h-11 px-4 text-sm")}>Open map</Button>
+      {activeTab === 'history' && (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
+          History tab (Connectivity & Timeline) will be rendered in Phase 7.
         </div>
-      </div>
+      )}
 
-      <Tabs defaultValue="events">
-        <TabsList className="flex gap-2 sm:gap-6 border-b border-secondary mb-6 bg-transparent p-0 justify-start h-auto rounded-none overflow-x-auto scrollbar-none">
-          <TabsTrigger value="events" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Recent Events</TabsTrigger>
-          <TabsTrigger value="telemetry" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Telemetry</TabsTrigger>
-          <TabsTrigger value="logs" className={cn("pb-3 text_sm font-medium border-b-2 border-transparent data-[state=active]:border-brand-solid text-secondary hover:text-primary transition-colors data-[state=active]:text-primary rounded-none shadow-none bg-transparent whitespace-nowrap", isTablet && "min-h-[44px] flex items-center px-4")}>Device Logs</TabsTrigger>
-        </TabsList>
+      {activeTab === 'installation' && (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
+          Installation deployment periods will be rendered in Phase 7.
+        </div>
+      )}
 
-        <TabsContent value="events">
-          <div className="app_card p-0">
-             <div className="p-12 text-center text-tertiary text_sm">
-                No recent events for this device in the last 7 days.
-             </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="telemetry">
-           <div className="app_card p-12 text-center text-tertiary text_sm">
-              Telemetry graph placeholder
-           </div>
-        </TabsContent>
-        <TabsContent value="logs">
-           <div className="app_card p-12 text-center text-tertiary text_sm">
-              Raw device logs placeholder
-           </div>
-        </TabsContent>
-      </Tabs>
+      {activeTab === 'events' && (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
+          Filtered device events inbox will be rendered in Phase 7.
+        </div>
+      )}
 
+      {activeTab === 'health_reports' && (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground">
+          Diagnostic health reports will be rendered in Phase 7.
+        </div>
+      )}
     </div>
   );
 }
-
-
