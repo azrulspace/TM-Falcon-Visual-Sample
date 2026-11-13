@@ -9,7 +9,10 @@
     <script>
       (function () {
         var t;
-        try { t = localStorage.getItem("ds_theme"); } catch (e) {}
+        try {
+          var params = new URLSearchParams(window.location.search);
+          t = params.get("theme") || localStorage.getItem("ds_theme");
+        } catch (e) {}
         if (!t) t = "dark";
         document.documentElement.classList.remove("theme_light", "theme_dark", "dark");
         document.documentElement.classList.add("theme_" + t);

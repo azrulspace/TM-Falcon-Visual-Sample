@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { formatId, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { devices } from '@/data/devices';
 
 export interface DeviceChipProps {
@@ -18,11 +18,14 @@ export const DeviceChip: React.FC<DeviceChipProps> = ({
 }) => {
   if (!deviceId) return <span className="text-muted-foreground font-mono text-xs">—</span>;
 
-  const formatted = formatId(deviceId);
+  // Preserves user identifier verbatim as stored
+  const displayId = deviceId.trim();
   
   // Single source of truth: if status not explicitly passed, query the shared devices registry
   const matchedDevice = devices.find(
-    (d) => d.id === deviceId || d.id === deviceId.replace('-', '_') || formatId(d.id) === formatted
+    (d) =>
+      d.id.toLowerCase() === displayId.toLowerCase() ||
+      d.id.toLowerCase().replace(/_/g, '-') === displayId.toLowerCase().replace(/_/g, '-')
   );
   const resolvedStatus = status || matchedDevice?.status || 'offline';
   const normStatus = resolvedStatus.toLowerCase();
@@ -33,18 +36,18 @@ export const DeviceChip: React.FC<DeviceChipProps> = ({
 
   return (
     <Link
-      to={`/assets/inventory/devices/${formatted}`}
+      to={`/assets/devices/${displayId}`}
       onClick={(e) => e.stopPropagation()}
       className={cn(
         'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[5px] bg-muted/60 hover:bg-muted border border-border/80 text-foreground hover:text-primary transition-colors font-mono text-xs font-medium cursor-pointer',
         className
       )}
-      title={`Device ${formatted} (${normStatus})`}
+      title={`Device ${displayId} (${normStatus})`}
     >
       {showDot && (
         <span className={cn('size-1.5 rounded-full shrink-0', dotColor)} />
       )}
-      <span>{formatted}</span>
+      <span>{displayId}</span>
     </Link>
   );
 };
