@@ -18,7 +18,7 @@ import Risk from './pages/Risk';
 import Poles from './pages/Poles';
 import PoleDetail from './pages/PoleDetail';
 import CableSpans from './pages/CableSpans';
-import Inventory from './pages/Inventory';
+import Devices from './pages/Devices';
 import CreateDevice from './pages/CreateDevice';
 import DeviceDetail from './pages/DeviceDetail';
 import PlannedPage from './pages/PlannedPage';
@@ -63,8 +63,12 @@ export default function App() {
                     <Route path="/assets/poles" element={<ProtectedRoute><Poles /></ProtectedRoute>} />
                     <Route path="/assets/poles/:id" element={<ProtectedRoute><PoleDetail /></ProtectedRoute>} />
                     <Route path="/assets/cable-spans" element={<ProtectedRoute><CableSpans /></ProtectedRoute>} />
-                    <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                    <Route path="/assets/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+                    <Route path="/assets/inventory" element={<Navigate to="/assets/devices" replace />} />
+                    <Route path="/assets/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                    <Route path="/assets/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
+                    <Route path="/assets/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                    <Route path="/assets/inventory/devices/new" element={<Navigate to="/assets/devices/new" replace />} />
                     <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
                     <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     

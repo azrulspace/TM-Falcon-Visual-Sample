@@ -19,7 +19,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [reviewMode, setReviewMode] = useState(false);
-  const [accountLabel, setAccountLabel] = useState<string | null>(localStorage.getItem("ds_account"));
+  const [accountLabel, setAccountLabel] = useState<string | null>(
+    () => localStorage.getItem("ds_account") || "Admin (sample)"
+  );
   const [previewClipStatus, setPreviewClipStatus] = useState<ClipStatus | null>(null);
   const [selectedSite, setSelectedSiteState] = useState<string>(
     () => localStorage.getItem("falcon_selected_site") || "Teluk Panglima Garang"

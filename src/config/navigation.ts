@@ -159,10 +159,10 @@ export const navigationConfig: NavSection[] = [
             route: '/assets/cable-spans',
           },
           {
-            id: 'inventory-register',
-            label: 'Inventory register',
+            id: 'assets-devices-list',
+            label: 'Devices',
             icon: HardDrive,
-            route: '/assets/inventory',
+            route: '/assets/devices',
           },
           {
             id: 'devices-fleet',
