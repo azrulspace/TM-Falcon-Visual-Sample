@@ -5,6 +5,7 @@ import { OverviewProvider } from './contexts/OverviewContext';
 import { EventsProvider } from './contexts/EventsContext';
 import { CasesProvider } from './contexts/CasesContext';
 import { AssetsProvider } from './contexts/AssetsContext';
+import { DevicesProvider } from './contexts/DevicesContext';
 import { AppShell } from './components/AppShell';
 import { TooltipProvider } from './components/ui/tooltip';
 import { PreviewFrameModal } from './components/common/PreviewFrameModal';
@@ -44,7 +45,8 @@ export default function App() {
           <EventsProvider>
             <CasesProvider>
               <AssetsProvider>
-                <TooltipProvider>
+                <DevicesProvider>
+                  <TooltipProvider>
                   <Routes>
                     <Route path="/" element={<DefaultRedirect />} />
                     <Route path="/signin" element={<SignIn />} />
@@ -70,7 +72,8 @@ export default function App() {
                   </Routes>
                   <PreviewFrameModal />
                 </TooltipProvider>
-              </AssetsProvider>
+              </DevicesProvider>
+            </AssetsProvider>
             </CasesProvider>
           </EventsProvider>
         </OverviewProvider>

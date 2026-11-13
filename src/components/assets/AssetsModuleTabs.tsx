@@ -1,25 +1,27 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Layers } from 'lucide-react';
+import { MapPin, Layers, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiMode } from '@/hooks/useUiMode';
 
 export interface AssetsModuleTabsProps {
-  activeTab: 'poles' | 'cable_spans';
+  activeTab: 'poles' | 'cable_spans' | 'devices';
   polesCount: number;
   cableSpansCount: number;
+  devicesCount?: number;
 }
 
 export const AssetsModuleTabs: React.FC<AssetsModuleTabsProps> = ({
   activeTab,
   polesCount,
   cableSpansCount,
+  devicesCount = 12,
 }) => {
   const navigate = useNavigate();
   const { isTablet } = useUiMode();
 
   const tabs: {
-    key: 'poles' | 'cable_spans';
+    key: 'poles' | 'cable_spans' | 'devices';
     label: string;
     count: number;
     route: string;
@@ -38,6 +40,13 @@ export const AssetsModuleTabs: React.FC<AssetsModuleTabsProps> = ({
       count: cableSpansCount,
       route: '/assets/cable-spans',
       icon: <Layers className="size-3.5 shrink-0" />,
+    },
+    {
+      key: 'devices',
+      label: 'Devices',
+      count: devicesCount,
+      route: '/assets/devices',
+      icon: <Radio className="size-3.5 shrink-0" />,
     },
   ];
 
