@@ -74,6 +74,9 @@ export default function CreateDevice() {
   const isEdit = Boolean(editParamId);
 
   const prefillSerial = searchParams.get('vendorSerial') || '';
+  const prefillPoleId = searchParams.get('poleId') || '';
+  const prefillSite = searchParams.get('site') || '';
+
   const matchedPrefillVendor = useMemo(
     () =>
       prefillSerial
@@ -83,7 +86,9 @@ export default function CreateDevice() {
   );
 
   const defaultSite =
-    selectedSite && selectedSite !== 'ALL' && sites.some((s) => s.name === selectedSite)
+    prefillSite && sites.some((s) => s.name === prefillSite)
+      ? prefillSite
+      : selectedSite && selectedSite !== 'ALL' && sites.some((s) => s.name === selectedSite)
       ? selectedSite
       : sites[0]?.name || 'Unassigned';
 
@@ -116,7 +121,7 @@ export default function CreateDevice() {
     existingDevice?.components.join('\n') || ''
   );
   const [installedPoleId, setInstalledPoleId] = useState<string>(
-    existingDevice?.installedPoleId || ''
+    existingDevice?.installedPoleId || prefillPoleId || ''
   );
 
   const [vendorPickerOpen, setVendorPickerOpen] = useState(false);
@@ -588,6 +593,18 @@ export default function CreateDevice() {
                 Site boundary assignment, lifecycle stage, and physical pole mounting.
               </p>
             </div>
+
+            {prefillPoleId && !isEdit && (
+              <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-primary flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Radio className="size-3.5 shrink-0" />
+                  <span>
+                    Mounting target pre-selected: Pole <strong className="font-mono">{prefillPoleId}</strong> ({siteName})
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium opacity-80 shrink-0">Initiated from Pole Detail</span>
+              </div>
+            )}
 
             {/* Hug controls: Site and Pole arranged naturally */}
             <div className="flex flex-wrap gap-5 items-start">
