@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -10,6 +10,9 @@ import {
   Route,
   Activity,
   Ruler,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { useAssets } from '@/contexts/AssetsContext';
 import { useAppContext } from '@/contexts/AppContext';
@@ -35,6 +38,15 @@ export default function CableSpans() {
   const [siteFilter, setSiteFilter] = useState<string>(selectedSite);
   const [selectedSpan, setSelectedSpan] = useState<CableSpanRecord | null>(null);
 
+  // Pagination state (default: 10 rows per page, matching user request for 10-15 rows)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+
+  // Reset to first page when search or site filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, siteFilter]);
+
   const activePolesCount = useMemo(
     () => poles.filter((p) => p.lifecycle !== 'Deleted').length,
     [poles]
@@ -56,6 +68,16 @@ export default function CableSpans() {
       return true;
     });
   }, [cableSpans, siteFilter, search]);
+
+  // Pagination calculation
+  const totalFiltered = filteredSpans.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / rowsPerPage));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIdx = (safePage - 1) * rowsPerPage;
+
+  const paginatedSpans = useMemo(() => {
+    return filteredSpans.slice(startIdx, startIdx + rowsPerPage);
+  }, [filteredSpans, startIdx, rowsPerPage]);
 
   // Network Telemetry KPIs
   const spanStats = useMemo(() => {
@@ -236,7 +258,7 @@ export default function CableSpans() {
             </select>
           </div>
           <span className="text-xs font-mono text-muted-foreground">
-            Showing {filteredSpans.length} cable spans
+            Showing {totalFiltered === 0 ? 0 : startIdx + 1}–{Math.min(startIdx + rowsPerPage, totalFiltered)} of {totalFiltered} cable spans
           </span>
         </div>
 
@@ -255,94 +277,174 @@ export default function CableSpans() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredSpans.slice(0, 100).map((span) => {
-                const fromDevs = poleDevicesCountMap.get(span.fromPole) || 0;
-                const toDevs = poleDevicesCountMap.get(span.toPole) || 0;
-                const totalEndpointDevs = fromDevs + toDevs;
-                const formattedLength =
-                  typeof span.lengthKm === 'number'
-                    ? span.lengthKm >= 1
-                      ? `${span.lengthKm.toFixed(2)} km`
-                      : `${Math.round(span.lengthKm * 1000)} m`
-                    : '—';
+              {paginatedSpans.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
+                    <Layers className="size-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="font-semibold text-foreground text-xs">No cable spans found</p>
+                    <p className="text-[11px] mt-0.5">
+                      No cable spans match the search query or site filter.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedSpans.map((span) => {
+                  const fromDevs = poleDevicesCountMap.get(span.fromPole) || 0;
+                  const toDevs = poleDevicesCountMap.get(span.toPole) || 0;
+                  const totalEndpointDevs = fromDevs + toDevs;
+                  const formattedLength =
+                    typeof span.lengthKm === 'number'
+                      ? span.lengthKm >= 1
+                        ? `${span.lengthKm.toFixed(2)} km`
+                        : `${Math.round(span.lengthKm * 1000)} m`
+                      : '—';
 
-                return (
-                  <tr key={span.identifier} className="hover:bg-muted/30 transition-colors h-12">
-                    <td className="py-2 px-4 font-mono font-semibold">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSpan(span)}
-                        className="text-primary hover:underline text-left cursor-pointer"
-                      >
-                        {span.identifier}
-                      </button>
-                    </td>
+                  return (
+                    <tr key={span.identifier} className="hover:bg-muted/30 transition-colors h-12">
+                      <td className="py-2 px-4 font-mono font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSpan(span)}
+                          className="text-primary hover:underline text-left cursor-pointer"
+                        >
+                          {span.identifier}
+                        </button>
+                      </td>
 
-                    <td className="py-2 px-4">
-                      <div className="font-medium text-foreground">{span.name}</div>
-                      {span.route && (
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <Route className="size-3 text-muted-foreground/80" />
-                          <span>{span.route}</span>
+                      <td className="py-2 px-4">
+                        <div className="font-medium text-foreground">{span.name}</div>
+                        {span.route && (
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Route className="size-3 text-muted-foreground/80" />
+                            <span>{span.route}</span>
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-2 px-4 text-muted-foreground">{span.siteName}</td>
+
+                      <td className="py-2 px-4 font-mono text-foreground font-medium">
+                        {formattedLength}
+                      </td>
+
+                      <td className="py-2 px-4 font-mono">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Link
+                            to={`/assets/poles/${encodeURIComponent(span.fromPole)}`}
+                            className="text-primary hover:underline"
+                          >
+                            {span.fromPole}
+                          </Link>
+                          <ArrowRight className="size-3 text-muted-foreground shrink-0" />
+                          <Link
+                            to={`/assets/poles/${encodeURIComponent(span.toPole)}`}
+                            className="text-primary hover:underline"
+                          >
+                            {span.toPole}
+                          </Link>
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="py-2 px-4 text-muted-foreground">{span.siteName}</td>
+                      <td className="py-2 px-4">
+                        {totalEndpointDevs > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[11px] font-medium">
+                            <Cpu className="size-3" />
+                            <span>{totalEndpointDevs} IoT device{totalEndpointDevs === 1 ? '' : 's'}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">No sensors</span>
+                        )}
+                      </td>
 
-                    <td className="py-2 px-4 font-mono text-foreground font-medium">
-                      {formattedLength}
-                    </td>
+                      <td className="py-2 px-4">
+                        <StatusBadge status={span.lifecycle} size="sm" />
+                      </td>
 
-                    <td className="py-2 px-4 font-mono">
-                      <div className="inline-flex items-center gap-1.5">
-                        <Link
-                          to={`/assets/poles/${encodeURIComponent(span.fromPole)}`}
-                          className="text-primary hover:underline"
+                      <td className="py-2 px-4 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedSpan(span)}
+                          className="h-7 px-2 text-[11px] text-primary hover:underline cursor-pointer"
                         >
-                          {span.fromPole}
-                        </Link>
-                        <ArrowRight className="size-3 text-muted-foreground shrink-0" />
-                        <Link
-                          to={`/assets/poles/${encodeURIComponent(span.toPole)}`}
-                          className="text-primary hover:underline"
-                        >
-                          {span.toPole}
-                        </Link>
-                      </div>
-                    </td>
-
-                    <td className="py-2 px-4">
-                      {totalEndpointDevs > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[11px] font-medium">
-                          <Cpu className="size-3" />
-                          <span>{totalEndpointDevs} IoT device{totalEndpointDevs === 1 ? '' : 's'}</span>
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">No sensors</span>
-                      )}
-                    </td>
-
-                    <td className="py-2 px-4">
-                      <StatusBadge status={span.lifecycle} size="sm" />
-                    </td>
-
-                    <td className="py-2 px-4 text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedSpan(span)}
-                        className="h-7 px-2 text-[11px] text-primary hover:underline cursor-pointer"
-                      >
-                        Inspect
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
+                          Inspect
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card text-xs text-muted-foreground">
+          <div>
+            Showing{' '}
+            <span className="font-mono font-semibold text-foreground">
+              {totalFiltered === 0 ? 0 : startIdx + 1}
+            </span>
+            –
+            <span className="font-mono font-semibold text-foreground">
+              {Math.min(startIdx + rowsPerPage, totalFiltered)}
+            </span>{' '}
+            of{' '}
+            <span className="font-mono font-semibold text-foreground">
+              {totalFiltered}
+            </span>{' '}
+            cable {totalFiltered === 1 ? 'span' : 'spans'}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span>Rows per page</span>
+              <div className="relative bg-background border border-border rounded-md flex items-center h-8">
+                <select
+                  aria-label="Rows per page"
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-full pl-2.5 pr-7 bg-transparent text-xs font-medium text-foreground cursor-pointer outline-none appearance-none"
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+                <ChevronDown className="absolute right-1.5 size-3.5 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="h-8 w-8 p-0 border-border bg-card hover:bg-muted cursor-pointer"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <span className="w-14 text-center font-mono font-medium text-foreground">
+                {safePage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="h-8 w-8 p-0 border-border bg-card hover:bg-muted cursor-pointer"
+                aria-label="Next page"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
