@@ -120,7 +120,7 @@ export default function SignIn() {
                   <button type="button" className="w-full h-11 rounded-[10px] bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 shadow-sm transition-all flex items-center justify-center">Revoke Access</button>
                 </Dialog.Trigger>
                 <Dialog.Portal>
-                  <Dialog.Overlay className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50" />
+                  <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 animate-in fade-in-0 duration-200" />
                   <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-2xl shadow-xl z-50 w-full max-w-md border border-slate-200">
                     <Dialog.Title className="text-lg font-semibold mb-4 text-slate-900">Revoke Access</Dialog.Title>
                       <div className="flex flex-col gap-1.5 mb-6">

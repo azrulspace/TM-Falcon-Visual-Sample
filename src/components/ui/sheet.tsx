@@ -43,7 +43,7 @@ function SheetContent({
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
         data-slot="sheet-overlay"
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm transition-opacity duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
       />
       <DialogPrimitive.Popup
         data-slot="sheet-content"

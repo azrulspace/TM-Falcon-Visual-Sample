@@ -523,7 +523,7 @@ export const CaseClosureTab: React.FC<CaseClosureTabProps> = ({
           role="dialog"
           aria-modal="true"
           aria-labelledby="closure-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
         >
           <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 text-xs">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20">
