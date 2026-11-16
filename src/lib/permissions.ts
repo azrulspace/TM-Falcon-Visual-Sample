@@ -218,3 +218,46 @@ export function getDevicePermissions(
   };
 }
 
+export interface ReportPermissions {
+  role: UserRole;
+  canViewReports: boolean;
+  viewDisabledReason?: string;
+  canExportReports: boolean;
+  exportDisabledReason?: string;
+  canScheduleReports: boolean;
+  scheduleDisabledReason?: string;
+  canViewAuditLog: boolean;
+  auditLogDisabledReason?: string;
+}
+
+/**
+ * Computes RBAC + backend capability permissions for Reports actions.
+ * Viewing, exporting, scheduling, and the audit log are separate permissions.
+ */
+export function getReportPermissions(
+  role: UserRole,
+  capabilities: BackendCapabilities = DEFAULT_BACKEND_CAPABILITIES
+): ReportPermissions {
+  void capabilities;
+  const isAdminOrSystem = role === 'Admin' || role === 'System';
+  const canExport = isAdminOrSystem || role === 'Operator';
+
+  return {
+    role,
+    canViewReports: true,
+    canExportReports: canExport,
+    exportDisabledReason: canExport
+      ? undefined
+      : 'Export restricted: Admin, System, or Operator role required to export reports.',
+    canScheduleReports: isAdminOrSystem,
+    scheduleDisabledReason: !isAdminOrSystem
+      ? 'Permission required: only Admin or System roles can configure recurring schedules.'
+      : 'Not available yet — automated report delivery queue required (schedule state preserved locally)',
+    canViewAuditLog: isAdminOrSystem,
+    auditLogDisabledReason: isAdminOrSystem
+      ? undefined
+      : 'Restricted access: Compliance and governance audit trail requires Admin or System role.',
+  };
+}
+
+

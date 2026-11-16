@@ -12,6 +12,7 @@ import {
   FileText,
   AlertTriangle,
   History,
+  Clock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -204,20 +205,26 @@ export const navigationConfig: NavSection[] = [
         id: 'reports',
         label: 'Reports & audits',
         icon: BarChart3,
-        route: '/planned/reports',
-        description: 'SLAs, uptime statistics, and compliance exports',
+        route: '/reports',
+        description: 'Ready-made reports for operations, management and review.',
         children: [
           {
-            id: 'reports-uptime',
-            label: 'Network uptime SLA',
-            icon: FileText,
-            route: '/planned/reports/sla',
+            id: 'reports-library',
+            label: 'Report catalog',
+            icon: BarChart3,
+            route: '/reports?tab=library',
           },
           {
-            id: 'reports-audit',
-            label: 'Audit trails',
+            id: 'reports-scheduled',
+            label: 'Scheduled runs',
+            icon: Clock,
+            route: '/reports?tab=scheduled',
+          },
+          {
+            id: 'reports-history',
+            label: 'Generated history',
             icon: FileText,
-            route: '/planned/reports/audit',
+            route: '/reports?tab=history',
           },
         ],
       },

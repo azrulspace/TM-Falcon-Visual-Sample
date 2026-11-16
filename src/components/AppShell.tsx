@@ -194,7 +194,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (path.startsWith('/planned/work-queue')) return ['Risk', 'Work queue'];
     if (path.startsWith('/planned/devices')) return ['Assets', 'Device health'];
     if (path.startsWith('/planned/fleet')) return ['Assets', 'Infrastructure health'];
-    if (path.startsWith('/planned/reports')) return ['System', 'Reports'];
+    if (path.startsWith('/reports') || path.startsWith('/planned/reports')) return ['System', 'Reports'];
     if (path.startsWith('/planned/admin')) return ['System', 'Administration'];
     return ['Dashboard', path.replace('/', '').toUpperCase()];
   }, [location.pathname]);
@@ -498,7 +498,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <DropdownMenuItem onClick={() => navigate('/planned/admin')} className="cursor-pointer text-xs">
                     <span>Administration Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/planned/reports')} className="cursor-pointer text-xs">
+                  <DropdownMenuItem onClick={() => navigate('/reports')} className="cursor-pointer text-xs">
                     <span>Reports & Audits</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -714,8 +714,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       const isEventsRoute = location.pathname.startsWith('/events') && item.id === 'event-inbox';
                       const isCasesRoute = (location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases';
                       const isAssetsRoute = location.pathname.startsWith('/assets') && item.id === 'assets-devices';
-                      const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute || isAssetsRoute;
-                      const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute || isAssetsRoute;
+                      const isReportsRoute = (location.pathname.startsWith('/reports') || location.pathname.startsWith('/planned/reports')) && item.id === 'reports';
+                      const isParentActive = location.pathname.startsWith(item.route) || isEventsRoute || isCasesRoute || isAssetsRoute || isReportsRoute;
+                      const isLeafActive = location.pathname === item.route || isEventsRoute || isCasesRoute || isAssetsRoute || isReportsRoute;
                       const hasChildren = item.children && item.children.length > 0;
                       const isExpanded = openGroups[item.id] !== false; // default open
 
@@ -1047,7 +1048,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                       const isItemActive =
                         location.pathname.startsWith(item.route) ||
                         (location.pathname.startsWith('/events') && item.id === 'event-inbox') ||
-                        ((location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases');
+                        ((location.pathname.startsWith('/cases') || location.pathname.startsWith('/planned/cases')) && item.id === 'cases') ||
+                        (location.pathname.startsWith('/assets') && item.id === 'assets-devices') ||
+                        ((location.pathname.startsWith('/reports') || location.pathname.startsWith('/planned/reports')) && item.id === 'reports');
                       return (
                         <div key={item.id} className="space-y-1">
                           <div

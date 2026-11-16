@@ -24,6 +24,7 @@ import DeviceDetail from './pages/DeviceDetail';
 import PlannedPage from './pages/PlannedPage';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel } = useAppContext();
@@ -69,6 +70,9 @@ export default function App() {
                     <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
                     <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     
+                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/planned/reports" element={<Navigate to="/reports" replace />} />
+                    <Route path="/planned/reports/*" element={<Navigate to="/reports" replace />} />
                     <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
                   </Routes>
                   <PreviewFrameModal />
