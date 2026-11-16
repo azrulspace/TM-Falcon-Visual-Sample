@@ -1,4 +1,4 @@
-import type { ReportTemplateMeta, PeriodPreset, ReportAudience } from '../types/reports.ts';
+import type { ReportTemplateMeta, PeriodPreset, ReportAudience, ReportCategory } from '../types/reports.ts';
 
 export interface ConsolidatedReportMeta {
   id: string; // e.g. 'R1', 'R10', ...
@@ -6,6 +6,7 @@ export interface ConsolidatedReportMeta {
   name: string; // Plain language name
   purpose: string; // What question the report answers
   group: 'Overview' | 'Operations' | 'Cases' | 'Network' | 'Planning' | 'Review';
+  category: ReportCategory;
   audience: ReportAudience[];
   defaultPeriod: PeriodPreset;
   availablePresets: PeriodPreset[];
@@ -18,7 +19,7 @@ export interface ConsolidatedReportMeta {
 /**
  * The 8 consolidated reports mandated by the TM Falcon Stakeholder Verdict.
  */
-export const CONSOLIDATED_REPORTS: ConsolidatedReportMeta[] = [
+const RAW_CONSOLIDATED_REPORTS: Omit<ConsolidatedReportMeta, 'category'>[] = [
   // 1. Overview group
   {
     id: 'R10',
@@ -181,6 +182,11 @@ export const CONSOLIDATED_REPORTS: ConsolidatedReportMeta[] = [
     requiresPermission: 'audit_log',
   },
 ];
+
+export const CONSOLIDATED_REPORTS: ConsolidatedReportMeta[] = RAW_CONSOLIDATED_REPORTS.map((r) => ({
+  ...r,
+  category: r.group,
+}));
 
 /**
  * Mapping table from old templates (R1-R12) to the new 8 consolidated reports.

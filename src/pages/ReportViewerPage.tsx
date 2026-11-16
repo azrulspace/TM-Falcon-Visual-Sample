@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -8,7 +8,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { REPORT_TEMPLATES } from '@/data/reportsCatalog';
+import { getReportBySlug, saveLastOpenedReport } from '@/data/reportsCatalog';
 import { ReportViewerHeader } from '@/components/reports/ReportViewerHeader';
 import { ReportParameterBar } from '@/components/reports/ReportParameterBar';
 import { ReportDataNotesBar } from '@/components/reports/ReportDataNotesBar';
@@ -44,6 +44,8 @@ import { getMetricById } from '@/lib/metricDictionary';
 import { useEvents } from '@/contexts/EventsContext';
 import { useCases } from '@/contexts/CasesContext';
 import { useAssets } from '@/contexts/AssetsContext';
+import { useAppContext } from '@/contexts/AppContext';
+import { getRoleFromAccountLabel, getReportPermissions } from '@/lib/permissions';
 import { segments as initialRiskSegments } from '@/data/segments';
 import { INITIAL_DEVICES_REGISTRY as initialDevices } from '@/data/devicesRegistry';
 import { useToast } from '@/contexts/ToastContext';
@@ -71,15 +73,23 @@ export const ReportViewerPage: React.FC = () => {
   const [definitionsOpen, setDefinitionsOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
-  // Look up current template by slug or ID
+  const { accountLabel } = useAppContext();
+  const userRole = useMemo(() => getRoleFromAccountLabel(accountLabel), [accountLabel]);
+  const permissions = useMemo(() => getReportPermissions(userRole), [userRole]);
+
+  // Look up current consolidated template by slug or ID
   const report = useMemo(() => {
     if (!slug) return null;
-    return (
-      REPORT_TEMPLATES.find(
-        (t) => t.slug === slug || t.id.toLowerCase() === slug.toLowerCase()
-      ) || null
-    );
+    return getReportBySlug(slug) || null;
   }, [slug]);
+
+  // Canonical slug redirect (e.g. /reports/daily-operations -> /reports/operations)
+  useEffect(() => {
+    if (report && slug && report.slug.toLowerCase() !== slug.toLowerCase()) {
+      const nextParams = new URLSearchParams(searchParams);
+      navigate(`/reports/${report.slug}?${nextParams.toString()}`, { replace: true });
+    }
+  }, [report, slug, searchParams, navigate]);
 
   // Read URL search params
   const periodParam = (searchParams.get('period') as PeriodPreset) || report?.defaultPeriod || 'today';
@@ -371,6 +381,16 @@ export const ReportViewerPage: React.FC = () => {
     );
   }, [report, parameters, eventMetrics.total, caseMetrics.casesOpened, addToast]);
 
+  const handleSaveSettings = useCallback(() => {
+    if (!report) return;
+    saveLastOpenedReport(report.slug, periodParam, siteParam, compareParam);
+    addToast(
+      'success',
+      `Saved ${report.name} (${dateRange.label}, ${parameters.site}) as your preferred parameters.`,
+      'Settings saved'
+    );
+  }, [report, periodParam, siteParam, compareParam, dateRange.label, parameters.site, addToast]);
+
   // If report not found, show error state
   if (!report) {
     return (
@@ -385,11 +405,11 @@ export const ReportViewerPage: React.FC = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/reports?tab=library')}
+          onClick={() => navigate('/reports')}
           className="gap-1.5 text-xs"
         >
           <ArrowLeft className="size-3.5" />
-          <span>Return to Reports Library</span>
+          <span>Return to Default Report</span>
         </Button>
       </div>
     );
@@ -426,7 +446,9 @@ export const ReportViewerPage: React.FC = () => {
         onExportCsv={handleExportCsv}
         onPrint={handlePrint}
         onShareLink={handleShareLink}
+        onSaveSettings={handleSaveSettings}
         isSimulatedIncluded={parameters.includeSimulatedEvents}
+        canViewAuditLog={permissions.canViewAuditLog}
       />
 
       {/* Sticky Parameter Bar */}

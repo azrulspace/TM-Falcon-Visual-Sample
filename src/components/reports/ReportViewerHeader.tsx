@@ -1,17 +1,27 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
-  ChevronLeft,
-  BookOpen,
-  Calendar,
   Download,
-  Printer,
   Share2,
+  MoreHorizontal,
+  Calendar,
   Camera,
+  BookOpen,
+  Printer,
+  FileSpreadsheet,
+  FileText,
   AlertTriangle,
   FlaskConical,
+  BookmarkCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ReportSwitcherCombobox } from './ReportSwitcherCombobox';
 import type { ReportTemplateMeta, ReportParameters } from '@/types/reports';
 
 export interface ReportViewerHeaderProps {
@@ -23,7 +33,9 @@ export interface ReportViewerHeaderProps {
   onExportCsv: () => void;
   onPrint: () => void;
   onShareLink: () => void;
+  onSaveSettings?: () => void;
   isSimulatedIncluded?: boolean;
+  canViewAuditLog?: boolean;
 }
 
 export const ReportViewerHeader: React.FC<ReportViewerHeaderProps> = ({
@@ -35,124 +47,125 @@ export const ReportViewerHeader: React.FC<ReportViewerHeaderProps> = ({
   onExportCsv,
   onPrint,
   onShareLink,
+  onSaveSettings,
   isSimulatedIncluded = false,
+  canViewAuditLog = false,
 }) => {
   return (
-    <div className="space-y-4">
-      {/* Top breadcrumb and back button */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Link
-            to="/reports?tab=library"
-            className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-          >
-            <ChevronLeft className="size-3.5" />
-            <span>Reports & audits</span>
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-semibold">{report.name}</span>
+    <div className="space-y-3">
+      {/* Top row: Headline combobox switcher + badges & actions */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-2 border-b border-border/60">
+        {/* Headline Combobox (replaces static H1 and category/id chips) */}
+        <div className="flex-1">
+          <ReportSwitcherCombobox
+            currentSlug={report.slug}
+            canViewAuditLog={canViewAuditLog}
+          />
         </div>
 
-        {/* Sample data pill badge */}
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+        {/* Badges & Actions */}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* Sample data indicator badge */}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 mr-1">
             <FlaskConical className="size-3" />
             <span>Sample data</span>
           </span>
-          <span className="text-[11px] text-muted-foreground hidden sm:inline">
-            Internal operational use only
-          </span>
-        </div>
-      </div>
 
-      {/* Main header title & actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-border/60">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              {report.name}
-            </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-              {report.category}
-            </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
-              ID: {report.id}
-            </span>
-          </div>
-          <p className="text-xs md:text-sm text-muted-foreground mt-1 max-w-3xl leading-relaxed">
-            {report.purpose}
-          </p>
-        </div>
+          {/* Action Hierarchy: 1. Primary Export Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger render={
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-1.5 text-xs h-8 font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Download className="size-3.5" />
+                <span>Export</span>
+              </Button>
+            } />
+            <DropdownMenuContent align="end" className="w-52 text-xs">
+              <DropdownMenuItem onClick={onPrint} className="gap-2 cursor-pointer">
+                <FileText className="size-3.5 text-muted-foreground" />
+                <span>Export as PDF (Printable)</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportCsv} className="gap-2 cursor-pointer">
+                <FileSpreadsheet className="size-3.5 text-muted-foreground" />
+                <span>Export as CSV (Data table)</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Primary Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenDefinitions}
-            className="gap-1.5 text-xs h-8"
-            title="Open metric definitions dictionary and calculation formulas"
-          >
-            <BookOpen className="size-3.5" />
-            <span>Definitions</span>
-          </Button>
-
+          {/* Action Hierarchy: 2. Secondary Share Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={onShareLink}
             className="gap-1.5 text-xs h-8"
-            title="Copy shareable link with current parameters"
+            title="Copy reproducible view link with parameters"
           >
             <Share2 className="size-3.5" />
             <span>Share</span>
           </Button>
 
-          {report.scheduleSupported && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenSchedule}
-              className="gap-1.5 text-xs h-8"
-              title="Configure automated scheduled delivery"
-            >
-              <Calendar className="size-3.5" />
-              <span>Schedule</span>
-            </Button>
-          )}
+          {/* Action Hierarchy: 3. Overflow Menu (...) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger render={
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                title="More actions"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            } />
+            <DropdownMenuContent align="end" className="w-56 text-xs">
+              <DropdownMenuItem
+                onClick={onOpenSchedule}
+                disabled={!report.scheduleSupported}
+                className="gap-2 cursor-pointer"
+              >
+                <Calendar className="size-3.5 text-muted-foreground" />
+                <span>Schedule this report</span>
+              </DropdownMenuItem>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onPrint}
-            className="gap-1.5 text-xs h-8 hidden sm:inline-flex"
-            title="Print or export as PDF"
-          >
-            <Printer className="size-3.5" />
-            <span>Print / PDF</span>
-          </Button>
+              <DropdownMenuItem
+                onClick={onGenerateSnapshot}
+                className="gap-2 cursor-pointer"
+              >
+                <Camera className="size-3.5 text-muted-foreground" />
+                <span>Save this view (Snapshot)</span>
+              </DropdownMenuItem>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExportCsv}
-            className="gap-1.5 text-xs h-8"
-            title="Export report data tables to CSV"
-          >
-            <Download className="size-3.5" />
-            <span>Export CSV</span>
-          </Button>
+              {onSaveSettings && (
+                <DropdownMenuItem
+                  onClick={onSaveSettings}
+                  className="gap-2 cursor-pointer"
+                >
+                  <BookmarkCheck className="size-3.5 text-muted-foreground" />
+                  <span>Save as default settings</span>
+                </DropdownMenuItem>
+              )}
 
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onGenerateSnapshot}
-            className="gap-1.5 text-xs h-8 font-medium bg-primary text-primary-foreground hover:bg-primary/90"
-            title="Freeze parameters and generate a persistent snapshot record"
-          >
-            <Camera className="size-3.5" />
-            <span>Generate snapshot</span>
-          </Button>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={onOpenDefinitions}
+                className="gap-2 cursor-pointer"
+              >
+                <BookOpen className="size-3.5 text-muted-foreground" />
+                <span>Metric definitions</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={onPrint}
+                className="gap-2 cursor-pointer"
+              >
+                <Printer className="size-3.5 text-muted-foreground" />
+                <span>Print layout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
