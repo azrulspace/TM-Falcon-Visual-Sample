@@ -469,14 +469,14 @@ describe('Reports & Audits: Invariant Tests', () => {
           status: 'Open',
           severity: 'Critical',
           createdAt: '2026-10-21T08:00:00+08:00',
-        } as FalconCase,
+        } as unknown as FalconCase,
         {
           id: 'CAS-2',
           title: 'Case 2',
           status: 'In progress',
           severity: 'High',
           createdAt: '2026-10-21T09:00:00+08:00',
-        } as FalconCase,
+        } as unknown as FalconCase,
         {
           id: 'CAS-3',
           title: 'Case 3',
@@ -484,7 +484,7 @@ describe('Reports & Audits: Invariant Tests', () => {
           severity: 'Low',
           createdAt: '2026-10-21T07:00:00+08:00',
           closedAt: '2026-10-21T11:00:00+08:00',
-        } as FalconCase,
+        } as unknown as FalconCase,
       ];
 
       const range = {
