@@ -16,6 +16,9 @@ import { ReportKpiStrip } from '@/components/reports/ReportKpiStrip';
 import { ReportSection } from '@/components/reports/ReportSection';
 import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
 import { DailyOperationsReport } from '@/components/reports/templates/DailyOperationsReport';
+import { WeeklyOperationsReport } from '@/components/reports/templates/WeeklyOperationsReport';
+import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
+import { CaseManagementReport } from '@/components/reports/templates/CaseManagementReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { ScheduleReportDialog } from '@/components/reports/ScheduleReportDialog';
@@ -446,6 +449,26 @@ export const ReportViewerPage: React.FC = () => {
             events={events}
             cases={cases}
             devices={devices}
+            dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : report.id === 'R2' ? (
+          <WeeklyOperationsReport
+            events={events}
+            cases={cases}
+            devices={devices}
+            dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : report.id === 'R3' ? (
+          <EventIncidentAnalysisReport
+            events={events}
+            dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : report.id === 'R5' ? (
+          <CaseManagementReport
+            cases={cases}
             dateRange={dateRange}
             parameters={parameters}
           />
