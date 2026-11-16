@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { History, RotateCw, ExternalLink, Download, Link2, Search } from 'lucide-react';
+import { History, RotateCw, ExternalLink, Download, Link2, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/contexts/ToastContext';
@@ -97,7 +97,26 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
   onRerunSnapshot,
 }) => {
   const { addToast } = useToast();
-  const [snapshots] = useState<ReportSnapshot[]>(INITIAL_SNAPSHOTS);
+  const [snapshots, setSnapshots] = useState<ReportSnapshot[]>(() => {
+    try {
+      const stored = localStorage.getItem('falcon_reports_history');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const combined = [...parsed];
+          for (const init of INITIAL_SNAPSHOTS) {
+            if (!combined.some((s) => s.id === init.id)) {
+              combined.push(init);
+            }
+          }
+          return combined;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return INITIAL_SNAPSHOTS;
+  });
   const [search, setSearch] = useState<string>('');
   const [siteFilter, setSiteFilter] = useState<string>('all');
   const [templateFilter, setTemplateFilter] = useState<string>('all');
@@ -129,6 +148,19 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
       `Direct link for snapshot ${snapshot.id} copied to clipboard.`,
       'Link copied'
     );
+  };
+
+  const handleDeleteSnapshot = (id: string) => {
+    setSnapshots((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      try {
+        localStorage.setItem('falcon_reports_history', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+    addToast('info', `Snapshot ${id} removed from local history.`, 'Snapshot deleted');
   };
 
   return (
@@ -318,6 +350,24 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                         } />
                         <TooltipContent side="top" className="text-xs">
                           Copy snapshot link
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {/* Delete Snapshot */}
+                      <Tooltip>
+                        <TooltipTrigger render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSnapshot(snap.id)}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                            aria-label="Delete snapshot"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        } />
+                        <TooltipContent side="top" className="text-xs">
+                          Delete snapshot
                         </TooltipContent>
                       </Tooltip>
                     </div>

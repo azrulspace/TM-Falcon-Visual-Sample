@@ -67,25 +67,58 @@ export const ScheduledTab: React.FC<ScheduledTabProps> = ({
   onNewSchedule,
   onRunNow,
 }) => {
-  const [schedules, setSchedules] = useState<ScheduledReportConfig[]>(INITIAL_SCHEDULES);
+  const [schedules, setSchedules] = useState<ScheduledReportConfig[]>(() => {
+    try {
+      const stored = localStorage.getItem('falcon_scheduled_reports');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const combined = [...parsed];
+          for (const init of INITIAL_SCHEDULES) {
+            if (!combined.some((s) => s.id === init.id)) {
+              combined.push(init);
+            }
+          }
+          return combined;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return INITIAL_SCHEDULES;
+  });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const togglePauseResume = (id: string) => {
-    setSchedules((prev) =>
-      prev.map((s) => {
+    setSchedules((prev) => {
+      const updated = prev.map((s) => {
         if (s.id !== id) return s;
         const newActive = !s.isActive;
         return {
           ...s,
           isActive: newActive,
-          lastRunStatus: newActive ? 'Pending' : 'Paused',
+          lastRunStatus: (newActive ? 'Pending' : 'Paused') as any,
         };
-      })
-    );
+      });
+      try {
+        localStorage.setItem('falcon_scheduled_reports', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
   };
 
   const handleDelete = (id: string) => {
-    setSchedules((prev) => prev.filter((s) => s.id !== id));
+    setSchedules((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      try {
+        localStorage.setItem('falcon_scheduled_reports', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
     setDeleteConfirmId(null);
   };
 
