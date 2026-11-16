@@ -15,6 +15,9 @@ import { ReportDataNotesBar } from '@/components/reports/ReportDataNotesBar';
 import { ReportKpiStrip } from '@/components/reports/ReportKpiStrip';
 import { ReportSection } from '@/components/reports/ReportSection';
 import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
+import { DailyOperationsReport } from '@/components/reports/templates/DailyOperationsReport';
+import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
+import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { ScheduleReportDialog } from '@/components/reports/ScheduleReportDialog';
 import {
   computeReportDateRange,
@@ -384,6 +387,25 @@ export const ReportViewerPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-[1720px] mx-auto animate-in fade-in duration-150">
+      {/* Print-only Header (A4 PDF layout) */}
+      <div className="hidden print-only mb-6 border-b-2 border-black pb-4 text-black">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xl font-black uppercase tracking-wider">TM FALCON Operations Console</div>
+            <div className="text-sm font-bold text-gray-700">{report.name} ({report.id})</div>
+          </div>
+          <div className="text-right text-xs">
+            <div className="font-bold text-rose-700">CONFIDENTIAL / INTERNAL USE ONLY</div>
+            <div>Generated: {formatAbsoluteMYT(new Date().toISOString())}</div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-gray-300">
+          <div><strong>Period:</strong> {dateRange.label}</div>
+          <div><strong>Site Scope:</strong> {parameters.site}</div>
+          <div><strong>Dictionary Version:</strong> v1.0.0</div>
+        </div>
+      </div>
+
       {/* Report Header */}
       <ReportViewerHeader
         report={report}
@@ -419,104 +441,132 @@ export const ReportViewerPage: React.FC = () => {
 
       {/* Dynamic Content Sections */}
       <div className="space-y-6 pt-2">
-        {/* Section 1: Operational Summary */}
-        <ReportSection
-          id="summary-section"
-          title="Executive Operational Highlights"
-          description="High-level operational performance indicators across active site corridors."
-          onExportCsv={handleExportCsv}
-          hasTableView={false}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
-              <div className="font-semibold text-foreground flex items-center gap-1.5">
-                <Activity className="size-3.5 text-primary" />
-                <span>Detection & Triage</span>
-              </div>
-              <p className="text-muted-foreground leading-relaxed">
-                Recorded <strong className="text-foreground">{eventMetrics.total}</strong> incidents in the selected period.
-                High & Critical priority events constitute <strong className="text-foreground">{eventMetrics.highCriticalShare}%</strong> of overall volume.
-              </p>
-              <div className="pt-2 text-[11px] text-muted-foreground">
-                Unacknowledged queue now: <strong className="text-foreground">{eventMetrics.unacknowledgedNow}</strong> events
-              </div>
-            </div>
+        {report.id === 'R1' ? (
+          <DailyOperationsReport
+            events={events}
+            cases={cases}
+            devices={devices}
+            dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : report.id === 'R10' ? (
+          <ExecutiveSummaryReport
+            events={events}
+            cases={cases}
+            devices={devices}
+            poles={poles}
+            cableSpans={cableSpans}
+            segments={segments}
+            dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : (
+          <>
+            {/* Generic Operational Highlights */}
+            <ReportSection
+              id="summary-section"
+              title="Executive Operational Highlights"
+              description="High-level operational performance indicators across active site corridors."
+              onExportCsv={handleExportCsv}
+              hasTableView={false}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Activity className="size-3.5 text-primary" />
+                    <span>Detection & Triage</span>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Recorded <strong className="text-foreground">{eventMetrics.total}</strong> incidents in the selected period.
+                    High & Critical priority events constitute <strong className="text-foreground">{eventMetrics.highCriticalShare}%</strong> of overall volume.
+                  </p>
+                  <div className="pt-2 text-[11px] text-muted-foreground">
+                    Unacknowledged queue now: <strong className="text-foreground">{eventMetrics.unacknowledgedNow}</strong> events
+                  </div>
+                </div>
 
-            <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
-              <div className="font-semibold text-foreground flex items-center gap-1.5">
-                <Layers className="size-3.5 text-primary" />
-                <span>Case Resolutions</span>
-              </div>
-              <p className="text-muted-foreground leading-relaxed">
-                Field teams opened <strong className="text-foreground">{caseMetrics.casesOpened}</strong> cases and successfully closed{' '}
-                <strong className="text-foreground">{caseMetrics.casesClosed}</strong> cases.
-              </p>
-              <div className="pt-2 text-[11px] text-muted-foreground">
-                Open backlog at period end: <strong className="text-foreground">{caseMetrics.casesOpenAtEnd}</strong> active investigations
-              </div>
-            </div>
+                <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Layers className="size-3.5 text-primary" />
+                    <span>Case Resolutions</span>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Field teams opened <strong className="text-foreground">{caseMetrics.casesOpened}</strong> cases and successfully closed{' '}
+                    <strong className="text-foreground">{caseMetrics.casesClosed}</strong> cases.
+                  </p>
+                  <div className="pt-2 text-[11px] text-muted-foreground">
+                    Open backlog at period end: <strong className="text-foreground">{caseMetrics.casesOpenAtEnd}</strong> active investigations
+                  </div>
+                </div>
 
-            <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
-              <div className="font-semibold text-foreground flex items-center gap-1.5">
-                <Radio className="size-3.5 text-primary" />
-                <span>Telemetry & Network State</span>
+                <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Radio className="size-3.5 text-primary" />
+                    <span>Telemetry & Network State</span>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Overall sensor network availability averaged <strong className="text-foreground">{deviceMetrics.availabilityPercent}%</strong>.
+                  </p>
+                  <div className="pt-2 text-[11px] text-muted-foreground">
+                    Online devices: <strong className="text-foreground">{deviceMetrics.byState.online}</strong> · Stale: <strong className="text-foreground">{deviceMetrics.byState.stale}</strong>
+                  </div>
+                </div>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
-                Overall sensor network availability averaged <strong className="text-foreground">{deviceMetrics.availabilityPercent}%</strong>.
-              </p>
-              <div className="pt-2 text-[11px] text-muted-foreground">
-                Online devices: <strong className="text-foreground">{deviceMetrics.byState.online}</strong> · Stale: <strong className="text-foreground">{deviceMetrics.byState.stale}</strong>
-              </div>
-            </div>
-          </div>
-        </ReportSection>
+            </ReportSection>
 
-        {/* Section 2: Distribution & Activity Table */}
-        <ReportSection
-          id="details-table"
-          title="Event & Detection Breakdown"
-          description="Classified incident occurrences grouped by trigger category and priority tiers."
-          onExportCsv={handleExportCsv}
-          hasTableView={false}
-        >
-          <div className="overflow-x-auto border border-border rounded-xl">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border text-[11px] text-muted-foreground uppercase font-semibold">
-                <tr>
-                  <th className="py-2.5 px-4">Event Category / Type</th>
-                  <th className="py-2.5 px-4">Priority Class</th>
-                  <th className="py-2.5 px-4 text-right">Count</th>
-                  <th className="py-2.5 px-4 text-right">Share (%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {Object.entries(eventMetrics.byType).length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-muted-foreground">
-                      No events recorded for the active timeframe and site scope.
-                    </td>
-                  </tr>
-                ) : (
-                  Object.entries(eventMetrics.byType).map(([type, count]) => {
-                    const share = eventMetrics.total > 0 ? Math.round((count / eventMetrics.total) * 100) : 0;
-                    return (
-                      <tr key={type} className="hover:bg-muted/30">
-                        <td className="py-2.5 px-4 font-medium text-foreground">{type}</td>
-                        <td className="py-2.5 px-4 text-muted-foreground">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-muted border border-border">
-                            Operational
-                          </span>
+            {/* Generic Details Table */}
+            <ReportSection
+              id="details-table"
+              title="Event & Detection Breakdown"
+              description="Classified incident occurrences grouped by trigger category and priority tiers."
+              onExportCsv={handleExportCsv}
+              hasTableView={false}
+            >
+              <div className="overflow-x-auto border border-border rounded-xl">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-muted/50 border-b border-border text-[11px] text-muted-foreground uppercase font-semibold">
+                    <tr>
+                      <th className="py-2.5 px-4">Event Category / Type</th>
+                      <th className="py-2.5 px-4">Priority Class</th>
+                      <th className="py-2.5 px-4 text-right">Count</th>
+                      <th className="py-2.5 px-4 text-right">Share (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {Object.entries(eventMetrics.byType).length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                          No events recorded for the active timeframe and site scope.
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-medium">{count}</td>
-                        <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{share}%</td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </ReportSection>
+                    ) : (
+                      Object.entries(eventMetrics.byType).map(([type, count]) => {
+                        const share = eventMetrics.total > 0 ? Math.round((count / eventMetrics.total) * 100) : 0;
+                        return (
+                          <tr key={type} className="hover:bg-muted/30">
+                            <td className="py-2.5 px-4 font-medium text-foreground">{type}</td>
+                            <td className="py-2.5 px-4 text-muted-foreground">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-muted border border-border">
+                                Operational
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-mono font-medium">{count}</td>
+                            <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{share}%</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </ReportSection>
+          </>
+        )}
+      </div>
+
+      {/* Print-only Footer */}
+      <div className="hidden print-only mt-8 pt-4 border-t border-gray-400 text-center text-[10px] text-gray-600">
+        TM FALCON Telecom Infrastructure Surveillance Platform · Data as of {formatAbsoluteMYT(new Date().toISOString())} · Page 1 of 1
       </div>
 
       {/* Definitions Drawer */}
