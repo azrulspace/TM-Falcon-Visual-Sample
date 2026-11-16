@@ -115,7 +115,7 @@ export default function SavedRunsPage() {
 
   const [snapshots, setSnapshots] = useState<ReportSnapshot[]>(() => {
     try {
-      const stored = localStorage.getItem('falcon_report_snapshots');
+      const stored = localStorage.getItem('falcon_reports_history') || localStorage.getItem('falcon_report_snapshots');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -142,6 +142,7 @@ export default function SavedRunsPage() {
   const persistSnapshots = (list: ReportSnapshot[]) => {
     setSnapshots(list);
     try {
+      localStorage.setItem('falcon_reports_history', JSON.stringify(list));
       localStorage.setItem('falcon_report_snapshots', JSON.stringify(list));
     } catch {
       // fallback
