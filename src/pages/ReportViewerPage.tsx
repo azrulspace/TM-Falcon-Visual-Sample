@@ -17,10 +17,9 @@ import { ReportKpiStrip } from '@/components/reports/ReportKpiStrip';
 import { ReportSection } from '@/components/reports/ReportSection';
 import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
 import { OperationsReport } from '@/components/reports/templates/OperationsReport';
+import { CasesResponseReport } from '@/components/reports/templates/CasesResponseReport';
+import { NetworkHealthReport } from '@/components/reports/templates/NetworkHealthReport';
 import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
-import { ResponseSlaReport } from '@/components/reports/templates/ResponseSlaReport';
-import { CaseManagementReport } from '@/components/reports/templates/CaseManagementReport';
-import { DeviceHealthReport } from '@/components/reports/templates/DeviceHealthReport';
 import { AssetInventoryReport } from '@/components/reports/templates/AssetInventoryReport';
 import { RiskPreventiveWorkReport } from '@/components/reports/templates/RiskPreventiveWorkReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
@@ -604,21 +603,15 @@ export const ReportViewerPage: React.FC = () => {
             dateRange={dateRange}
             parameters={parameters}
           />
-        ) : report.id === 'R4' ? (
-          <ResponseSlaReport
+        ) : report.slug === 'cases-response' || report.id === 'R4' || report.id === 'R5' ? (
+          <CasesResponseReport
+            cases={cases}
             events={events}
-            cases={cases}
-            range={dateRange}
-            parameters={parameters}
-          />
-        ) : report.id === 'R5' ? (
-          <CaseManagementReport
-            cases={cases}
             dateRange={dateRange}
             parameters={parameters}
           />
-        ) : report.id === 'R6' ? (
-          <DeviceHealthReport
+        ) : report.slug === 'network-health' || report.id === 'R6' ? (
+          <NetworkHealthReport
             devices={devices}
             range={dateRange}
             siteFilter={parameters.site}

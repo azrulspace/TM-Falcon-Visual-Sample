@@ -153,7 +153,7 @@ export const ReportSwitcherCombobox: React.FC<ReportSwitcherComboboxProps> = ({
         map[r.group].push(r);
       }
     }
-    return Object.entries(map).filter(([_, items]) => items.length > 0);
+    return Object.entries(map).filter(([, items]) => items.length > 0);
   }, [filteredReports]);
 
   // Flat list for keyboard navigation
