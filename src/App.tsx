@@ -25,6 +25,7 @@ import PlannedPage from './pages/PlannedPage';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
 import Reports from './pages/Reports';
+import { ReportViewerPage } from './pages/ReportViewerPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel } = useAppContext();
@@ -71,6 +72,7 @@ export default function App() {
                     <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     
                     <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/reports/:slug" element={<ProtectedRoute><ReportViewerPage /></ProtectedRoute>} />
                     <Route path="/planned/reports" element={<Navigate to="/reports" replace />} />
                     <Route path="/planned/reports/*" element={<Navigate to="/reports" replace />} />
                     <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />

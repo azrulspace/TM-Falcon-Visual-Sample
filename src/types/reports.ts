@@ -35,17 +35,40 @@ export interface ReportDateRange {
 }
 
 export interface ReportParameters {
-  reportId: string;
-  dateRange: ReportDateRange;
+  reportId?: string;
+  periodPreset?: PeriodPreset;
+  customStartDate?: string;
+  customEndDate?: string;
+  dateRange?: ReportDateRange;
   site: string; // specific site or 'All sites'
   compareWithPrevious: boolean;
-  includeSimulated: boolean;
+  includeSimulated?: boolean;
+  includeSimulatedEvents?: boolean;
   // Report-specific parameters
   priorityFilter?: string[];
   teamFilter?: string;
   deviceTypeFilter?: string;
   repeatThreshold?: number; // for repeat targets, default 3
   staleThresholdHours?: number; // for stale contact, default 24
+}
+
+export interface ReportDelta {
+  diff: number;
+  percent: number | null;
+  direction: 'up' | 'down' | 'flat';
+  formattedText: string;
+}
+
+export interface ReportKpiItem {
+  id: string;
+  label: string;
+  value: string | number;
+  unit?: string;
+  status?: 'computable now' | 'needs backend' | 'not available';
+  missingReason?: string;
+  delta?: ReportDelta | null;
+  isInverseDelta?: boolean;
+  subtext?: string;
 }
 
 export interface MetricDefinition {

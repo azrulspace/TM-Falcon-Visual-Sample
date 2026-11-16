@@ -225,7 +225,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                   <td className="py-3 px-4">
                     <div className="font-medium text-foreground">{snap.templateName}</div>
                     <div className="text-[11px] text-muted-foreground">
-                      {snap.parameters.dateRange.label}
+                      {snap.parameters.dateRange?.label || snap.parameters.periodPreset || 'Current period'}
                     </div>
                   </td>
                   <td className="py-3 px-4 text-muted-foreground">
