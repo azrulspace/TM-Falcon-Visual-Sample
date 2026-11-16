@@ -22,7 +22,8 @@ export interface FalconEvent {
   state: 'New' | 'Acknowledged' | 'In case' | 'Resolved';
   status: 'New' | 'Acknowledged' | 'In case' | 'Resolved';
   caseId: string | null;
-  source: 'Edge service' | 'Manual' | 'Partner feed';
+  source: 'Edge service' | 'Manual' | 'Partner feed' | 'Simulation';
+  site?: string;
   ruleCode: string;
   vendorCode: string;
   observed: string;

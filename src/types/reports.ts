@@ -57,7 +57,7 @@ export interface MetricDefinition {
   unit: string;
   status: 'computable now' | 'needs backend' | 'not available';
   missingFieldReason?: string;
-  source: 'Events' | 'Cases' | 'Devices' | 'Poles' | 'Risk' | 'Audit' | 'Vendor';
+  source: 'Events' | 'Cases' | 'Devices' | 'Poles' | 'Risk' | 'Audit' | 'Vendor' | 'Data quality' | 'Cross-domain';
 }
 
 export interface ReportTemplateMeta {

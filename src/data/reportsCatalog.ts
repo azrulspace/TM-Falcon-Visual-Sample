@@ -1,4 +1,4 @@
-import type { ReportTemplateMeta } from '../types/reports';
+import type { ReportTemplateMeta } from '../types/reports.ts';
 
 export const REPORT_TEMPLATES: ReportTemplateMeta[] = [
   {
@@ -247,3 +247,6 @@ export function getRecommendedReportIdsForRole(role?: string | null): string[] {
   }
   return [];
 }
+
+export const REPORTS_CATALOG = REPORT_TEMPLATES;
+
