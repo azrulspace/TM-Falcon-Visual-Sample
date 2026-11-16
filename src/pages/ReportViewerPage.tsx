@@ -12,18 +12,17 @@ import { getReportBySlug, saveLastOpenedReport } from '@/data/reportsCatalog';
 import { ReportViewerHeader } from '@/components/reports/ReportViewerHeader';
 import { ReportParameterBar } from '@/components/reports/ReportParameterBar';
 import { ReportDataNotesBar } from '@/components/reports/ReportDataNotesBar';
+import { ReportHighlights } from '@/components/reports/ReportHighlights';
 import { ReportKpiStrip } from '@/components/reports/ReportKpiStrip';
 import { ReportSection } from '@/components/reports/ReportSection';
 import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
-import { DailyOperationsReport } from '@/components/reports/templates/DailyOperationsReport';
-import { WeeklyOperationsReport } from '@/components/reports/templates/WeeklyOperationsReport';
+import { OperationsReport } from '@/components/reports/templates/OperationsReport';
 import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
 import { ResponseSlaReport } from '@/components/reports/templates/ResponseSlaReport';
 import { CaseManagementReport } from '@/components/reports/templates/CaseManagementReport';
 import { DeviceHealthReport } from '@/components/reports/templates/DeviceHealthReport';
 import { AssetInventoryReport } from '@/components/reports/templates/AssetInventoryReport';
 import { RiskPreventiveWorkReport } from '@/components/reports/templates/RiskPreventiveWorkReport';
-import { EvidenceClipReport } from '@/components/reports/templates/EvidenceClipReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
 import { AuditLogReport } from '@/components/reports/templates/AuditLogReport';
 import { DataQualityReport } from '@/components/reports/templates/DataQualityReport';
@@ -361,6 +360,60 @@ export const ReportViewerPage: React.FC = () => {
     return list;
   }, [dataQualityMetrics, deviceMetrics.byState.offline]);
 
+  // Highlights facts (Section 5.2 — Plain operational summary)
+  const highlightFacts = useMemo(() => {
+    const facts = [];
+    if (kpiItems[0]) {
+      const deltaText = kpiItems[0].delta ? `, ${kpiItems[0].delta.formattedText} vs prior` : '';
+      facts.push({
+        id: 'fact-events',
+        text: `${kpiItems[0].label}: ${typeof kpiItems[0].value === 'number' ? kpiItems[0].value.toLocaleString() : kpiItems[0].value}${deltaText}.`,
+        sectionId: 'section-events-temporal',
+        type: (kpiItems[0].delta?.direction === 'up' && kpiItems[0].isInverseDelta ? 'warning' : 'neutral') as any,
+      });
+    }
+    if (eventMetrics.unacknowledgedNow > 0) {
+      facts.push({
+        id: 'fact-unacked',
+        text: `${eventMetrics.unacknowledgedNow} unacknowledged alarms require triage action.`,
+        sectionId: 'section-to-handle-now',
+        type: 'warning' as const,
+      });
+    }
+    if (dataQualityMetrics.onlineStale > 0) {
+      facts.push({
+        id: 'fact-stale',
+        text: `${dataQualityMetrics.onlineStale} devices are online with stale contact (> 24 hours).`,
+        sectionId: 'section-devices-to-check',
+        type: 'warning' as const,
+      });
+    } else if (deviceMetrics.byState.offline > 0) {
+      facts.push({
+        id: 'fact-offline',
+        text: `${deviceMetrics.byState.offline} devices are currently offline.`,
+        sectionId: 'section-devices-to-check',
+        type: 'warning' as const,
+      });
+    }
+    if (caseMetrics.casesClosed > 0) {
+      facts.push({
+        id: 'fact-cases-closed',
+        text: `${caseMetrics.casesClosed} cases closed. Active backlog is ${caseMetrics.casesOpenAtEnd} cases.`,
+        sectionId: 'section-to-handle-now',
+        type: 'positive' as const,
+      });
+    }
+    if (riskMetrics.highPriority > 0) {
+      facts.push({
+        id: 'fact-risk',
+        text: `${riskMetrics.highPriority} cable segments identified as high priority for inspection.`,
+        sectionId: 'top-risk-corridors',
+        type: 'warning' as const,
+      });
+    }
+    return facts.slice(0, 5);
+  }, [kpiItems, eventMetrics, dataQualityMetrics, deviceMetrics, caseMetrics, riskMetrics]);
+
   // Action handlers
   const handleShareLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
@@ -518,24 +571,30 @@ export const ReportViewerPage: React.FC = () => {
         onOpenDefinitions={() => setDefinitionsOpen(true)}
       />
 
+      {/* Highlights (Section 5.2 — Plain facts what changed) */}
+      <ReportHighlights facts={highlightFacts} />
+
       {/* Primary KPI Strip */}
-      <ReportKpiStrip items={kpiItems} />
+      <ReportKpiStrip items={kpiItems} onOpenDefinitions={() => setDefinitionsOpen(true)} />
 
       {/* Dynamic Content Sections */}
       <div className="space-y-6 pt-2">
-        {report.id === 'R1' ? (
-          <DailyOperationsReport
+        {report.slug === 'operations' || report.id === 'R1' || report.id === 'R2' || report.id === 'R3' || report.id === 'R9' ? (
+          <OperationsReport
             events={events}
             cases={cases}
             devices={devices}
             dateRange={dateRange}
             parameters={parameters}
           />
-        ) : report.id === 'R2' ? (
-          <WeeklyOperationsReport
+        ) : report.slug === 'executive-summary' || report.id === 'R10' ? (
+          <ExecutiveSummaryReport
             events={events}
             cases={cases}
             devices={devices}
+            poles={poles}
+            cableSpans={cableSpans}
+            segments={segments}
             dateRange={dateRange}
             parameters={parameters}
           />
@@ -578,24 +637,6 @@ export const ReportViewerPage: React.FC = () => {
             events={events}
             range={dateRange}
             siteFilter={parameters.site}
-          />
-        ) : report.id === 'R9' ? (
-          <EvidenceClipReport
-            events={events}
-            devices={devices}
-            range={dateRange}
-            parameters={parameters}
-          />
-        ) : report.id === 'R10' ? (
-          <ExecutiveSummaryReport
-            events={events}
-            cases={cases}
-            devices={devices}
-            poles={poles}
-            cableSpans={cableSpans}
-            segments={segments}
-            dateRange={dateRange}
-            parameters={parameters}
           />
         ) : report.id === 'R11' ? (
           <AuditLogReport
