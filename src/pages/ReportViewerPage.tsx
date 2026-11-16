@@ -18,11 +18,15 @@ import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
 import { DailyOperationsReport } from '@/components/reports/templates/DailyOperationsReport';
 import { WeeklyOperationsReport } from '@/components/reports/templates/WeeklyOperationsReport';
 import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
+import { ResponseSlaReport } from '@/components/reports/templates/ResponseSlaReport';
 import { CaseManagementReport } from '@/components/reports/templates/CaseManagementReport';
 import { DeviceHealthReport } from '@/components/reports/templates/DeviceHealthReport';
 import { AssetInventoryReport } from '@/components/reports/templates/AssetInventoryReport';
 import { RiskPreventiveWorkReport } from '@/components/reports/templates/RiskPreventiveWorkReport';
+import { EvidenceClipReport } from '@/components/reports/templates/EvidenceClipReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
+import { AuditLogReport } from '@/components/reports/templates/AuditLogReport';
+import { DataQualityReport } from '@/components/reports/templates/DataQualityReport';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { ScheduleReportDialog } from '@/components/reports/ScheduleReportDialog';
 import {
@@ -469,6 +473,13 @@ export const ReportViewerPage: React.FC = () => {
             dateRange={dateRange}
             parameters={parameters}
           />
+        ) : report.id === 'R4' ? (
+          <ResponseSlaReport
+            events={events}
+            cases={cases}
+            range={dateRange}
+            parameters={parameters}
+          />
         ) : report.id === 'R5' ? (
           <CaseManagementReport
             cases={cases}
@@ -496,6 +507,13 @@ export const ReportViewerPage: React.FC = () => {
             range={dateRange}
             siteFilter={parameters.site}
           />
+        ) : report.id === 'R9' ? (
+          <EvidenceClipReport
+            events={events}
+            devices={devices}
+            range={dateRange}
+            parameters={parameters}
+          />
         ) : report.id === 'R10' ? (
           <ExecutiveSummaryReport
             events={events}
@@ -505,6 +523,21 @@ export const ReportViewerPage: React.FC = () => {
             cableSpans={cableSpans}
             segments={segments}
             dateRange={dateRange}
+            parameters={parameters}
+          />
+        ) : report.id === 'R11' ? (
+          <AuditLogReport
+            devices={devices}
+            poles={poles}
+            cases={cases}
+            range={dateRange}
+          />
+        ) : report.id === 'R12' ? (
+          <DataQualityReport
+            devices={devices}
+            poles={poles}
+            events={events}
+            range={dateRange}
             parameters={parameters}
           />
         ) : (
