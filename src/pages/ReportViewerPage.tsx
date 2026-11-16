@@ -631,14 +631,15 @@ export const ReportViewerPage: React.FC = () => {
             range={dateRange}
             siteFilter={parameters.site}
           />
-        ) : report.id === 'R11' ? (
+        ) : report.slug === 'audit-log' || report.id === 'R11' ? (
           <AuditLogReport
             devices={devices}
             poles={poles}
             cases={cases}
             range={dateRange}
+            canViewAuditLog={permissions.canViewAuditLog}
           />
-        ) : report.id === 'R12' ? (
+        ) : report.slug === 'data-quality' || report.id === 'R12' ? (
           <DataQualityReport
             devices={devices}
             poles={poles}

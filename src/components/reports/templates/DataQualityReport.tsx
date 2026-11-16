@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ShieldAlert,
-  AlertTriangle,
-  RefreshCw,
   ExternalLink,
   Sparkles,
   MapPinOff,
   WifiOff,
   CheckCircle2,
+  Camera,
+  Film,
+  ArrowRight,
 } from 'lucide-react';
 import type { DeviceRecord } from '@/types/devices';
 import type { PoleRecord } from '@/types/assets';
@@ -22,7 +22,7 @@ import {
 } from '@/data/devicesRegistry';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 
-interface DataQualityReportProps {
+export interface DataQualityReportProps {
   devices: DeviceRecord[];
   poles: PoleRecord[];
   events: FalconEvent[];
@@ -35,92 +35,304 @@ export const DataQualityReport: React.FC<DataQualityReportProps> = ({
   poles,
   events,
 }) => {
-  const dataQuality = computeDataQualityMetrics(
-    devices,
-    poles,
-    events,
-    INITIAL_VENDOR_DISCOVERY_RECORDS,
-    INITIAL_VENDOR_SYNC_SUMMARY
-  );
+  const dataQuality = useMemo(() => {
+    return computeDataQualityMetrics(
+      devices,
+      poles,
+      events,
+      INITIAL_VENDOR_DISCOVERY_RECORDS,
+      INITIAL_VENDOR_SYNC_SUMMARY
+    );
+  }, [devices, poles, events]);
 
-  // Vendor conflict records
-  const vendorConflicts = INITIAL_VENDOR_DISCOVERY_RECORDS.filter(
-    (r) => r.matchStatus === 'Conflict'
-  );
+  // 1. Vendor conflict records
+  const vendorConflicts = useMemo(() => {
+    return INITIAL_VENDOR_DISCOVERY_RECORDS.filter((r) => r.matchStatus === 'Conflict');
+  }, []);
 
-  // Stale contact devices marked online
-  const now = new Date().getTime();
-  const onlineStaleDevices = devices.filter((d) => {
-    if (d.connectivityState !== 'online') return false;
-    if (!d.lastContactAt) return true;
-    const contactMs = new Date(d.lastContactAt).getTime();
-    return now - contactMs > 24 * 3600 * 1000;
-  });
+  // 2. Stale contact devices marked online
+  const onlineStaleDevices = useMemo(() => {
+    const now = new Date().getTime();
+    return devices.filter((d) => {
+      if (d.connectivityState !== 'online') return false;
+      if (!d.lastContactAt) return true;
+      const contactMs = new Date(d.lastContactAt).getTime();
+      return now - contactMs > 24 * 3600 * 1000;
+    });
+  }, [devices]);
 
-  // Poles without location
-  const unlocatedPoles = poles.filter((p) => p.lifecycle !== 'Deleted' && !p.location);
+  // 3. Poles without location
+  const unlocatedPoles = useMemo(() => {
+    return poles.filter((p) => p.lifecycle !== 'Deleted' && !p.location);
+  }, [poles]);
+
+  // 4. Optical evidence & clip stats
+  const evidenceStats = useMemo(() => {
+    const totalEvents = events.length;
+    const withSnapshot = events.filter((e) => (e.snapshots && e.snapshots.length > 0) || (e as any).hasSnapshot).length;
+    const withClip = events.filter((e) => (e as any).videoClipAvailable || (e as any).evidence?.clipUrl).length;
+    const snapshotRate = totalEvents > 0 ? Math.round((withSnapshot / totalEvents) * 100) : 0;
+    const clipRate = totalEvents > 0 ? Math.round((withClip / totalEvents) * 100) : 0;
+    return {
+      totalEvents,
+      withSnapshot,
+      withClip,
+      snapshotRate,
+      clipRate,
+    };
+  }, [events]);
 
   return (
     <div className="space-y-6">
-      {/* 1. Data Integrity & Trust Scorecard */}
+      {/* SECTION 1: Vendor Edge Synchronization & Hardware Conflicts */}
       <ReportSection
-        id="data-quality-scorecard"
-        title="Data Trust & System Health Scorecard"
-        description="Comprehensive audit of vendor synchronization freshness, record discrepancies, unlocated assets, and simulation share."
+        id="section-vendor-conflicts"
+        title="Vendor Edge Synchronization & Hardware Conflicts"
+        description="Edge vendor discovery records where hardware serial collides with an existing FALCON identifier or library driver."
+        viewAllLink={{ label: 'Manage vendor records in Vendor Discovery', href: '/assets/inventory/vendor-discovery' }}
+        topLimitNotice="Showing hardware serial conflicts requiring resolution."
       >
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-2 text-xs font-medium text-primary mb-1">
-                <RefreshCw className="size-3.5" />
-                <span>Vendor Sync Freshness</span>
-              </div>
-              <div className="text-2xl font-bold text-foreground">
-                {dataQuality.vendorSyncAgeMinutes} min ago
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">Edge telemetry feed</div>
-            </div>
+        {vendorConflicts.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/10">
+            <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
+            <p className="font-semibold text-foreground text-xs">Zero Vendor Conflicts</p>
+            <p className="text-[11px]">All discovered vendor hardware records cleanly map to the FALCON device registry.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-border/60">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground">
+                  <th className="py-2.5 px-3 font-semibold">Vendor Serial</th>
+                  <th className="py-2.5 px-3 font-semibold">Vendor Model</th>
+                  <th className="py-2.5 px-3 font-semibold">FALCON Target</th>
+                  <th className="py-2.5 px-3 font-semibold">Conflict Description</th>
+                  <th className="py-2.5 px-3 font-semibold text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {vendorConflicts.map((c) => (
+                  <tr key={c.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-semibold text-foreground">
+                      {c.serial}
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground font-medium">
+                      <div>{c.vendorName}</div>
+                      <div className="text-[10px] text-muted-foreground">{c.model}</div>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-primary font-semibold">
+                      {c.matchedFalconId || 'DEV-001'}
+                    </td>
+                    <td className="py-2.5 px-3 text-rose-500 font-medium">
+                      {c.conflictReason || 'Mapped to another vendor device serial'}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <Link
+                        to="/assets/inventory/vendor-discovery"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                      >
+                        <span>Resolve</span>
+                        <ExternalLink className="size-2.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ReportSection>
 
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-2 text-xs font-medium text-rose-500 mb-1">
-                <ShieldAlert className="size-3.5" />
-                <span>Vendor Conflicts</span>
-              </div>
-              <div className="text-2xl font-bold text-foreground">{dataQuality.vendorConflicts}</div>
-              <div className="text-xs text-muted-foreground mt-1">Serial-to-ID collision</div>
-            </div>
+      {/* SECTION 2: Telemetry Contradictions (Online State with Stale Contact) */}
+      <ReportSection
+        id="section-telemetry-contradictions"
+        title="Telemetry Contradictions Audit (Online with Stale Heartbeat)"
+        description="Physical devices flagged as 'online' in registry but failing to transmit telemetry packets for > 24 hours."
+        viewAllLink={{ label: 'View all offline & stale devices in Inventory', href: '/assets/inventory?status=offline' }}
+        topLimitNotice="Showing top 10 telemetry contradictions."
+      >
+        {onlineStaleDevices.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/10">
+            <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
+            <p className="font-semibold text-foreground text-xs">No State Contradictions</p>
+            <p className="text-[11px]">All online devices have verified active heartbeat telemetry.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-border/60">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground">
+                  <th className="py-2.5 px-3 font-semibold">Device</th>
+                  <th className="py-2.5 px-3 font-semibold">Stated State</th>
+                  <th className="py-2.5 px-3 font-semibold">Last Contact (MYT)</th>
+                  <th className="py-2.5 px-3 font-semibold">Mounted Pole</th>
+                  <th className="py-2.5 px-3 font-semibold text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {onlineStaleDevices.slice(0, 10).map((d) => (
+                  <tr key={d.identifier} className="hover:bg-muted/20 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-semibold text-foreground">
+                      <Link
+                        to={`/assets/inventory/devices/${d.identifier}`}
+                        className="text-primary hover:underline"
+                      >
+                        {d.identifier}
+                      </Link>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                        <WifiOff className="size-3" />
+                        ONLINE (&gt;24h silence)
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground font-mono">
+                      {d.lastContactAt ? formatAbsoluteMYT(d.lastContactAt) : 'Never received'}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                      {d.installedPoleId || 'Not installed'}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <Link
+                        to={`/assets/inventory/devices/${d.identifier}`}
+                        className="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1"
+                      >
+                        <span>Inspect</span>
+                        <ArrowRight className="size-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ReportSection>
 
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-2 text-xs font-medium text-amber-500 mb-1">
-                <WifiOff className="size-3.5" />
-                <span>Online-Stale Contradictions</span>
-              </div>
-              <div className="text-2xl font-bold text-foreground">{onlineStaleDevices.length}</div>
-              <div className="text-xs text-muted-foreground mt-1">No contact in &gt; 24h</div>
-            </div>
+      {/* SECTION 3: Unlocated Pole Infrastructure Audit */}
+      <ReportSection
+        id="section-unlocated-poles"
+        title="Unlocated Pole Infrastructure Audit"
+        description="Poles registered in inventory missing verified GPS coordinates for GIS map layers."
+        viewAllLink={{ label: 'Review all poles in Assets', href: '/assets/poles' }}
+        topLimitNotice="Showing unlocated pole assets requiring survey coordinates."
+      >
+        {unlocatedPoles.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/10">
+            <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
+            <p className="font-semibold text-foreground text-xs">All Poles Located</p>
+            <p className="text-[11px]">All active poles have confirmed latitude and longitude coordinates.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-border/60">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground">
+                  <th className="py-2.5 px-3 font-semibold">Pole ID</th>
+                  <th className="py-2.5 px-3 font-semibold">Name &amp; Corridor</th>
+                  <th className="py-2.5 px-3 font-semibold">Site Scope</th>
+                  <th className="py-2.5 px-3 font-semibold">Lifecycle</th>
+                  <th className="py-2.5 px-3 font-semibold text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {unlocatedPoles.slice(0, 10).map((p) => (
+                  <tr key={p.identifier} className="hover:bg-muted/20 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-semibold text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <MapPinOff className="size-3 text-amber-500" />
+                        <span>{p.identifier}</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 text-foreground font-medium truncate max-w-xs">{p.name}</td>
+                    <td className="py-2.5 px-3 text-muted-foreground">{p.siteName || 'Unassigned'}</td>
+                    <td className="py-2.5 px-3">
+                      <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-foreground">
+                        {p.lifecycle}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <Link
+                        to={`/assets/poles/${p.identifier}`}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                      >
+                        <span>Locate</span>
+                        <ArrowRight className="size-3" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ReportSection>
 
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-2 text-xs font-medium text-purple-500 mb-1">
-                <MapPinOff className="size-3.5" />
-                <span>Unlocated Poles</span>
+      {/* SECTION 4: Optical Evidence Completeness & Simulated Share */}
+      <ReportSection
+        id="section-evidence-completeness"
+        title="Optical Evidence Completeness &amp; Simulation Share"
+        description="Audit of media evidence integrity and the proportion of synthetic demo data versus live production telemetry."
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Media Evidence Rate */}
+          <div className="p-4 rounded-xl border border-border/60 bg-muted/10 space-y-3">
+            <span className="font-semibold text-foreground text-xs block">
+              Incident Evidence Attachment Completeness
+            </span>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1.5">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Camera className="size-3.5 text-primary" />
+                    <span>Snapshots</span>
+                  </span>
+                  <span className="font-mono font-bold text-foreground">{evidenceStats.snapshotRate}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${evidenceStats.snapshotRate}%` }}
+                    className="bg-primary h-full"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground block">
+                  {evidenceStats.withSnapshot} of {evidenceStats.totalEvents} events have visual photos
+                </span>
               </div>
-              <div className="text-2xl font-bold text-foreground">{unlocatedPoles.length}</div>
-              <div className="text-xs text-muted-foreground mt-1">Missing GPS coordinates</div>
+
+              <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1.5">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Film className="size-3.5 text-blue-500" />
+                    <span>Video Clips</span>
+                  </span>
+                  <span className="font-mono font-bold text-foreground">{evidenceStats.clipRate}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${evidenceStats.clipRate}%` }}
+                    className="bg-blue-500 h-full"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground block">
+                  {evidenceStats.withClip} of {evidenceStats.totalEvents} events have recorded RTSP clips
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Simulated vs Real Data Share Banner */}
-          <div className="p-4 rounded-xl border border-border bg-card space-y-3">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-foreground font-semibold flex items-center gap-1.5">
-                <Sparkles className="size-4 text-purple-400" />
-                <span>Data Source Breakdown (Real Edge vs Simulation)</span>
+          {/* Simulation vs Real Share */}
+          <div className="p-4 rounded-xl border border-border/60 bg-muted/10 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Sparkles className="size-3.5 text-purple-400" />
+                <span>Data Provenance (Edge Telemetry vs Simulated)</span>
               </span>
               <span className="font-mono text-foreground font-bold">
-                {dataQuality.simulatedShare}% Simulated
+                {dataQuality.simulatedShare}% Synthetic
               </span>
             </div>
-            <div className="h-3 w-full bg-muted rounded-full overflow-hidden flex">
+            <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden flex">
               <div
                 style={{ width: `${100 - dataQuality.simulatedShare}%` }}
                 className="bg-emerald-500 h-full transition-all duration-500"
@@ -132,147 +344,18 @@ export const DataQualityReport: React.FC<DataQualityReportProps> = ({
                 title={`Simulated: ${dataQuality.simulatedShare}%`}
               />
             </div>
-            <div className="flex justify-between text-[11px] text-muted-foreground">
-              <span>{100 - dataQuality.simulatedShare}% Real telemetry and camera feeds</span>
-              <span>{dataQuality.simulatedShare}% Synthetic incidents and stress models</span>
+            <div className="flex justify-between text-[11px] text-muted-foreground pt-1">
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                <span>{100 - dataQuality.simulatedShare}% Live telemetry</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="size-2 rounded-full bg-purple-500" />
+                <span>{dataQuality.simulatedShare}% Simulated training events</span>
+              </span>
             </div>
           </div>
         </div>
-      </ReportSection>
-
-      {/* 2. Vendor Discovery Conflicts Audit */}
-      <ReportSection
-        id="vendor-conflicts-audit"
-        title="Vendor Discovery Serial Conflicts"
-        description="Edge vendor records where device serial matches a different FALCON identifier or library driver."
-      >
-        {vendorConflicts.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">
-            <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
-            <p className="font-medium text-foreground">Zero Vendor Conflicts</p>
-            <p>All vendor hardware records cleanly map to FALCON device registry.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="py-2.5 px-3 font-semibold">Vendor Serial</th>
-                    <th className="py-2.5 px-3 font-semibold">Vendor Device Name</th>
-                    <th className="py-2.5 px-3 font-semibold">FALCON Target</th>
-                    <th className="py-2.5 px-3 font-semibold">Conflict Description</th>
-                    <th className="py-2.5 px-3 font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {vendorConflicts.map((c) => (
-                    <tr key={c.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="py-2.5 px-3 font-mono font-medium text-foreground">
-                        {c.serial}
-                      </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">
-                        <div>{c.vendorName}</div>
-                        <div className="text-[10px]">{c.model}</div>
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-primary">
-                        {c.matchedFalconId || 'DEV-001'}
-                      </td>
-                      <td className="py-2.5 px-3 text-rose-400 font-medium">
-                        {c.conflictReason || 'Mapped to another vendor device serial'}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Link
-                          to="/assets/inventory/vendor-discovery"
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
-                        >
-                          <span>Resolve Conflict</span>
-                          <ExternalLink className="size-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </ReportSection>
-
-      {/* 3. Data Contradictions: Online State with Stale Contact */}
-      <ReportSection
-        id="data-contradictions"
-        title="Telemetry Contradictions Audit"
-        description="Hardware flagged as Online in status tables but lacking fresh heartbeat telemetry within 24 hours."
-      >
-        {onlineStaleDevices.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">
-            No telemetry state contradictions detected.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-              <AlertTriangle className="size-5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="text-xs">
-                <p className="font-semibold text-amber-400">
-                  {onlineStaleDevices.length} devices marked Online with outdated contact
-                </p>
-                <p className="text-muted-foreground mt-0.5">
-                  These records have not reported a telemetry packet in over 24 hours. The edge sync
-                  scheduler should transition their connectivityState to 'stale' or 'offline'.
-                </p>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="py-2.5 px-3 font-semibold">Device</th>
-                    <th className="py-2.5 px-3 font-semibold">Stated State</th>
-                    <th className="py-2.5 px-3 font-semibold">Last Contact (MYT)</th>
-                    <th className="py-2.5 px-3 font-semibold">Mounted Pole</th>
-                    <th className="py-2.5 px-3 font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {onlineStaleDevices.map((d) => (
-                    <tr key={d.identifier} className="hover:bg-muted/50 transition-colors">
-                      <td className="py-2.5 px-3 font-mono font-medium text-foreground">
-                        <Link
-                          to={`/assets/inventory/devices/${d.identifier}`}
-                          className="text-primary hover:underline flex items-center gap-1.5"
-                        >
-                          {d.identifier}
-                          <ExternalLink className="size-3 opacity-60" />
-                        </Link>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          ONLINE (Contradiction)
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">
-                        {d.lastContactAt ? formatAbsoluteMYT(d.lastContactAt) : 'Never'}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-muted-foreground">
-                        {d.installedPoleId || 'Not installed'}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Link
-                          to={`/assets/inventory/devices/${d.identifier}`}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Force Sync
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </ReportSection>
     </div>
   );
