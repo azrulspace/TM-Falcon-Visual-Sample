@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ChevronDown,
   ChevronUp,
@@ -6,6 +7,7 @@ import {
   Table as TableIcon,
   BarChart2,
   AlertTriangle,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +22,8 @@ export interface ReportSectionProps {
   status?: 'computable now' | 'needs backend' | 'not available';
   missingReason?: string;
   defaultExpanded?: boolean;
+  viewAllLink?: { label: string; href: string };
+  topLimitNotice?: string;
   children: React.ReactNode;
   tableContent?: React.ReactNode;
   className?: string;
@@ -36,6 +40,8 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
   status = 'computable now',
   missingReason,
   defaultExpanded = true,
+  viewAllLink,
+  topLimitNotice,
   children,
   tableContent,
   className = '',
@@ -149,6 +155,19 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             <div className="animate-in fade-in duration-150">{tableContent}</div>
           ) : (
             <div className="animate-in fade-in duration-150">{children}</div>
+          )}
+
+          {viewAllLink && (
+            <div className="pt-3 mt-3 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+              <span>{topLimitNotice || 'Showing top items for this view.'}</span>
+              <Link
+                to={viewAllLink.href}
+                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+              >
+                <span>{viewAllLink.label}</span>
+                <ArrowRight className="size-3" />
+              </Link>
+            </div>
           )}
         </div>
       )}
