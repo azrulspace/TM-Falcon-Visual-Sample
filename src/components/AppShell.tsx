@@ -22,6 +22,7 @@ import { useUiMode } from '@/hooks/useUiMode';
 import { useOverview } from '@/contexts/OverviewContext';
 import { formatStagingLiveClock } from '@/lib/dateTime';
 import { formatId } from '@/lib/utils';
+import { getReportBySlug } from '@/data/reportsCatalog';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -194,6 +195,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (path.startsWith('/planned/work-queue')) return ['Risk', 'Work queue'];
     if (path.startsWith('/planned/devices')) return ['Assets', 'Device health'];
     if (path.startsWith('/planned/fleet')) return ['Assets', 'Infrastructure health'];
+    if (path === '/reports/schedules') return ['System', 'Reports', 'Schedules'];
+    if (path === '/reports/saved') return ['System', 'Reports', 'Saved runs'];
+    if (path.startsWith('/reports/')) {
+      const slug = path.split('/')[2];
+      const report = getReportBySlug(slug);
+      return ['System', 'Reports', report?.name || 'Report'];
+    }
     if (path.startsWith('/reports') || path.startsWith('/planned/reports')) return ['System', 'Reports'];
     if (path.startsWith('/planned/admin')) return ['System', 'Administration'];
     return ['Dashboard', path.replace('/', '').toUpperCase()];

@@ -1,6 +1,10 @@
 export type ReportCategory =
+  | 'Overview'
   | 'Operations'
   | 'Cases'
+  | 'Network'
+  | 'Planning'
+  | 'Review'
   | 'Network and devices'
   | 'Risk and planning'
   | 'Assets'

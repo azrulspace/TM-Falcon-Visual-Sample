@@ -25,6 +25,8 @@ import PlannedPage from './pages/PlannedPage';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
 import Reports from './pages/Reports';
+import SchedulesPage from './pages/SchedulesPage';
+import SavedRunsPage from './pages/SavedRunsPage';
 import { ReportViewerPage } from './pages/ReportViewerPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -72,6 +74,8 @@ export default function App() {
                     <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                     
                     <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                    <Route path="/reports/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
+                    <Route path="/reports/saved" element={<ProtectedRoute><SavedRunsPage /></ProtectedRoute>} />
                     <Route path="/reports/:slug" element={<ProtectedRoute><ReportViewerPage /></ProtectedRoute>} />
                     <Route path="/planned/reports" element={<Navigate to="/reports" replace />} />
                     <Route path="/planned/reports/*" element={<Navigate to="/reports" replace />} />
