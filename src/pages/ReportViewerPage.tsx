@@ -73,7 +73,7 @@ export const ReportViewerPage: React.FC = () => {
   const [definitionsOpen, setDefinitionsOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
-  const { accountLabel } = useAppContext();
+  const { accountLabel, selectedSite } = useAppContext();
   const userRole = useMemo(() => getRoleFromAccountLabel(accountLabel), [accountLabel]);
   const permissions = useMemo(() => getReportPermissions(userRole), [userRole]);
 
@@ -91,9 +91,9 @@ export const ReportViewerPage: React.FC = () => {
     }
   }, [report, slug, searchParams, navigate]);
 
-  // Read URL search params
+  // Read URL search params (defaults site to header site selector)
   const periodParam = (searchParams.get('period') as PeriodPreset) || report?.defaultPeriod || 'today';
-  const siteParam = searchParams.get('site') || 'All sites';
+  const siteParam = searchParams.get('site') || selectedSite || 'Teluk Panglima Garang';
   const compareParam = searchParams.get('compare') !== 'false'; // default true
   const simParam = searchParams.get('sim') === 'true'; // default false
   const customStartParam = searchParams.get('customStart') || undefined;
@@ -312,6 +312,55 @@ export const ReportViewerPage: React.FC = () => {
     dataQualityMetrics,
   ]);
 
+  const actionableDataNotes = useMemo(() => {
+    const list = [];
+    if (dataQualityMetrics.onlineStale > 0) {
+      list.push({
+        id: 'stale-contact',
+        count: dataQualityMetrics.onlineStale,
+        label: `${dataQualityMetrics.onlineStale} devices online with stale contact`,
+        description: 'Devices report online status but have not transmitted telemetry in >24 hours.',
+        severity: 'medium' as const,
+        actionLabel: 'Inspect in Network health',
+        actionHref: '/reports/network-health',
+      });
+    }
+    if (deviceMetrics.byState.offline > 0) {
+      list.push({
+        id: 'offline-devices',
+        count: deviceMetrics.byState.offline,
+        label: `${deviceMetrics.byState.offline} devices currently offline`,
+        description: 'Hardware not responding to ping or heartbeat signals.',
+        severity: 'high' as const,
+        actionLabel: 'View offline devices',
+        actionHref: '/assets/inventory',
+      });
+    }
+    if (dataQualityMetrics.polesWithoutLocation > 0) {
+      list.push({
+        id: 'unlocated-poles',
+        count: dataQualityMetrics.polesWithoutLocation,
+        label: `${dataQualityMetrics.polesWithoutLocation} poles missing GPS coordinates`,
+        description: 'Physical pole assets without coordinates cannot be placed on the operations map.',
+        severity: 'medium' as const,
+        actionLabel: 'Review unlocated poles',
+        actionHref: '/assets/poles',
+      });
+    }
+    if (dataQualityMetrics.vendorConflicts > 0) {
+      list.push({
+        id: 'vendor-conflicts',
+        count: dataQualityMetrics.vendorConflicts,
+        label: `${dataQualityMetrics.vendorConflicts} Edge vendor hardware conflicts`,
+        description: 'Vendor serial numbers conflict with existing FALCON device records.',
+        severity: 'high' as const,
+        actionLabel: 'Resolve in Vendor discovery',
+        actionHref: '/assets/inventory/vendor-discovery',
+      });
+    }
+    return list;
+  }, [dataQualityMetrics, deviceMetrics.byState.offline]);
+
   // Action handlers
   const handleShareLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
@@ -458,14 +507,15 @@ export const ReportViewerPage: React.FC = () => {
         onResetDefaults={resetDefaults}
       />
 
-      {/* Data Notes & Freshness Bar */}
+      {/* Data Notes & Freshness Bar (Plain summary sentence + actionable notes popover) */}
       <ReportDataNotesBar
         range={dateRange}
         siteName={parameters.site}
-        recordCount={eventMetrics.total + caseMetrics.casesOpened}
-        recordLabel="events and cases"
+        eventCount={eventMetrics.total}
+        caseCount={caseMetrics.casesOpened}
+        deviceCount={deviceMetrics.devicesTotal}
+        dataNotes={actionableDataNotes}
         onOpenDefinitions={() => setDefinitionsOpen(true)}
-        dataQualityIssuesCount={dataQualityMetrics.onlineStale + dataQualityMetrics.polesWithoutLocation}
       />
 
       {/* Primary KPI Strip */}

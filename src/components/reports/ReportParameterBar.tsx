@@ -34,13 +34,13 @@ export interface ReportParameterBarProps {
 }
 
 const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
-  { value: 'today', label: 'Today (Oct 21)' },
-  { value: 'yesterday', label: 'Yesterday (Oct 20)' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
   { value: 'this_week', label: 'This week (Mon-Sun)' },
   { value: 'last_week', label: 'Last week' },
   { value: 'last_7_days', label: 'Last 7 days' },
-  { value: 'this_month', label: 'This month (Oct 2026)' },
-  { value: 'last_month', label: 'Last month (Sep 2026)' },
+  { value: 'this_month', label: 'This month' },
+  { value: 'last_month', label: 'Last month' },
   { value: 'last_30_days', label: 'Last 30 days' },
   { value: 'custom', label: 'Custom range...' },
 ];
