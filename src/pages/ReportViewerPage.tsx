@@ -19,6 +19,9 @@ import { DailyOperationsReport } from '@/components/reports/templates/DailyOpera
 import { WeeklyOperationsReport } from '@/components/reports/templates/WeeklyOperationsReport';
 import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
 import { CaseManagementReport } from '@/components/reports/templates/CaseManagementReport';
+import { DeviceHealthReport } from '@/components/reports/templates/DeviceHealthReport';
+import { AssetInventoryReport } from '@/components/reports/templates/AssetInventoryReport';
+import { RiskPreventiveWorkReport } from '@/components/reports/templates/RiskPreventiveWorkReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
 import { ScheduleReportDialog } from '@/components/reports/ScheduleReportDialog';
@@ -471,6 +474,27 @@ export const ReportViewerPage: React.FC = () => {
             cases={cases}
             dateRange={dateRange}
             parameters={parameters}
+          />
+        ) : report.id === 'R6' ? (
+          <DeviceHealthReport
+            devices={devices}
+            range={dateRange}
+            siteFilter={parameters.site}
+          />
+        ) : report.id === 'R7' ? (
+          <AssetInventoryReport
+            poles={poles}
+            cableSpans={cableSpans}
+            devices={devices}
+            range={dateRange}
+            siteFilter={parameters.site}
+          />
+        ) : report.id === 'R8' ? (
+          <RiskPreventiveWorkReport
+            segments={segments}
+            events={events}
+            range={dateRange}
+            siteFilter={parameters.site}
           />
         ) : report.id === 'R10' ? (
           <ExecutiveSummaryReport
