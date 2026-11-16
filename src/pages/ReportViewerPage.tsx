@@ -19,8 +19,8 @@ import { DefinitionsDrawer } from '@/components/reports/DefinitionsDrawer';
 import { OperationsReport } from '@/components/reports/templates/OperationsReport';
 import { CasesResponseReport } from '@/components/reports/templates/CasesResponseReport';
 import { NetworkHealthReport } from '@/components/reports/templates/NetworkHealthReport';
+import { AssetsCoverageReport } from '@/components/reports/templates/AssetsCoverageReport';
 import { EventIncidentAnalysisReport } from '@/components/reports/templates/EventIncidentAnalysisReport';
-import { AssetInventoryReport } from '@/components/reports/templates/AssetInventoryReport';
 import { RiskPreventiveWorkReport } from '@/components/reports/templates/RiskPreventiveWorkReport';
 import { ExecutiveSummaryReport } from '@/components/reports/templates/ExecutiveSummaryReport';
 import { AuditLogReport } from '@/components/reports/templates/AuditLogReport';
@@ -616,15 +616,15 @@ export const ReportViewerPage: React.FC = () => {
             range={dateRange}
             siteFilter={parameters.site}
           />
-        ) : report.id === 'R7' ? (
-          <AssetInventoryReport
+        ) : report.slug === 'assets-coverage' || report.id === 'R7' ? (
+          <AssetsCoverageReport
             poles={poles}
             cableSpans={cableSpans}
             devices={devices}
             range={dateRange}
             siteFilter={parameters.site}
           />
-        ) : report.id === 'R8' ? (
+        ) : report.slug === 'risk-preventive-work' || report.id === 'R8' ? (
           <RiskPreventiveWorkReport
             segments={segments}
             events={events}
