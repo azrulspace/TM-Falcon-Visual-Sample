@@ -400,4 +400,104 @@ describe('Reports & Audits: Invariant Tests', () => {
       assert.ok(dq.onlineStale >= 0);
     });
   });
+
+  describe('7. Drill-Down & Operational Equality Invariants', () => {
+    it('guarantees priority breakdown sum matches total events exactly', () => {
+      const mockEventsList: FalconEvent[] = [
+        {
+          id: 'EVT-TEST-1',
+          type: 'Monkey invasion',
+          priority: 'Critical',
+          state: 'New',
+          source: 'Edge service',
+          asset: 'AST-001',
+          captured: '2026-10-21T10:00:00+08:00',
+        } as FalconEvent,
+        {
+          id: 'EVT-TEST-2',
+          type: 'Heavy rain',
+          priority: 'High',
+          state: 'Acknowledged',
+          source: 'Edge service',
+          asset: 'AST-002',
+          captured: '2026-10-21T10:05:00+08:00',
+        } as FalconEvent,
+        {
+          id: 'EVT-TEST-3',
+          type: 'Vibration',
+          priority: 'Medium',
+          state: 'In case',
+          source: 'Edge service',
+          asset: 'AST-001',
+          captured: '2026-10-21T10:10:00+08:00',
+        } as FalconEvent,
+        {
+          id: 'EVT-TEST-4',
+          type: 'High temp',
+          priority: 'Low',
+          state: 'Resolved',
+          source: 'Edge service',
+          asset: 'AST-003',
+          captured: '2026-10-21T10:15:00+08:00',
+        } as FalconEvent,
+      ];
+
+      const range = {
+        preset: 'today' as const,
+        startIso: '2026-10-21T00:00:00+08:00',
+        endIso: '2026-10-22T00:00:00+08:00',
+        label: 'Today',
+      };
+
+      const metrics = computeEventMetrics(mockEventsList, range, 'all', true);
+      const prioritySum =
+        metrics.byPriority.Critical +
+        metrics.byPriority.High +
+        metrics.byPriority.Medium +
+        metrics.byPriority.Low;
+
+      assert.equal(metrics.total, 4);
+      assert.equal(prioritySum, metrics.total);
+      assert.equal(metrics.unacknowledgedNow, 1);
+    });
+
+    it('guarantees case backlog equals all open, in-progress, and in-review cases', () => {
+      const mockCases: FalconCase[] = [
+        {
+          id: 'CAS-1',
+          title: 'Case 1',
+          status: 'Open',
+          severity: 'Critical',
+          createdAt: '2026-10-21T08:00:00+08:00',
+        } as FalconCase,
+        {
+          id: 'CAS-2',
+          title: 'Case 2',
+          status: 'In progress',
+          severity: 'High',
+          createdAt: '2026-10-21T09:00:00+08:00',
+        } as FalconCase,
+        {
+          id: 'CAS-3',
+          title: 'Case 3',
+          status: 'Closed',
+          severity: 'Low',
+          createdAt: '2026-10-21T07:00:00+08:00',
+          closedAt: '2026-10-21T11:00:00+08:00',
+        } as FalconCase,
+      ];
+
+      const range = {
+        preset: 'today' as const,
+        startIso: '2026-10-21T00:00:00+08:00',
+        endIso: '2026-10-22T00:00:00+08:00',
+        label: 'Today',
+      };
+
+      const metrics = computeCaseMetrics(mockCases, range);
+      assert.equal(metrics.casesOpened, 3);
+      assert.equal(metrics.casesClosed, 1);
+      assert.equal(metrics.casesOpenAtEnd, 2);
+    });
+  });
 });
