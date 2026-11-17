@@ -1,7 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { METRIC_DEFINITIONS_LIST, getMetricById, getMetricsForReport } from '../lib/metricDictionary.ts';
-import { REPORTS_CATALOG } from '../data/reportsCatalog.ts';
+import {
+  REPORTS_CATALOG,
+  CONSOLIDATED_REPORTS,
+  OLD_SLUG_MAP,
+  getDefaultReportForUser,
+} from '../data/reportsCatalog.ts';
+import { INITIAL_DEVICES_REGISTRY } from '../data/devicesRegistry.ts';
 import {
   computeReportDateRange,
   computeComparisonRange,
@@ -498,6 +504,64 @@ describe('Reports & Audits: Invariant Tests', () => {
       assert.equal(metrics.casesOpened, 3);
       assert.equal(metrics.casesClosed, 1);
       assert.equal(metrics.casesOpenAtEnd, 2);
+    });
+  });
+
+  describe('8. Consolidated 8-Report Catalog & Invariant Routing', () => {
+    it('defines exactly 8 consolidated reports in catalog', () => {
+      assert.equal(CONSOLIDATED_REPORTS.length, 8);
+      const canonicalSlugs = [
+        'executive-summary',
+        'operations',
+        'cases-response',
+        'network-health',
+        'risk-preventive-work',
+        'assets-coverage',
+        'audit-log',
+        'data-quality',
+      ];
+      assert.deepEqual(
+        CONSOLIDATED_REPORTS.map((r) => r.slug).sort(),
+        canonicalSlugs.sort()
+      );
+    });
+
+    it('every consolidated report defines at least 1 and at most 5 primary KPIs', () => {
+      for (const report of CONSOLIDATED_REPORTS) {
+        assert.ok(
+          report.metricIds.length >= 1 && report.metricIds.length <= 5,
+          `Report ${report.slug} must define between 1 and 5 primary metrics, but got ${report.metricIds.length}`
+        );
+      }
+    });
+
+    it('OLD_SLUG_MAP maps all 12 legacy templates to canonical consolidated slugs', () => {
+      assert.equal(OLD_SLUG_MAP['daily-operations'].targetSlug, 'operations');
+      assert.equal(OLD_SLUG_MAP['weekly-operations'].targetSlug, 'operations');
+      assert.equal(OLD_SLUG_MAP['incident-analysis'].targetSlug, 'operations');
+      assert.equal(OLD_SLUG_MAP['evidence-clip-usage'].targetSlug, 'operations');
+      assert.equal(OLD_SLUG_MAP['response-sla'].targetSlug, 'cases-response');
+      assert.equal(OLD_SLUG_MAP['case-management'].targetSlug, 'cases-response');
+      assert.equal(OLD_SLUG_MAP['device-health'].targetSlug, 'network-health');
+      assert.equal(OLD_SLUG_MAP['asset-inventory'].targetSlug, 'assets-coverage');
+      assert.equal(OLD_SLUG_MAP['risk-preventive-work'].targetSlug, 'risk-preventive-work');
+      assert.equal(OLD_SLUG_MAP['executive-summary'].targetSlug, 'executive-summary');
+      assert.equal(OLD_SLUG_MAP['audit-log'].targetSlug, 'audit-log');
+      assert.equal(OLD_SLUG_MAP['data-quality'].targetSlug, 'data-quality');
+    });
+
+    it('getDefaultReportForUser maps roles to operational defaults', () => {
+      assert.equal(getDefaultReportForUser('Operator').slug, 'operations');
+      assert.equal(getDefaultReportForUser('Supervisor').slug, 'operations');
+      assert.equal(getDefaultReportForUser('Supervisor').preset, 'last_week');
+      assert.equal(getDefaultReportForUser('Planner').slug, 'risk-preventive-work');
+      assert.equal(getDefaultReportForUser('Executive').slug, 'executive-summary');
+      assert.equal(getDefaultReportForUser('Administrator').slug, 'executive-summary');
+    });
+
+    it('guarantees device registry contains zero LiDAR sensors (cameras and speakers only)', () => {
+      const lidarCount = INITIAL_DEVICES_REGISTRY.filter((d) => d.type === ('LiDAR sensor' as any)).length;
+      assert.equal(lidarCount, 0, 'No LiDAR sensor records must exist in INITIAL_DEVICES_REGISTRY');
     });
   });
 });

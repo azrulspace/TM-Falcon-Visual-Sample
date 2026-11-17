@@ -565,7 +565,7 @@ export function buildJalanBandarLamaPreviewDataset(): {
     return {
       id: `DEV-JBL-${String(num).padStart(2, '0')}`,
       name: `JBL Sensor ${num}`,
-      type: num % 3 === 0 ? 'LiDAR sensor' : num === 10 ? 'Gateway' : 'Camera',
+      type: num % 3 === 0 ? 'Speaker' : num === 10 ? 'Gateway' : 'Camera',
       lifecycle: 'Active',
       site: JALAN_BANDAR_LAMA_SITE.name,
       status: num === 4 ? 'offline' : num === 7 ? 'stale' : 'online',

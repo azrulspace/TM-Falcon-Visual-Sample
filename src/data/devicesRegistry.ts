@@ -378,13 +378,13 @@ const STAGING_CAMERAS: DeviceRecord[] = [
   }),
 ];
 
-const DEV_004_LIDAR: DeviceRecord = {
+const DEV_004_CAMERA: DeviceRecord = {
   identifier: 'DEV-004',
   name: 'DEV-004',
-  type: 'LiDAR sensor',
-  manufacturer: 'Sample vendor',
-  library: 'Pilot_Edge_v1',
-  model: 'Pilot LiDAR',
+  type: 'Camera',
+  manufacturer: 'Hikvision',
+  library: 'Hikvision_Edge_v2',
+  model: 'DS-2CD2043G2-I',
   serial: 'SN_DEV_004',
   vendorDeviceId: 'SN_DEV_004',
   identifierKind: 'Registry',
@@ -405,13 +405,13 @@ const DEV_004_LIDAR: DeviceRecord = {
     checkedAt: '2026-10-20T09:00:00+08:00',
     message: 'Timeout waiting for Edge ping after 5000 ms',
   },
-  components: ['LiDAR head', 'RS-485 bridge'],
+  components: ['Optical sensor', 'IR illuminator'],
   configVersion: 'cfg-2',
   configStatus: 'Partly applied',
   configReportedAt: '2026-10-03T14:00:00+08:00',
   configuration: {
-    scan_rate_hz: 15,
-    encroachment_distance_m: 3.5,
+    resolution: '1440p',
+    framerate: 25,
   },
   configVersions: [
     {
@@ -512,7 +512,7 @@ const DEV_004_LIDAR: DeviceRecord = {
       from: '2026-09-25T09:15:00+08:00',
       to: null,
       actor: 'Admin',
-      note: 'Canal bank LiDAR perimeter unit',
+      note: 'Canal bank optical surveillance camera',
     },
   ],
   healthReports: [
@@ -870,7 +870,7 @@ const REMAINING_FLEET_DEVICES: DeviceRecord[] = [
 
 export const INITIAL_DEVICES_REGISTRY: DeviceRecord[] = [
   ...STAGING_CAMERAS.slice(0, 3),
-  DEV_004_LIDAR,
+  DEV_004_CAMERA,
   ...STAGING_CAMERAS.slice(3),
   ...STAGING_NOT_INSTALLED_DEVICES,
   ...REMAINING_FLEET_DEVICES,
@@ -951,7 +951,7 @@ export function buildJalanBandarLamaPreviewDevices(): {
   const devices: DeviceRecord[] = Array.from({ length: 10 }, (_, i): DeviceRecord => {
     const num = i + 1;
     const isPhotoHalf = num > 5;
-    const type: DeviceTypeCategory = num === 10 ? 'Gateway' : num % 3 === 0 ? 'LiDAR sensor' : 'Camera';
+    const type: DeviceTypeCategory = num === 10 ? 'Gateway' : num % 3 === 0 ? 'Speaker' : 'Camera';
     const connectivityState: DeviceConnectivityState =
       num === 4 ? 'offline' : num === 7 ? 'stale' : 'online';
     const lastContactAt =
