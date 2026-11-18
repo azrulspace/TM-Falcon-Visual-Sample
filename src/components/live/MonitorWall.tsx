@@ -209,7 +209,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
   return (
     <div ref={wallContainerRef} className="flex flex-col gap-4 w-full">
       {/* 1. Wall Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-card border border-border">
         {/* Left: Group Selector & Management */}
         <div className="flex items-center gap-2">
           <Popover open={groupDropdownOpen} onOpenChange={setGroupDropdownOpen}>

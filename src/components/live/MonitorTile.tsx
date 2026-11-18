@@ -132,7 +132,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
             <div className="flex items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="bg-rose-500/90 text-white border-rose-600 text-xs px-1.5 py-0 font-bold animate-pulse"
+                className="bg-destructive text-destructive-foreground border-destructive text-xs px-1.5 py-0 font-bold animate-pulse"
               >
                 LIVE
               </Badge>
