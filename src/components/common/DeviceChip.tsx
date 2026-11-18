@@ -55,7 +55,7 @@ export const DeviceChip: React.FC<DeviceChipProps> = ({
       to={targetUrl}
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[5px] bg-muted/60 hover:bg-muted border border-border/80 text-foreground hover:text-primary transition-colors font-mono text-xs font-medium cursor-pointer',
+        'inline-flex items-center gap-1.5 h-6 px-2 rounded-md bg-muted/60 hover:bg-muted border border-border/80 text-foreground hover:text-primary transition-colors font-mono text-xs font-medium cursor-pointer',
         className
       )}
       title={

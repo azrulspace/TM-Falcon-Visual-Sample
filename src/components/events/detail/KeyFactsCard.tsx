@@ -110,7 +110,7 @@ export const KeyFactsCard: React.FC<KeyFactsCardProps> = ({
               <button
                 type="button"
                 onClick={onOpenCreateCase}
-                className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-xs"
+                className="h-6 inline-flex items-center text-primary hover:underline font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-xs"
               >
                 Create case
               </button>

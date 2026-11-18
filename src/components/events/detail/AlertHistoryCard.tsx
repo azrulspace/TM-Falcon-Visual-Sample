@@ -67,7 +67,7 @@ export const AlertHistoryCard: React.FC<AlertHistoryCardProps> = ({ event }) => 
         {/* Deep Link to Scoped Event Inbox */}
         <Link
           to={targetInboxUrl}
-          className="text-xs text-primary hover:underline font-medium flex items-center gap-1.5 pt-1 cursor-pointer group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-xs"
+          className="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1.5 min-h-[32px] pt-1 cursor-pointer group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-xs"
         >
           <span>View all {olderCount} events in Event inbox</span>
           <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 stroke-[1.5]" />
