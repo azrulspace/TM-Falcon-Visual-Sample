@@ -208,3 +208,42 @@ test('Live View Phase 8: Cross-module deep link autostart URL construction and p
   assert.equal(decodeURIComponent(parsedCustom.pathname), '/live/DEV 002');
   assert.equal(parsedCustom.searchParams.get('autostart'), '1');
 });
+
+test('Live View Phase 9: Camera strip prev/next boundary invariants', () => {
+  const fleet = [
+    { identifier: 'DEV-001', connectivityState: 'online' },
+    { identifier: 'DEV-002', connectivityState: 'online' },
+    { identifier: 'DEV-003', connectivityState: 'online' },
+  ];
+
+  // First element: cannot go prev
+  const idx0 = 0;
+  const canPrev0 = idx0 > 0;
+  const canNext0 = idx0 < fleet.length - 1;
+  assert.equal(canPrev0, false);
+  assert.equal(canNext0, true);
+
+  // Last element: cannot go next
+  const idxLast = fleet.length - 1;
+  const canPrevLast = idxLast > 0;
+  const canNextLast = idxLast < fleet.length - 1;
+  assert.equal(canPrevLast, true);
+  assert.equal(canNextLast, false);
+});
+
+test('Live View Phase 9: Telemetry data usage formula boundary invariants', () => {
+  const bitrateMbps = 2.4;
+
+  // Zero seconds: exactly 0 MB
+  const zeroSeconds = 0;
+  const zeroMb = (bitrateMbps * 1000 * 1000 * zeroSeconds) / (8 * 1024 * 1024);
+  assert.equal(zeroMb, 0);
+
+  // 1 hour (3600 seconds)
+  const oneHourSeconds = 3600;
+  const oneHourMb = (bitrateMbps * 1000 * 1000 * oneHourSeconds) / (8 * 1024 * 1024);
+  // ~1030 MB
+  assert.ok(oneHourMb > 1020 && oneHourMb < 1040);
+  assert.equal(Number.isFinite(oneHourMb), true);
+  assert.equal(Number.isNaN(oneHourMb), false);
+});
