@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { DeviceWithRelations } from '@/types/devices';
 import type { LiveCameraCapabilities } from '@/types/live';
 import type { PoleRecord } from '@/types/assets';
 import { useLiveStream } from '@/contexts/LiveStreamContext';
-import { formatRelativeTime } from '@/lib/dateTime';
+import { useEvents } from '@/contexts/EventsContext';
+import { formatRelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
 import {
   Play,
   RotateCw,
@@ -15,9 +16,13 @@ import {
   Loader2,
   XCircle,
   WifiOff,
+  ChevronDown,
+  ChevronRight,
+  VideoOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LivePlayerProps {
   camera: DeviceWithRelations;
@@ -33,6 +38,12 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
   const navigate = useNavigate();
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { events } = useEvents();
+
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControlsInFullscreen, setShowControlsInFullscreen] = useState(true);
+  const fullscreenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     activeStreamingDeviceId,
@@ -53,6 +64,11 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
   const isCurrentStreaming = activeStreamingDeviceId === camera.identifier;
   const currentEffectiveState = isCurrentStreaming ? streamState : 'idle';
 
+  // Last event for this camera to display on idle poster
+  const lastEvent = useMemo(() => {
+    return events.find((e) => (e.device || '').toLowerCase().trim() === camera.identifier.toLowerCase().trim()) || null;
+  }, [events, camera.identifier]);
+
   // Vendor secondary label (e.g. KT-001)
   const vendorName = camera.vendorDeviceId && camera.vendorDeviceId !== camera.identifier ? camera.vendorDeviceId : null;
 
@@ -71,16 +87,43 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
     }
   }, [isMuted, volume]);
 
+  // Handle Fullscreen tracking and auto-hide
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFs = Boolean(document.fullscreenElement);
+      setIsFullscreen(isFs);
+      setShowControlsInFullscreen(true);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const handlePointerActivity = () => {
+    if (!isFullscreen) return;
+    setShowControlsInFullscreen(true);
+    if (fullscreenTimerRef.current) clearTimeout(fullscreenTimerRef.current);
+    fullscreenTimerRef.current = setTimeout(() => {
+      setShowControlsInFullscreen(false);
+    }, 3000);
+  };
+
   return (
     <div
       ref={playerContainerRef}
       id="falcon-live-player"
       tabIndex={0}
+      onPointerMove={handlePointerActivity}
+      onKeyDown={handlePointerActivity}
       aria-label={`Live camera feed for ${camera.identifier}`}
       className="relative w-full aspect-video rounded-xl bg-zinc-950 border border-border shadow-md overflow-hidden select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {/* Top Corners Overlay: Never covers burned-in camera text (sits in top header band) */}
-      <div className="absolute top-0 inset-x-0 h-12 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20 flex items-center justify-between px-4 pointer-events-none">
+      <div
+        className={`absolute top-0 inset-x-0 h-12 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20 flex items-center justify-between px-4 pointer-events-none transition-opacity duration-300 ${
+          isFullscreen && !showControlsInFullscreen ? 'opacity-0' : 'opacity-100'
+        }`}
+      >
         {/* Top Left: Identifier & Secondary Vendor Name */}
         <div className="flex items-center gap-2">
           <span className="font-mono text-sm font-bold text-white drop-shadow-md">
@@ -118,7 +161,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
       {/* STATE 1: IDLE */}
       {currentEffectiveState === 'idle' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-zinc-950">
-          {/* Dimmed poster background */}
+          {/* Dimmed poster background with real snapshot */}
           <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
             <img
               src="/monkey-fiber.jpg"
@@ -140,9 +183,15 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
             <h3 className="text-base font-bold text-white mb-1">
               Start live video
             </h3>
-            <p className="text-xs text-zinc-300 mb-2">
+            <p className="text-xs text-zinc-300 mb-1">
               Live video is requested from the camera when you press Start.
             </p>
+
+            {lastEvent && (
+              <span className="text-[11px] text-zinc-400 mb-2">
+                Last recorded event: {lastEvent.type} ({formatRelativeTime(lastEvent.captured)})
+              </span>
+            )}
 
             {capabilities.isMobileData && (
               <div className="text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 mt-1">
@@ -205,7 +254,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
       {/* STATE 3: LIVE VIDEO STREAM */}
       {currentEffectiveState === 'live' && (
         <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
-          {/* Video element rendering simulated Edge RTSP/HLS feed */}
+          {/* Simulated Edge RTSP video stream */}
           <video
             ref={videoRef}
             src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
@@ -214,6 +263,25 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
             playsInline
             className="w-full h-full object-cover"
           />
+
+          {/* Burned-in camera text simulation (matching staging DEV-001) */}
+          {camera.identifier === 'DEV-001' && (
+            <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between text-yellow-300 font-mono text-[11px] drop-shadow-md z-10 opacity-90 select-none">
+              <div className="flex justify-between items-start">
+                <span>11-18-2026 Wed 13:25:13</span>
+                <span className="border border-yellow-300 px-1 py-0.2 rounded text-[10px]">
+                  [🔋 94%]
+                </span>
+              </div>
+              <div className="flex justify-between items-end">
+                <div className="leading-tight">
+                  <div>Data usage pre alarm</div>
+                  <div>Data Plan: 1000MB  Data Used: 2GB 692MB</div>
+                </div>
+                <div>KT 001</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -250,14 +318,26 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                     <ExternalLink className="size-3 mr-1.5" />
                     Open device
                   </Button>
-                  <Button
-                    size="sm"
-                    disabled
-                    title="Camera is currently offline"
-                    className="h-8 text-xs opacity-50 cursor-not-allowed"
-                  >
-                    Retry
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <span>
+                            <Button
+                              size="sm"
+                              disabled
+                              className="h-8 text-xs opacity-50 cursor-not-allowed"
+                            >
+                              Retry
+                            </Button>
+                          </span>
+                        }
+                      />
+                      <TooltipContent side="top" className="text-xs">
+                        Retry is disabled because the camera is currently offline.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </>
             ) : failureVariant === 'vendor_unknown' ? (
@@ -300,7 +380,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                   <Button
                     size="sm"
                     onClick={() => retryStream(camera.identifier)}
-                    className="h-8 text-xs bg-primary text-primary-foreground"
+                    className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <RotateCw className="size-3 mr-1.5" />
                     Retry connection
@@ -317,6 +397,26 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                   You do not have permission to watch live video.
                 </p>
               </>
+            ) : failureVariant === 'stream_unsupported' ? (
+              <>
+                <div className="size-12 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">
+                  <VideoOff className="size-6" />
+                </div>
+                <h3 className="text-base font-bold text-white">Stream Unsupported</h3>
+                <p className="text-xs text-zinc-400">
+                  This camera does not provide live video.
+                </p>
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(`/assets/inventory/devices/${encodeURIComponent(camera.identifier)}`)}
+                    className="h-8 text-xs text-zinc-200 border-zinc-700 hover:bg-zinc-800"
+                  >
+                    Open device
+                  </Button>
+                </div>
+              </>
             ) : (
               <>
                 <div className="size-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
@@ -326,11 +426,31 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                 <p className="text-xs text-zinc-400">
                   {failureMessage || 'Could not initialize live video decoder.'}
                 </p>
+
+                {/* Collapsible Details */}
+                <div className="w-full text-left pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setDetailsExpanded(!detailsExpanded)}
+                    className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer mx-auto"
+                  >
+                    {detailsExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                    <span>{detailsExpanded ? 'Hide technical details' : 'Show technical details'}</span>
+                  </button>
+                  {detailsExpanded && (
+                    <div className="mt-2 p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-[11px] font-mono text-zinc-300 break-all">
+                      Error: RTSP_DECODER_INIT_FAILED (code: 504 Gateway Timeout)
+                      Device: {camera.identifier} ({camera.model})
+                      Timestamp: {formatAbsoluteMYT(new Date())}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2 pt-2">
                   <Button
                     size="sm"
                     onClick={() => retryStream(camera.identifier)}
-                    className="h-8 text-xs bg-primary text-primary-foreground"
+                    className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <RotateCw className="size-3 mr-1.5" />
                     Retry
