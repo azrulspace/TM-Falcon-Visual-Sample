@@ -53,6 +53,7 @@ import { StillWatchingDialog } from '@/components/live/StillWatchingDialog';
 import type { PoleRecord } from '@/types/assets';
 import { isLivePreviewEnabled } from '@/preview/live/previewConfig';
 import { getPreviewCameras } from '@/preview/live/previewFixtures';
+import { PreviewLabSheet } from '@/preview/live/PreviewLabSheet';
 
 export const LiveViewRedirect: React.FC = () => {
   const { richDevices, poles } = useAssets();
@@ -118,13 +119,21 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
     return 'single';
   }, [explicitMode, location.pathname]);
 
+  const [previewTick, setPreviewTick] = useState(0);
+
+  useEffect(() => {
+    const handlePreviewChange = () => setPreviewTick((t) => t + 1);
+    window.addEventListener('falcon-preview-state-changed', handlePreviewChange);
+    return () => window.removeEventListener('falcon-preview-state-changed', handlePreviewChange);
+  }, []);
+
   // All valid cameras (speakers and sensors excluded; uses dynamic preview fixtures when enabled)
   const cameras = useMemo(() => {
     if (isLivePreviewEnabled()) {
       return getPreviewCameras(richDevices, poles);
     }
     return filterCamerasOnly(richDevices);
-  }, [richDevices, poles]);
+  }, [richDevices, poles, previewTick]);
 
   // Handle legacy route redirect: /live/:deviceId -> /live/single/:deviceId or /live/monitor
   useEffect(() => {
@@ -496,6 +505,9 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
         remainingSeconds={inactivityRemainingSeconds}
         onConfirm={confirmStillWatching}
       />
+
+      {/* Reviewer Preview Lab Sheet */}
+      {isLivePreviewEnabled() && <PreviewLabSheet />}
     </div>
   );
 };

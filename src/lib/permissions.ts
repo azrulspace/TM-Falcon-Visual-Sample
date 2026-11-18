@@ -1,6 +1,6 @@
 import type { BackendCapabilities } from '../types/assets.ts';
 
-export type UserRole = 'Admin' | 'System' | 'Operator' | 'Field';
+export type UserRole = 'Admin' | 'System' | 'Operator' | 'Field' | 'Viewer';
 
 export interface PolePermissions {
   role: UserRole;
