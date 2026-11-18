@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Navigation,
+  Video,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -174,24 +175,41 @@ export const DevicePopupContent: React.FC<DevicePopupContentProps> = ({ entity, 
       </div>
 
       {/* 5. Footer Actions */}
-      <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            onClose();
-            navigate(`/assets/inventory/devices/${encodeURIComponent(displayId)}`);
-          }}
-          className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
-        >
-          <span>View device</span>
-          <ExternalLink className="size-3" />
-        </Button>
+      <div className="pt-2 border-t border-border flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              onClose();
+              navigate(`/assets/inventory/devices/${encodeURIComponent(displayId)}`);
+            }}
+            className="h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
+          >
+            <span>View device</span>
+            <ExternalLink className="size-3" />
+          </Button>
+
+          {deviceType.toLowerCase().includes('camera') && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                onClose();
+                navigate(`/live/${encodeURIComponent(displayId)}?autostart=1`);
+              }}
+              className="h-8 px-2.5 text-xs font-medium border-border hover:bg-muted text-primary cursor-pointer flex items-center gap-1.5"
+            >
+              <Video className="size-3 text-primary" />
+              <span>Watch live</span>
+            </Button>
+          )}
+        </div>
 
         <Button
           size="sm"
           variant="outline"
           onClick={() => selectEntity('pole', poleId, { fly: true })}
-          className="h-8 px-3 text-xs font-medium bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5"
+          className="h-8 px-2.5 text-xs font-medium bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5"
         >
           <Navigation className="size-3 text-secondary-foreground" />
           <span>Open pole on map</span>

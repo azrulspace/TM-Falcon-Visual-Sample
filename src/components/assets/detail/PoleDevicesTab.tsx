@@ -191,13 +191,24 @@ export const PoleDevicesTab: React.FC<PoleDevicesTabProps> = ({
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <Link
-                        to={`/assets/inventory/devices/${encodeURIComponent(dev.id)}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium"
-                      >
-                        <span>Details</span>
-                        <ExternalLink className="size-3" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-2.5">
+                        {dev.type?.toLowerCase().includes('camera') && (
+                          <Link
+                            to={`/live/${encodeURIComponent(dev.id)}?autostart=1`}
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium"
+                          >
+                            <Video className="size-3" />
+                            <span>Watch live</span>
+                          </Link>
+                        )}
+                        <Link
+                          to={`/assets/inventory/devices/${encodeURIComponent(dev.id)}`}
+                          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                        >
+                          <span>Details</span>
+                          <ExternalLink className="size-3" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

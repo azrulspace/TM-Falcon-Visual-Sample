@@ -27,6 +27,7 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
   onClose,
   onOpenLiveStream,
 }) => {
+  const navigate = useNavigate();
   const { selectEntity } = useOverview();
   const { events } = useEvents();
   const [spanExpanded, setSpanExpanded] = useState(false);
@@ -106,7 +107,13 @@ export const EventPopupContent: React.FC<EventPopupContentProps> = ({
         capturedTimeMYT={evt?.captured || 'Oct 27, 2026, 10:31 PM MYT'}
         deviceIsOnline={isDeviceOnline}
         compact
-        onWatchLive={() => onOpenLiveStream?.(deviceId)}
+        onWatchLive={() => {
+          if (onOpenLiveStream) {
+            onOpenLiveStream(deviceId);
+          } else {
+            navigate(`/live/${encodeURIComponent(deviceId)}?autostart=1`);
+          }
+        }}
       />
 
       {/* d. Key Facts (Two Columns: Detection & Captured By) */}
@@ -293,7 +300,13 @@ export const EventPopupFooter: React.FC<EventPopupFooterProps> = ({
               size="icon-sm"
               variant="outline"
               disabled={!isDeviceOnline}
-              onClick={() => onOpenLiveStream?.(deviceId)}
+              onClick={() => {
+                if (onOpenLiveStream) {
+                  onOpenLiveStream(deviceId);
+                } else {
+                  navigate(`/live/${encodeURIComponent(deviceId)}?autostart=1`);
+                }
+              }}
               className="size-8 rounded-lg bg-card dark:bg-popover border border-border hover:border-border-strong text-secondary-foreground hover:text-foreground disabled:opacity-40 cursor-pointer"
               aria-label={isDeviceOnline ? 'Watch live stream' : 'Device is offline'}
             >

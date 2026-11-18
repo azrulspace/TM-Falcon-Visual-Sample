@@ -13,6 +13,7 @@ import {
   Map as MapIcon,
   AlertTriangle,
   Archive,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -218,6 +219,18 @@ export const DeviceDetailHeader: React.FC<DeviceDetailHeaderProps> = ({
 
         {/* Primary & Secondary Actions */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {device.type?.toLowerCase().includes('camera') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/live/${encodeURIComponent(device.identifier)}?autostart=1`)}
+              className="h-8 px-3 text-xs gap-1.5 border-border bg-card hover:bg-muted font-medium cursor-pointer text-primary"
+            >
+              <Video className="size-3.5" />
+              <span>Watch live</span>
+            </Button>
+          )}
+
           {permissions.canManageInstallation && (
             <Button
               variant="outline"
@@ -265,6 +278,15 @@ export const DeviceDetailHeader: React.FC<DeviceDetailHeaderProps> = ({
               }
             />
             <DropdownMenuContent align="end" className="w-52 text-xs">
+              {device.type?.toLowerCase().includes('camera') && (
+                <DropdownMenuItem
+                  onClick={() => navigate(`/live/${encodeURIComponent(device.identifier)}?autostart=1`)}
+                  className="gap-2 cursor-pointer font-medium text-primary"
+                >
+                  <Video className="size-3.5" />
+                  <span>Watch live stream</span>
+                </DropdownMenuItem>
+              )}
               {permissions.canRunConnectionCheck && (
                 <DropdownMenuItem onClick={onRunConnectionCheck} className="gap-2 cursor-pointer">
                   <Activity className="size-3.5" />

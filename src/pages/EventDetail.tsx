@@ -253,8 +253,7 @@ export default function EventDetail() {
   const hasAlertHistory = Boolean((event as any).hasAlertHistory);
 
   const handleWatchLive = () => {
-    if (!isDeviceOnline) return;
-    addToast('info', `Connecting to ${formatId(rawDeviceId)} live camera stream...`);
+    navigate(`/live/${encodeURIComponent(formatId(rawDeviceId))}?autostart=1`);
   };
 
   const handleOpenCreateCase = () => {

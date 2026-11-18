@@ -19,6 +19,7 @@ import {
   Plus,
   RotateCcw,
   Clock,
+  Video,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -493,6 +494,17 @@ export const DevicesTableView: React.FC<DevicesTableViewProps> = ({
                         }
                       />
                       <DropdownMenuContent align="end" className="w-48 text-xs">
+                        {d.type?.toLowerCase().includes('camera') && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigate(`/live/${encodeURIComponent(d.identifier)}?autostart=1`)
+                            }
+                            className="gap-2 cursor-pointer font-medium text-primary"
+                          >
+                            <Video className="size-3.5" />
+                            <span>Watch live</span>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() =>
                             navigate(`/assets/inventory/devices/${encodeURIComponent(d.identifier)}`)

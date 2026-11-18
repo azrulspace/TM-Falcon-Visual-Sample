@@ -131,11 +131,10 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
   };
 
   const handleWatchLiveClick = () => {
-    if (!isDeviceOnline) return;
     if (onWatchLive) {
       onWatchLive();
     } else {
-      addToast('info', `Connecting to ${formatId(rawDeviceId)} live camera stream...`);
+      navigate(`/live/${encodeURIComponent(formatId(rawDeviceId))}?autostart=1`);
     }
   };
 

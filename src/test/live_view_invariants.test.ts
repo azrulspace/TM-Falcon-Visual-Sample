@@ -191,3 +191,20 @@ test('Live View Phase 7: Session audit record structure conformance', () => {
   assert.ok(['user_stopped', 'inactivity', 'page_hidden', 'tab_closed', 'page_unmount', 'camera_switched'].includes(auditRecord.stopReason));
   assert.ok(auditRecord.estimatedDataMb > 0);
 });
+
+test('Live View Phase 8: Cross-module deep link autostart URL construction and parsing', () => {
+  const deviceId = 'DEV-001';
+  const deepLink = `/live/${encodeURIComponent(deviceId)}?autostart=1`;
+
+  const parsedUrl = new URL(deepLink, 'http://localhost');
+  assert.equal(parsedUrl.pathname, '/live/DEV-001');
+  assert.equal(parsedUrl.searchParams.get('autostart'), '1');
+
+  // Verify URL encoding handles spaces/special characters safely
+  const customId = 'DEV 002';
+  const customLink = `/live/${encodeURIComponent(customId)}?autostart=1`;
+  const parsedCustom = new URL(customLink, 'http://localhost');
+  assert.equal(parsedCustom.pathname, '/live/DEV%20002');
+  assert.equal(decodeURIComponent(parsedCustom.pathname), '/live/DEV 002');
+  assert.equal(parsedCustom.searchParams.get('autostart'), '1');
+});
