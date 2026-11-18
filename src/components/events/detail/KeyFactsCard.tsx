@@ -188,7 +188,7 @@ export const KeyFactsCard: React.FC<KeyFactsCardProps> = ({
                         >
                           <div className="flex flex-col">
                             <span className="font-medium text-foreground">{a.name}</span>
-                            <span className="text-muted-foreground text-[11px]">{a.role}</span>
+                            <span className="text-muted-foreground text-xs">{a.role}</span>
                           </div>
                           {currentAssignee === a.name && (
                             <Check className="size-3.5 text-primary stroke-[1.5]" />

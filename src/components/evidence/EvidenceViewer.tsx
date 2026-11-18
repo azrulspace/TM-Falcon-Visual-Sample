@@ -240,7 +240,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       case 'failed':
         return <AlertTriangle className="size-3 text-amber-500" />;
       case 'device_offline':
-        return <VideoOff className="size-3 text-slate-400" />;
+        return <VideoOff className="size-3 text-muted-foreground" />;
       default:
         return <Film className="size-3 text-muted-foreground" />;
     }
@@ -268,7 +268,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
           {/* CLIP VIEW */}
           {activeTab === 'clip' && (
-            <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-950 p-4 text-center">
+            <div className="relative w-full h-full flex flex-col items-center justify-center bg-background p-4 text-center">
               {/* NOT REQUESTED */}
               {clipState.status === 'not_requested' && (
                 <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -279,7 +279,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                     className="absolute inset-0 w-full h-full object-cover opacity-25 filter blur-xs"
                   />
                   <div className="relative z-10 flex flex-col items-center gap-2 max-w-[240px]">
-                    <p className="text-[11px] text-slate-300 leading-snug">
+                    <p className="text-xs text-muted-foreground leading-snug">
                       The clip is not loaded yet. It is requested from the camera only when needed.
                     </p>
                     <Button
@@ -296,12 +296,12 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
               {/* REQUESTED */}
               {clipState.status === 'requested' && (
-                <div className="flex flex-col items-center gap-2 text-slate-300">
+                <div className="flex flex-col items-center gap-2 text-foreground">
                   <Loader2 className="size-6 animate-spin text-primary" />
                   <p className="text-xs font-semibold text-foreground">
                     Request sent. Waiting for the camera.
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Requested by {clipState.requestedBy || 'Operator'}
                   </p>
                 </div>
@@ -309,22 +309,22 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
               {/* UPLOADING */}
               {clipState.status === 'uploading' && (
-                <div className="w-full max-w-[260px] flex flex-col items-center gap-2.5 text-slate-300">
+                <div className="w-full max-w-[260px] flex flex-col items-center gap-2.5 text-foreground">
                   <Loader2 className="size-5 animate-spin text-primary" />
                   <p className="text-xs font-medium text-foreground">
                     Evidence is still being uploaded.
                   </p>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                     <div
                       className="bg-primary h-full transition-all duration-300 rounded-full"
                       style={{ width: `${clipState.progress || 25}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">
+                  <span className="text-xs font-mono text-muted-foreground">
                     {clipState.progress ? `${clipState.progress}%` : 'Uploading footage...'}
                   </span>
                   {clipState.takingLongerThanExpected && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-amber-400">
+                    <div className="flex items-center gap-1.5 text-xs text-amber-400">
                       <span>Taking longer than expected</span>
                       <button
                         type="button"
@@ -361,7 +361,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                     </button>
                   )}
                   {/* Bottom bar overlay */}
-                  <div className="absolute bottom-1 left-2 right-2 flex items-center justify-between text-[10px] font-mono text-white/90 bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
+                  <div className="absolute bottom-1 left-2 right-2 flex items-center justify-between text-xs font-mono text-white/90 bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
                     <span>{formatClipDuration(currentTime)} / {formatClipDuration(clipState.durationSeconds)}</span>
                     <button
                       type="button"
@@ -381,7 +381,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                   <p className="text-xs font-semibold text-foreground">
                     {getFailureDetails(clipState.failureReason).title}
                   </p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
+                  <p className="text-xs text-muted-foreground leading-snug">
                     {getFailureDetails(clipState.failureReason).explanation}
                   </p>
                   {getFailureDetails(clipState.failureReason).canRetry && (
@@ -389,7 +389,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       size="sm"
                       variant="outline"
                       onClick={retryRequest}
-                      className="h-6 px-2.5 text-[11px] mt-1 cursor-pointer"
+                      className="h-6 px-2.5 text-xs mt-1 cursor-pointer"
                     >
                       {getFailureDetails(clipState.failureReason).retryLabel}
                     </Button>
@@ -400,18 +400,18 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               {/* EXPIRED */}
               {clipState.status === 'expired' && (
                 <div className="flex flex-col items-center gap-1.5 max-w-[240px]">
-                  <Clock className="size-5 text-slate-400" />
+                  <Clock className="size-5 text-muted-foreground" />
                   <p className="text-xs font-semibold text-foreground">
                     This clip is no longer available.
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     The snapshot remains available.
                   </p>
                   {clipState.requestable && (
                     <Button
                       size="sm"
                       onClick={requestClip}
-                      className="h-6 px-2.5 text-[11px] mt-1 cursor-pointer"
+                      className="h-6 px-2.5 text-xs mt-1 cursor-pointer"
                     >
                       Request again
                     </Button>
@@ -422,9 +422,9 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               {/* OFFLINE */}
               {clipState.status === 'device_offline' && (
                 <div className="flex flex-col items-center gap-1.5 max-w-[240px]">
-                  <VideoOff className="size-5 text-slate-400" />
+                  <VideoOff className="size-5 text-muted-foreground" />
                   <p className="text-xs font-semibold text-foreground">Camera is offline</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Clips cannot be requested until the camera reconnects.
                   </p>
                 </div>
@@ -439,7 +439,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('snapshot')}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === 'snapshot'
                   ? 'bg-card text-foreground shadow-xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -451,7 +451,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('clip')}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition-colors cursor-pointer ${
                 activeTab === 'clip'
                   ? 'bg-card text-foreground shadow-xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -460,7 +460,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               {renderClipTabIcon()}
               <span>Clip</span>
               {clipState.status === 'ready' && (
-                <span className="text-[10px] font-mono text-emerald-400">
+                <span className="text-xs font-mono text-emerald-400">
                   {formatClipDuration(clipState.durationSeconds)}
                 </span>
               )}
@@ -615,7 +615,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       </div>
 
       {/* 2. Main Stage (V2: canvas token background, centered contain, min-h 320px, max-h min(560px, 60vh), 1px border) */}
-      <div className="relative w-full min-h-[320px] max-h-[min(560px,60vh)] h-[440px] bg-[#08090a] flex items-center justify-center overflow-hidden border-y border-border select-none">
+      <div className="relative w-full min-h-[320px] max-h-[min(560px,60vh)] h-[440px] bg-background flex items-center justify-center overflow-hidden border-y border-border select-none">
         {/* ================= SNAPSHOT TAB ================= */}
         {activeTab === 'snapshot' && (
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
@@ -633,7 +633,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
         {/* ================= CLIP TAB ================= */}
         {activeTab === 'clip' && (
-          <div className="relative w-full h-full flex items-center justify-center bg-[#08090a] p-6 text-center">
+          <div className="relative w-full h-full flex items-center justify-center bg-background p-6 text-center">
             {/* NOT REQUESTED */}
             {clipState.status === 'not_requested' && (
               <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -645,11 +645,11 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                 />
                 <div className="relative z-10 flex flex-col items-center gap-3 max-w-sm">
                   <Film className="size-8 text-primary/80" />
-                  <p className="text-xs sm:text-sm text-slate-200">
+                  <p className="text-xs sm:text-sm text-foreground">
                     The clip is not loaded yet. It is requested from the camera only when needed.
                   </p>
                   {clipState.windowStartTime && clipState.windowEndTime && (
-                    <p className="text-[11px] font-mono text-muted-foreground">
+                    <p className="text-xs font-mono text-muted-foreground">
                       Window: {clipState.windowStartTime} – {clipState.windowEndTime} MYT (~38s)
                     </p>
                   )}
@@ -666,7 +666,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
             {/* REQUESTED */}
             {clipState.status === 'requested' && (
-              <div className="flex flex-col items-center gap-3 text-slate-300">
+              <div className="flex flex-col items-center gap-3 text-foreground">
                 <Loader2 className="size-8 animate-spin text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">
                   Request sent. Waiting for the camera.
@@ -679,12 +679,12 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
             {/* UPLOADING */}
             {clipState.status === 'uploading' && (
-              <div className="w-full max-w-sm flex flex-col items-center gap-3 text-slate-300">
+              <div className="w-full max-w-sm flex flex-col items-center gap-3 text-foreground">
                 <Loader2 className="size-7 animate-spin text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">
                   Evidence is still being uploaded.
                 </h3>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-primary h-full transition-all duration-300 rounded-full"
                     style={{ width: `${clipState.progress || 30}%` }}
@@ -740,7 +740,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                     <Button
                       size="sm"
                       onClick={applyNewVersion}
-                      className="h-6 px-2.5 text-[11px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                      className="h-6 px-2.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                     >
                       Load new version
                     </Button>
@@ -779,7 +779,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       >
                         {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
                       </button>
-                      <span className="font-mono text-[11px] tabular-nums">
+                      <span className="font-mono text-xs tabular-nums">
                         {formatClipDuration(currentTime)} / {formatClipDuration(clipState.durationSeconds)}
                       </span>
                     </div>
@@ -788,7 +788,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                       <button
                         type="button"
                         onClick={handleSpeedChange}
-                        className="px-1.5 py-0.5 rounded text-[11px] font-mono hover:bg-white/20 transition-colors cursor-pointer"
+                        className="px-1.5 py-0.5 rounded text-xs font-mono hover:bg-white/20 transition-colors cursor-pointer"
                         title="Playback speed"
                       >
                         {playbackRate}x
@@ -834,7 +834,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             {/* EXPIRED */}
             {clipState.status === 'expired' && (
               <div className="flex flex-col items-center gap-2 max-w-sm">
-                <Clock className="size-8 text-slate-400" />
+                <Clock className="size-8 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">
                   This clip is no longer available.
                 </h3>
@@ -856,7 +856,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             {/* DEVICE OFFLINE */}
             {clipState.status === 'device_offline' && (
               <div className="flex flex-col items-center gap-2 max-w-sm">
-                <VideoOff className="size-8 text-slate-400" />
+                <VideoOff className="size-8 text-muted-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">Camera is offline</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   The clip cannot be requested while the camera is disconnected. Try again when it returns online.

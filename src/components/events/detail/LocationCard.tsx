@@ -165,7 +165,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
 
       {/* 2. Mini Map Viewport with centered marker & span padding (V1) */}
       {isExpanded && (
-        <div className="relative w-full h-64 bg-[#08101c] overflow-hidden transition-all duration-300">
+        <div className="relative w-full h-64 bg-background overflow-hidden transition-all duration-300">
           {!mapLoaded && (
             <div className="absolute inset-0 z-20 bg-muted/40 animate-pulse flex items-center justify-center">
               <span className="text-xs text-muted-foreground font-sans">Loading map tiles...</span>
@@ -233,7 +233,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
           </div>
 
           {/* Attribution Bar: small, legible, AA compliant (V1) */}
-          <div className="absolute bottom-1.5 left-2.5 z-10 text-[10px] text-white/70 font-sans pointer-events-none select-none">
+          <div className="absolute bottom-1.5 left-2.5 z-10 text-xs text-white/70 font-sans pointer-events-none select-none">
             © Mapbox · Maxar Satellite · OpenStreetMap
           </div>
         </div>

@@ -218,10 +218,10 @@ export default function EventDetail() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6 text-center select-none">
         <div className="size-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-          <AlertTriangle className="size-8 text-amber-500" />
+          <AlertTriangle className="size-8 text-amber-500 stroke-[1.5]" />
         </div>
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-foreground">This event is no longer available</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">This event is no longer available</h2>
           <p className="text-xs text-muted-foreground max-w-sm">
             The event may have been deleted, archived, or is no longer accessible with your current permissions.
           </p>
@@ -230,9 +230,9 @@ export default function EventDetail() {
           variant="outline"
           size="sm"
           onClick={() => navigate('/events')}
-          className="border-border text-xs gap-1.5 cursor-pointer"
+          className="border-border text-xs gap-1.5 cursor-pointer h-9 px-4"
         >
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="size-4 stroke-[1.5]" />
           <span>Back to Event inbox</span>
         </Button>
       </div>
@@ -389,8 +389,8 @@ export default function EventDetail() {
           onClick={() => setCreateCaseOpen(true)}
           className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-xs cursor-pointer`}
         >
-          <Briefcase className="size-4" />
-          <span>Create Case</span>
+          <Briefcase className="size-4 stroke-[1.5]" />
+          <span>Create case</span>
         </Button>
 
         {/* Secondary Action: Watch live */}
@@ -401,7 +401,7 @@ export default function EventDetail() {
           onClick={handleWatchLive}
           className={`flex-1 ${isTablet ? 'h-[44px] text-sm' : 'h-9 text-xs'} border-border hover:bg-muted font-medium text-foreground gap-2 cursor-pointer disabled:opacity-40`}
         >
-          <Video className="size-4" />
+          <Video className="size-4 stroke-[1.5]" />
           <span>Watch live</span>
         </Button>
       </div>
