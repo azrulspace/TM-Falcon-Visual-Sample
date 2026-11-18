@@ -4,23 +4,18 @@ import type { DeviceWithRelations } from '@/types/devices';
 import type { PoleRecord } from '@/types/assets';
 import type { FalconEvent } from '@/data/events';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PriorityBadge } from '@/components/common/PriorityBadge';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { formatRelativeTime } from '@/lib/dateTime';
 import {
-  ExternalLink,
   MapPin,
-  Radio,
   Copy,
   HardDrive,
   Sparkles,
   ChevronRight,
-  Trees,
-  ShieldAlert,
-  Compass,
-  Truck,
-  Wrench,
   Activity,
+  Radio,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { MapCanvas } from '@/components/MapCanvas';
@@ -62,53 +57,21 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
   };
 
   const renderEventThumbnail = (evt: FalconEvent) => {
-    const typeLower = (evt.type || '').toLowerCase();
-    if (typeLower.includes('wildlife') || typeLower.includes('animal') || typeLower.includes('monkey')) {
+    if (evt.snapshots && evt.snapshots.length > 0 && evt.snapshots[0]) {
       return (
         <img
-          src="/monkey-fiber.jpg"
+          src={evt.snapshots[0]}
           alt={evt.type}
-          className="size-9 rounded object-cover shrink-0 border border-border"
+          className="w-12 h-9 rounded-[6px] object-cover shrink-0 border border-border"
+          loading="lazy"
         />
       );
     }
-    if (typeLower.includes('vegetation') || typeLower.includes('tree') || typeLower.includes('branch')) {
-      return (
-        <div className="size-9 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0" title={evt.type}>
-          <Trees className="size-4" />
-        </div>
-      );
-    }
-    if (typeLower.includes('vandalism') || typeLower.includes('intrusion') || typeLower.includes('theft')) {
-      return (
-        <div className="size-9 rounded bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shrink-0" title={evt.type}>
-          <ShieldAlert className="size-4" />
-        </div>
-      );
-    }
-    if (typeLower.includes('tilt') || typeLower.includes('lean') || typeLower.includes('structural')) {
-      return (
-        <div className="size-9 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0" title={evt.type}>
-          <Compass className="size-4" />
-        </div>
-      );
-    }
-    if (typeLower.includes('vehicle') || typeLower.includes('overheight') || typeLower.includes('truck')) {
-      return (
-        <div className="size-9 rounded bg-sky-500/10 border border-sky-500/20 text-sky-500 flex items-center justify-center shrink-0" title={evt.type}>
-          <Truck className="size-4" />
-        </div>
-      );
-    }
-    if (typeLower.includes('fault') || typeLower.includes('sensor') || typeLower.includes('camera') || typeLower.includes('hardware')) {
-      return (
-        <div className="size-9 rounded bg-orange-500/10 border border-orange-500/20 text-orange-500 flex items-center justify-center shrink-0" title={evt.type}>
-          <Wrench className="size-4" />
-        </div>
-      );
-    }
     return (
-      <div className="size-9 rounded bg-muted border border-border text-muted-foreground flex items-center justify-center shrink-0" title={evt.type}>
+      <div
+        className="w-12 h-9 rounded-[6px] bg-muted border border-border text-muted-foreground flex items-center justify-center shrink-0"
+        title={evt.type}
+      >
         <Activity className="size-4" />
       </div>
     );
@@ -117,7 +80,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
   return (
     <div className="flex flex-col gap-4">
       {/* 1. Camera Info Card */}
-      <Card className="border-border bg-card shadow-xs rounded-xl overflow-hidden">
+      <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
             <HardDrive className="size-4 text-primary" />
@@ -128,67 +91,46 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             className="text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium"
           >
             <span>Device record</span>
-            <ExternalLink className="size-3" />
+            <ChevronRight className="size-3.5" />
           </Link>
         </CardHeader>
         <CardContent className="p-5 text-xs divide-y divide-border">
-          <div className="flex justify-between items-center py-2.5 first:pt-0">
-            <span className="text-muted-foreground">Identifier</span>
-            <span className="font-mono font-semibold text-foreground">{camera.identifier}</span>
-          </div>
-
-          <div className="flex justify-between items-center py-2.5">
+          <div className="flex justify-between items-center py-2.5 first:pt-0 min-h-[44px]">
             <span className="text-muted-foreground">Model</span>
             <span className="font-medium text-foreground">{camera.model || 'Standard IP Camera'}</span>
           </div>
 
-          <div className="flex justify-between items-center py-2.5">
-            <span className="text-muted-foreground">Vendor / Driver</span>
+          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
+            <span className="text-muted-foreground">Vendor and driver</span>
             <span className="text-foreground">{camera.manufacturer || 'Hikvision'} ({camera.library || 'HIK_OpenAPI'})</span>
           </div>
 
-          <div className="flex justify-between items-center py-2.5">
+          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
             <span className="text-muted-foreground">Connectivity</span>
             <div className="flex items-center gap-2" title={unifiedState.reason}>
-              <span
-                className={`size-2 rounded-full ${
-                  unifiedState.state === 'online'
-                    ? 'bg-emerald-500'
-                    : unifiedState.state === 'stale'
-                    ? 'bg-amber-500'
-                    : 'bg-rose-500'
-                }`}
-              />
-              <span className="capitalize font-medium text-foreground">{unifiedState.state}</span>
+              <StatusBadge status={unifiedState.state} size="sm" />
+              <span className="text-muted-foreground cursor-help" title={unifiedState.absoluteMYT}>
+                ({unifiedState.relativeTime})
+              </span>
             </div>
           </div>
 
-          <div className="flex justify-between items-center py-2.5">
-            <span className="text-muted-foreground">Last Contact</span>
-            <span
-              className="text-foreground cursor-help"
-              title={unifiedState.absoluteMYT}
-            >
-              {unifiedState.relativeTime}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center py-2.5">
-            <span className="text-muted-foreground">Installed Pole</span>
+          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
+            <span className="text-muted-foreground">Installed pole</span>
             {installedPole ? (
               <Link
                 to={`/assets/poles/${encodeURIComponent(installedPole.identifier)}`}
                 className="font-mono text-primary hover:underline inline-flex items-center gap-1"
               >
                 <span>{installedPole.identifier}</span>
-                <ExternalLink className="size-3" />
+                <ChevronRight className="size-3.5" />
               </Link>
             ) : (
               <span className="text-muted-foreground italic">Not installed</span>
             )}
           </div>
 
-          <div className="flex justify-between items-center py-2.5 last:pb-0">
+          <div className="flex justify-between items-center py-2.5 last:pb-0 min-h-[44px]">
             <span className="text-muted-foreground">Site</span>
             <span className="text-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
           </div>
@@ -196,7 +138,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
       </Card>
 
       {/* 2. Recent Events Card */}
-      <Card className="border-border bg-card shadow-xs rounded-xl overflow-hidden">
+      <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Radio className="size-4 text-primary" />
@@ -207,7 +149,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             className="text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium"
           >
             <span>View all ({totalEventsCount})</span>
-            <ExternalLink className="size-3" />
+            <ChevronRight className="size-3.5" />
           </Link>
         </CardHeader>
         <CardContent className="p-2 space-y-1 divide-y divide-border">
@@ -218,7 +160,6 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
           ) : (
             recentEvents.map((evt) => {
               const isSim = (evt as any).isSimulated || (evt as any).simulated;
-              const priority = (evt.priority || 'medium').toLowerCase();
 
               return (
                 <div
@@ -234,7 +175,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                           {evt.type}
                         </span>
                         {isSim && (
-                          <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">
+                          <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border font-medium">
                             <Sparkles className="size-3" />
                             Sim
                           </span>
@@ -247,18 +188,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 pl-2">
-                    <Badge
-                      variant="outline"
-                      className={`text-xs px-2 py-0.5 capitalize font-medium ${
-                        priority === 'critical'
-                          ? 'border-rose-500/30 text-rose-500 bg-rose-500/10'
-                          : priority === 'high'
-                          ? 'border-amber-500/30 text-amber-500 bg-amber-500/10'
-                          : 'border-blue-500/30 text-blue-500 bg-blue-500/10'
-                      }`}
-                    >
-                      {evt.priority || 'Medium'}
-                    </Badge>
+                    <PriorityBadge priority={evt.priority} size="sm" />
                     <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </div>
@@ -269,7 +199,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
       </Card>
 
       {/* 3. Location Mini Map Card */}
-      <Card className="border-border bg-card shadow-xs rounded-xl overflow-hidden">
+      <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
             <MapPin className="size-4 text-primary" />
@@ -280,17 +210,17 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => navigate(`/overview?pole=${encodeURIComponent(installedPole.identifier)}`)}
-              className="h-7 px-2 text-xs text-primary hover:underline p-0"
+              className="h-7 px-2 text-xs text-primary hover:underline p-0 flex items-center gap-1"
             >
-              Open overview
-              <ExternalLink className="size-3 ml-1" />
+              <span>Open on map</span>
+              <ChevronRight className="size-3.5" />
             </Button>
           )}
         </CardHeader>
         <CardContent className="p-0">
           {hasLocation ? (
             <div className="flex flex-col">
-              <div className="relative w-full h-48 bg-muted overflow-hidden">
+              <div className="relative w-full h-44 bg-muted overflow-hidden">
                 <MapCanvas
                   selectedId={installedPole ? installedPole.identifier : camera.identifier.replace('-', '_')}
                   onMarkerClick={() => {}}
@@ -305,11 +235,11 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                   }}
                   className="w-full h-full pointer-events-none"
                 />
-                <div className="absolute top-2 left-2 z-10 bg-black/80 backdrop-blur-xs text-white text-xs font-mono px-2.5 py-1 rounded-md border border-white/15 shadow-sm flex items-center gap-1.5">
+                <div className="absolute top-2 left-2 z-10 bg-card border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1.5">
                   <MapPin className="size-3 text-primary shrink-0" />
-                  <span>Pole {installedPole!.identifier}</span>
-                  <span className="text-white/40">•</span>
-                  <span className="text-white/80 font-sans">{camera.siteName || 'Teluk Panglima Garang'}</span>
+                  <span className="font-mono">Pole {installedPole!.identifier}</span>
+                  <span className="text-border">•</span>
+                  <span className="text-muted-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
                 </div>
               </div>
 
@@ -322,7 +252,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyCoords}
-                  className="h-8 px-2 text-xs gap-1.5 cursor-pointer"
+                  className="h-8 px-2 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   <Copy className="size-3.5" />
                   <span>Copy</span>

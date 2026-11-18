@@ -115,7 +115,7 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
         <PopoverContent
           align="start"
           sideOffset={8}
-          className="w-[360px] sm:w-[420px] p-0 bg-popover text-popover-foreground border-border shadow-xl rounded-xl overflow-hidden z-50"
+          className="w-[360px] sm:w-[420px] p-0 bg-popover text-popover-foreground border-border shadow-2xl rounded-xl overflow-hidden z-50"
         >
           {/* Search header */}
           <div className="p-3 border-b border-border bg-muted/20 space-y-2">

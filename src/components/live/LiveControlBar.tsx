@@ -225,7 +225,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
             {isLive && showVolumeSlider && (
               <div
                 onMouseLeave={() => setShowVolumeSlider(false)}
-                className="absolute left-10 z-30 p-2 bg-popover border border-border shadow-md rounded-lg flex items-center gap-2 w-28"
+                className="absolute left-10 z-30 p-2 bg-popover border border-border shadow-2xl rounded-lg flex items-center gap-2 w-28"
               >
                 <input
                   type="range"
@@ -288,7 +288,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
             <TooltipTrigger
               render={
                 <div className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted/30 border border-border/50 ${!isLive ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <span className="text-[11px] font-semibold text-muted-foreground hidden lg:inline mr-1">
+                  <span className="text-xs font-semibold text-muted-foreground hidden lg:inline mr-1">
                     PTZ
                   </span>
                   <div
@@ -423,7 +423,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                         type="button"
                         disabled={!isLive}
                         onClick={() => setPtzSpeed(spd)}
-                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors disabled:pointer-events-none ${
+                        className={`text-xs font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors disabled:pointer-events-none ${
                           ptzSpeed === spd
                             ? 'bg-primary text-primary-foreground font-bold'
                             : 'text-muted-foreground hover:bg-muted'
@@ -449,12 +449,12 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                             title={!isLive ? undefined : 'Camera presets'}
                           >
                             <Bookmark className="size-3" />
-                            <span className="hidden xl:inline text-[11px]">Presets</span>
+                            <span className="hidden xl:inline text-xs">Presets</span>
                           </Button>
                         }
                       />
-                      <PopoverContent align="center" className="w-64 p-2 text-xs bg-popover text-popover-foreground border-border shadow-md">
-                        <div className="font-semibold text-foreground px-2 py-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <PopoverContent align="center" className="w-64 p-2 text-xs bg-popover text-popover-foreground border-border shadow-2xl">
+                        <div className="font-semibold text-foreground px-2 py-1 text-xs uppercase tracking-wider text-muted-foreground">
                           Saved PTZ Positions
                         </div>
                         <div className="space-y-1 pt-1">
@@ -469,7 +469,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                             >
                               <div className="flex flex-col">
                                 <span className="text-xs">{p.name}</span>
-                                <span className="text-[10px] text-muted-foreground font-mono">{p.angle}</span>
+                                <span className="text-xs text-muted-foreground font-mono">{p.angle}</span>
                               </div>
                               {activePreset === p.id && <Check className="size-3 text-primary shrink-0" />}
                             </button>
@@ -713,7 +713,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                       type="button"
                       disabled={!isLive}
                       onClick={() => isLive && setTalkToggleMode(!isTalkToggleMode)}
-                      className={`size-7 rounded flex items-center justify-center text-[10px] font-mono cursor-pointer border disabled:pointer-events-none disabled:opacity-50 ${
+                      className={`size-7 rounded flex items-center justify-center text-xs font-mono cursor-pointer border disabled:pointer-events-none disabled:opacity-50 ${
                         isTalkToggleMode
                           ? 'bg-primary/20 text-primary border-primary/40'
                           : 'text-muted-foreground/60 border-transparent hover:bg-muted'
@@ -751,11 +751,11 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               </Button>
             }
           />
-          <PopoverContent align="end" className="w-64 p-3 text-xs bg-popover text-popover-foreground border-border shadow-md">
+          <PopoverContent align="end" className="w-64 p-3 text-xs bg-popover text-popover-foreground border-border shadow-2xl">
             <h4 className="font-semibold text-foreground mb-2 pb-1 border-b border-border">
               Stream Telemetry
             </h4>
-            <div className="space-y-1.5 font-mono text-[11px]">
+            <div className="space-y-1.5 font-mono text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
                 <span className="font-bold text-foreground uppercase">{streamState}</span>
@@ -782,14 +782,14 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               </div>
               <div className="flex justify-between pt-1 border-t border-border/60">
                 <span className="text-muted-foreground">Estimated data:</span>
-                <span className="font-bold text-amber-500">
+                <span className="font-bold text-status-warning">
                   {streamStats.estimatedDataMb} MB
                 </span>
               </div>
-              <div className="text-[10px] text-muted-foreground/70 pt-0.5 text-right italic">
+              <div className="text-xs text-muted-foreground/70 pt-0.5 text-right italic font-sans">
                 * Estimated from bitrate and session duration
               </div>
-              <div className="pt-2 mt-2 border-t border-border/60 text-[10px] text-muted-foreground/80 leading-normal font-sans">
+              <div className="pt-2 mt-2 border-t border-border/60 text-xs text-muted-foreground/80 leading-normal font-sans">
                 Note: Server viewing session audit API is pending backend implementation. Local session duration logged to browser storage.
               </div>
             </div>
@@ -811,38 +811,38 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               </Button>
             }
           />
-          <PopoverContent align="end" className="w-64 p-3 text-xs bg-popover text-popover-foreground border-border shadow-md">
+          <PopoverContent align="end" className="w-64 p-3 text-xs bg-popover text-popover-foreground border-border shadow-2xl">
             <h4 className="font-semibold text-foreground mb-2 pb-1 border-b border-border">
               Keyboard Shortcuts
             </h4>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Start / Stop stream</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">Space</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">Space</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Mute / Unmute audio</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">M</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">M</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Take snapshot</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">S</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">S</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Toggle fullscreen</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">F</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">F</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Previous camera</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">[</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">[</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Next camera</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">]</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">]</kbd>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Pan & tilt motor</span>
-                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">Arrows</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-xs border border-border">Arrows</kbd>
               </div>
             </div>
           </PopoverContent>

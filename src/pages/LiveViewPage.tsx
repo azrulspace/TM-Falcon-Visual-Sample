@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   MoreVertical,
-  ExternalLink,
   MapPin,
   Radio,
   Copy,
@@ -37,6 +36,7 @@ import {
   Video,
   LayoutGrid,
   Bookmark,
+  HardDrive,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { CameraSwitcherCombobox } from '@/components/live/CameraSwitcherCombobox';
@@ -336,7 +336,7 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
               />
               <DropdownMenuContent align="end" className="w-52 text-xs">
                 <DropdownMenuItem onClick={() => navigate(`/assets/inventory/devices/${encodeURIComponent(currentCamera.identifier)}`)}>
-                  <ExternalLink className="size-3.5 mr-2 text-muted-foreground" />
+                  <HardDrive className="size-3.5 mr-2 text-muted-foreground" />
                   Open device record
                 </DropdownMenuItem>
                 {installedPole && (

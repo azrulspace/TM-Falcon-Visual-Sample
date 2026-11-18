@@ -1,36 +1,30 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
-import { useEvents } from '@/contexts/EventsContext';
-import { formatRelativeTime } from '@/lib/dateTime';
-import { computeUnifiedDeviceState } from '@/lib/liveCameras';
-import { ChevronLeft, ChevronRight, Camera as CameraIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/common/StatusBadge';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Camera as CameraIcon,
+} from 'lucide-react';
+import { computeUnifiedDeviceState } from '@/lib/liveCameras';
 
 interface CameraStripProps {
   cameras: DeviceWithRelations[];
   selectedCameraId: string;
   onSelectCamera: (camera: DeviceWithRelations) => void;
+  lastEventTimeByCameraId?: Map<string, string>;
+  activeStreamingDeviceId?: string | null;
 }
 
 export const CameraStrip: React.FC<CameraStripProps> = ({
   cameras,
   selectedCameraId,
   onSelectCamera,
+  lastEventTimeByCameraId = new Map(),
+  activeStreamingDeviceId,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const { events } = useEvents();
-
-  // Precompute last event time per camera identifier
-  const lastEventTimeByCameraId = useMemo(() => {
-    const map = new Map<string, string>();
-    events.forEach((e) => {
-      const devId = (e.device || '').toLowerCase().trim();
-      if (devId && !map.has(devId) && e.captured) {
-        map.set(devId, formatRelativeTime(e.captured));
-      }
-    });
-    return map;
-  }, [events]);
 
   const currentIndex = cameras.findIndex((c) => c.identifier === selectedCameraId);
 
@@ -46,7 +40,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
     }
   };
 
-  // Keyboard navigation "[" and "]" globally when not typing
+  // Keyboard navigation for [ and ] shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
@@ -82,7 +76,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
     <div className="flex flex-col gap-2 pt-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground px-0.5">
         <span className="font-semibold text-foreground text-sm">
-          Camera fleet ({cameras.length})
+          Cameras ({cameras.length})
         </span>
         <div className="flex items-center gap-1">
           <Button
@@ -90,7 +84,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             size="sm"
             onClick={handlePrev}
             disabled={currentIndex <= 0}
-            className="size-8 p-0 cursor-pointer"
+            className="size-8 p-0 cursor-pointer border-border"
             aria-label="Previous camera"
             title="Previous camera ([)"
           >
@@ -101,7 +95,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             size="sm"
             onClick={handleNext}
             disabled={currentIndex >= cameras.length - 1}
-            className="size-8 p-0 cursor-pointer"
+            className="size-8 p-0 cursor-pointer border-border"
             aria-label="Next camera"
             title="Next camera (])"
           >
@@ -110,22 +104,23 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
         </div>
       </div>
 
-      {/* Horizontal Scroll Strip with Edge Fade Gradients */}
+      {/* Horizontal Scroll Strip with Canvas Edge Fade Gradients */}
       <div className="relative group/strip">
-        <div className="pointer-events-none absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-card to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-card to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-background to-transparent z-10" />
 
         <div
           ref={scrollContainerRef}
           role="listbox"
-          aria-label="Camera fleet strip"
+          aria-label="Cameras list"
           className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40"
         >
           {cameras.map((camera) => {
             const isSelected = camera.identifier === selectedCameraId;
+            const isStreaming = activeStreamingDeviceId === camera.identifier;
             const unifiedState = computeUnifiedDeviceState(camera.lastContactAt, camera.connectivityState);
             const lastEventLabel =
-              lastEventTimeByCameraId.get(camera.identifier.toLowerCase().trim()) || 'None';
+              lastEventTimeByCameraId.get(camera.identifier.toLowerCase().trim()) || null;
 
             return (
               <div
@@ -149,12 +144,12 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                 }}
                 className={`group flex-shrink-0 w-44 rounded-xl border text-left p-2.5 transition-all cursor-pointer select-none focus-visible:outline-none ${
                   isSelected
-                    ? 'ring-2 ring-primary border-primary bg-primary/10 shadow-xs'
-                    : 'border-border bg-card hover:bg-muted/60 hover:border-border'
+                    ? 'ring-2 ring-primary border-border bg-card'
+                    : 'border-border bg-card hover:border-border-strong'
                 }`}
               >
                 {/* 16:9 Thumbnail Frame */}
-                <div className="relative aspect-video w-full rounded-lg bg-zinc-900 overflow-hidden mb-2 flex items-center justify-center border border-border">
+                <div className="relative aspect-video w-full rounded-lg bg-muted overflow-hidden mb-2 flex items-center justify-center border border-border">
                   {camera.identifier === 'DEV-001' ? (
                     <img
                       src="/monkey-fiber.jpg"
@@ -163,41 +158,37 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center text-zinc-500 relative">
-                      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:12px_12px]" />
-                      <CameraIcon className="size-5 text-zinc-500/80 relative z-10" />
-                      <span className="text-xs font-mono text-zinc-400 mt-1 relative z-10">Standby</span>
+                    <div className="w-full h-full bg-muted flex flex-col items-center justify-center text-muted-foreground">
+                      <CameraIcon className="size-5 opacity-60" />
+                      <span className="text-xs text-muted-foreground mt-1">No snapshot</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                  <span className="absolute bottom-1 left-1.5 text-xs font-mono text-zinc-300 drop-shadow-xs truncate max-w-[90%]">
-                    Last: {lastEventLabel}
-                  </span>
+
+                  {/* Only a small Live badge while streaming */}
+                  {isStreaming && (
+                    <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 bg-destructive text-destructive-foreground text-xs px-1.5 py-0.5 rounded font-bold animate-pulse">
+                      <span className="size-1.5 rounded-full bg-white" />
+                      <span>LIVE</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Caption below image: ID, State, Pole */}
-                <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className={`font-mono text-xs font-bold truncate ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                {/* Caption below image: ID & State chip */}
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <span className={`font-mono text-xs font-semibold truncate ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                     {camera.identifier}
                   </span>
-                  <div className="flex items-center gap-1.5" title={unifiedState.reason}>
-                    <span
-                      className={`size-2 rounded-full shrink-0 ${
-                        unifiedState.state === 'online'
-                          ? 'bg-emerald-500'
-                          : unifiedState.state === 'stale'
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                      }`}
-                    />
-                    <span className="text-xs text-muted-foreground capitalize font-medium">
-                      {unifiedState.state}
-                    </span>
-                  </div>
+                  <StatusBadge status={unifiedState.state} size="sm" />
                 </div>
 
-                <div className="text-xs text-muted-foreground truncate">
+                {/* Pole name */}
+                <div className="text-xs text-muted-foreground truncate mb-0.5">
                   {camera.installedPoleId ? `Pole ${camera.installedPoleId}` : 'Unmounted'}
+                </div>
+
+                {/* Last event relative time in sans */}
+                <div className="text-xs text-muted-foreground/80 truncate">
+                  {lastEventLabel ? `Last event ${lastEventLabel}` : 'No events recorded'}
                 </div>
               </div>
             );

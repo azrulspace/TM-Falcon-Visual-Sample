@@ -162,7 +162,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl bg-card border-border text-foreground p-6 rounded-xl">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+          <DialogTitle className="text-sm font-semibold flex items-center gap-2">
             <Video className="size-5 text-primary" />
             <span>{isEdit ? 'Edit camera group' : 'Create new camera group'}</span>
           </DialogTitle>
@@ -173,7 +173,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
 
         <div className="space-y-4 py-2">
           {errorMessage && (
-            <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-lg">
+            <div className="p-3 text-xs bg-destructive/10 border border-destructive/30 text-destructive rounded-lg">
               {errorMessage}
             </div>
           )}
@@ -182,7 +182,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-foreground block mb-1">
-                Group name <span className="text-rose-500">*</span>
+                Group name <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -197,7 +197,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                 className="w-full h-9 px-3 text-xs rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50"
               />
               {isSystem && (
-                <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                <span className="text-xs text-muted-foreground mt-0.5 block">
                   System group names cannot be renamed.
                 </span>
               )}
@@ -273,11 +273,11 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                           className="size-3.5 rounded accent-primary cursor-pointer"
                         />
                         <span className="font-mono font-semibold">{cam.identifier}</span>
-                        <span className="text-[11px] text-muted-foreground truncate">
+                        <span className="text-xs text-muted-foreground truncate">
                           {cam.installedPoleId ? `Pole ${cam.installedPoleId}` : 'Unmounted'}
                         </span>
                       </div>
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
+                      <Badge variant="outline" className="text-xs px-1.5 py-0 capitalize">
                         {cam.manufacturer || 'Camera'}
                       </Badge>
                     </div>
@@ -296,7 +296,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setSelectedCameraIds([])}
-                    className="text-[11px] text-rose-500 hover:underline cursor-pointer"
+                    className="text-xs text-destructive hover:underline cursor-pointer"
                   >
                     Clear all
                   </button>
@@ -308,7 +308,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                 {selectedCameraIds.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center p-4 text-center text-xs text-muted-foreground">
                     <span>No cameras selected yet.</span>
-                    <span className="text-[11px] text-muted-foreground/80 mt-1">
+                    <span className="text-xs text-muted-foreground/80 mt-1">
                       Check cameras from the left column to add them to this group.
                     </span>
                   </div>
@@ -320,7 +320,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                         className="flex items-center justify-between p-2 rounded text-xs hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-2 truncate">
-                          <span className="font-mono text-muted-foreground text-[11px] w-4 text-center">
+                          <span className="font-mono text-muted-foreground text-xs w-4 text-center">
                             {index + 1}
                           </span>
                           <span className="font-mono font-semibold text-foreground">
@@ -353,7 +353,7 @@ export const GroupManageDialog: React.FC<GroupManageDialogProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleToggleCamera(camId)}
-                            className="size-6 p-0 text-muted-foreground hover:text-rose-500"
+                            className="size-6 p-0 text-muted-foreground hover:text-destructive"
                             title="Remove from group"
                           >
                             <Trash2 className="size-3" />

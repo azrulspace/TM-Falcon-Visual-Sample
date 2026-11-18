@@ -223,15 +223,15 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
                 >
                   <Video className="size-4 text-primary" />
                   <span>{activeGroup?.name || 'All cameras'}</span>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0 font-mono">
                     {groupCameras.length}
                   </Badge>
                   <ChevronDown className="size-3.5 text-muted-foreground ml-1" />
                 </Button>
               }
             />
-            <PopoverContent align="start" className="w-72 p-2 bg-popover text-popover-foreground border-border shadow-xl rounded-xl">
-              <div className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+            <PopoverContent align="start" className="w-72 p-2 bg-popover text-popover-foreground border-border shadow-2xl rounded-xl">
+              <div className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
                 Camera Groups
               </div>
               <div className="space-y-1 pt-1 max-h-60 overflow-y-auto">
@@ -250,7 +250,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
                     >
                       <div className="flex flex-col min-w-0">
                         <span className="truncate">{g.name}</span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {g.cameraIds.length} cameras {g.isSystem ? '• System' : ''}
                         </span>
                       </div>
@@ -311,7 +311,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
 
         {/* Center: Layout Selector (1, 2, 4, 6 tiles) */}
         <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
-          <span className="text-[11px] font-semibold text-muted-foreground px-2 hidden md:inline">
+          <span className="text-xs font-semibold text-muted-foreground px-2 hidden md:inline">
             Layout:
           </span>
           <Button
@@ -419,7 +419,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground/80">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
           <Info className="size-3 text-primary" />
           <span>Groups are saved on this device only</span>
         </div>

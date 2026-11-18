@@ -86,7 +86,7 @@ export const AddToGroupDialog: React.FC<AddToGroupDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-card border-border text-foreground p-6 rounded-xl">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base font-semibold flex items-center gap-2">
+          <DialogTitle className="text-sm font-semibold flex items-center gap-2">
             <Bookmark className="size-4 text-primary" />
             <span>Add {camera.identifier} to groups</span>
           </DialogTitle>
@@ -116,7 +116,7 @@ export const AddToGroupDialog: React.FC<AddToGroupDialogProps> = ({
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="font-semibold text-foreground truncate">{group.name}</span>
-                      <span className="text-[11px] text-muted-foreground truncate">
+                      <span className="text-xs text-muted-foreground truncate">
                         {group.cameraIds.length} cameras {group.isSystem ? '• System' : ''}
                       </span>
                     </div>

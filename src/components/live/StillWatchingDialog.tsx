@@ -29,15 +29,15 @@ export const StillWatchingDialog: React.FC<StillWatchingDialogProps> = ({
             <Clock className="size-5" />
             <span className="text-xs font-semibold tracking-wide uppercase">Bandwidth & Session Guard</span>
           </div>
-          <DialogTitle className="text-lg font-bold">Still watching?</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground pt-1">
+          <DialogTitle className="text-sm font-semibold text-foreground">Still watching?</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground pt-1">
             To preserve cellular mobile data and edge bandwidth, streaming automatically stops after 10 minutes of inactivity.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-3 px-4 bg-muted/40 rounded-lg border border-border flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Disconnecting in</span>
-          <span className="font-mono font-bold text-base text-foreground">{remainingSeconds}s</span>
+          <span className="font-mono font-semibold text-sm text-foreground">{remainingSeconds}s</span>
         </div>
 
         <DialogFooter className="mt-2">

@@ -11,7 +11,7 @@ import {
   VolumeX,
   Camera as CameraIcon,
   Maximize,
-  ExternalLink,
+  ChevronRight,
   Loader2,
   AlertCircle,
   Sparkles,
@@ -102,11 +102,11 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
 
   return (
     <div
-      className={`group/tile relative aspect-video w-full rounded-xl bg-zinc-950 border overflow-hidden select-none transition-all flex flex-col justify-between ${
+      className={`group/tile relative aspect-video w-full rounded-xl bg-card border overflow-hidden select-none transition-all flex flex-col justify-between ${
         isSpotlight
-          ? 'ring-2 ring-primary border-primary shadow-lg'
+          ? 'ring-2 ring-primary border-primary'
           : isStreaming
-          ? 'border-border shadow-md'
+          ? 'border-border'
           : 'border-border hover:border-border/80'
       }`}
     >
@@ -116,13 +116,13 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
           <button
             type="button"
             onClick={handleOpenSingle}
-            className="font-mono text-xs font-bold text-white hover:text-primary transition-colors cursor-pointer flex items-center gap-1 drop-shadow-sm"
+            className="font-mono text-xs font-bold text-white hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
             title="Open camera in single investigation mode"
           >
             <span>{camera.identifier}</span>
-            <ExternalLink className="size-2.5 opacity-60 group-hover/tile:opacity-100" />
+            <ChevronRight className="size-3 opacity-60 group-hover/tile:opacity-100" />
           </button>
-          <span className="text-[11px] text-zinc-300 truncate hidden sm:inline">
+          <span className="text-xs text-zinc-300 truncate hidden sm:inline">
             {camera.installedPoleId ? `Pole ${camera.installedPoleId}` : 'Unmounted'}
           </span>
         </div>
@@ -132,11 +132,11 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
             <div className="flex items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="bg-rose-500/90 text-white border-rose-600 text-[10px] px-1.5 py-0 font-bold animate-pulse"
+                className="bg-rose-500/90 text-white border-rose-600 text-xs px-1.5 py-0 font-bold animate-pulse"
               >
                 LIVE
               </Badge>
-              <span className="font-mono text-[10px] text-zinc-300 bg-black/60 px-1.5 py-0.5 rounded border border-white/10">
+              <span className="font-mono text-xs text-zinc-300 bg-black/60 px-1.5 py-0.5 rounded border border-white/10">
                 {formatElapsed(streamDuration)}
               </span>
             </div>
@@ -151,7 +151,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
                     : 'bg-rose-500'
                 }`}
               />
-              <span className="text-[11px] text-zinc-300 capitalize font-medium hidden sm:inline">
+              <span className="text-xs text-zinc-300 capitalize font-medium hidden sm:inline">
                 {unifiedState.state}
               </span>
             </div>
@@ -166,7 +166,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
           <div className="p-4 text-center z-10 flex flex-col items-center">
             <AlertCircle className="size-8 text-rose-500/80 mb-2" />
             <div className="text-xs font-semibold text-white">Camera offline</div>
-            <div className="text-[11px] text-zinc-400 max-w-[220px] mt-0.5">
+            <div className="text-xs text-zinc-400 max-w-[220px] mt-0.5">
               {unifiedState.reason}
             </div>
           </div>
@@ -175,14 +175,14 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
           <div className="p-4 text-center z-10 flex flex-col items-center">
             <AlertCircle className="size-8 text-amber-500/90 mb-2" />
             <div className="text-xs font-semibold text-white">Camera unavailable</div>
-            <div className="text-[11px] text-zinc-400 max-w-[220px] mt-0.5">
+            <div className="text-xs text-zinc-400 max-w-[220px] mt-0.5">
               The vendor does not recognize this camera device on Edge.
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onToggleStream(camera.identifier)}
-              className="h-7 px-3 text-[11px] mt-2 text-white border-zinc-700 hover:bg-zinc-800"
+              className="h-7 px-3 text-xs mt-2 text-white border-zinc-700 hover:bg-zinc-800"
             >
               Close stream
             </Button>
@@ -210,14 +210,13 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
             {camera.identifier === 'DEV-001' ? (
               <img
                 src="/monkey-fiber.jpg"
-                alt={`Standby frame for ${camera.identifier}`}
+                alt={`Idle frame for ${camera.identifier}`}
                 className="w-full h-full object-cover opacity-50"
               />
             ) : (
-              <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center text-zinc-600 relative">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <CameraIcon className="size-8 text-zinc-600 relative z-10" />
-                <span className="text-xs font-mono text-zinc-400 mt-1 relative z-10">Standby</span>
+              <div className="w-full h-full bg-muted/40 flex flex-col items-center justify-center text-muted-foreground relative">
+                <CameraIcon className="size-8 text-muted-foreground/60 relative z-10" />
+                <span className="text-xs font-mono text-muted-foreground mt-1 relative z-10">No snapshot</span>
               </div>
             )}
 
@@ -225,7 +224,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
             <Button
               size="sm"
               onClick={() => onToggleStream(camera.identifier)}
-              className="size-11 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground shadow-xl flex items-center justify-center z-10 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="size-11 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground flex items-center justify-center z-10 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
               aria-label={`Start live stream for ${camera.identifier}`}
             >
               <Play className="size-5 ml-0.5 fill-current" />
@@ -235,7 +234,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
       </div>
 
       {/* 3. Bottom Toolbar */}
-      <div className="h-10 bg-zinc-950/90 border-t border-border px-2 flex items-center justify-between text-xs z-20">
+      <div className="h-10 bg-card/90 border-t border-border px-2 flex items-center justify-between text-xs z-20">
         <div className="flex items-center gap-1">
           {/* Start / Stop Toggle */}
           {isStreaming ? (
