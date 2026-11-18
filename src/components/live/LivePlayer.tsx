@@ -64,6 +64,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
     connectingStep,
     connectionElapsedSeconds,
     isTakingLonger,
+    isPaused,
     isMuted,
     volume,
     isPtzMoving,
@@ -102,6 +103,20 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
       videoRef.current.volume = volume;
     }
   }, [isMuted, volume]);
+
+  // Sync pause / resume state with video element and canvas controller
+  useEffect(() => {
+    if (previewCtrlRef.current) {
+      previewCtrlRef.current.setPaused(isPaused);
+    }
+    if (videoRef.current) {
+      if (isPaused) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isPaused]);
 
   // Synthetic canvas preview stream attachment
   useEffect(() => {
@@ -226,16 +241,25 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                 variant="outline"
                 className="bg-black/60 text-muted-foreground border-border text-xs px-2 py-0.5"
               >
-                Preview stream
+                Demo stream · {camera.identifier}
               </Badge>
             )}
-            <Badge
-              variant="outline"
-              className="bg-destructive text-destructive-foreground border-destructive text-xs px-2.5 py-0.5 gap-1.5 font-bold animate-pulse"
-            >
-              <span className="size-2 rounded-full bg-white" />
-              LIVE
-            </Badge>
+            {isPaused ? (
+              <Badge
+                variant="outline"
+                className="bg-status-warning-tint text-status-warning border-status-warning-border text-xs px-2.5 py-0.5 font-bold"
+              >
+                PAUSED
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="bg-destructive text-destructive-foreground border-destructive text-xs px-2.5 py-0.5 gap-1.5 font-bold animate-pulse"
+              >
+                <span className="size-2 rounded-full bg-white" />
+                LIVE
+              </Badge>
+            )}
             <span className="font-mono text-xs font-semibold text-white bg-black/70 px-2 py-0.5 rounded border border-border">
               {formatElapsed(streamStats.elapsedSeconds)}
             </span>
@@ -376,6 +400,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
               ref={videoRef}
               src={isLivePreviewEnabled() ? undefined : "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"}
               autoPlay
+              muted
               loop
               playsInline
               className="w-full h-full object-cover"

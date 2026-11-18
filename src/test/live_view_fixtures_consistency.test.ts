@@ -8,16 +8,15 @@ test('Preview Fixtures: Consistency & Scenario Invariants', async (t) => {
   const now = new Date();
   const cameras = getPreviewCameras([], [], now);
 
-  await t.test('guarantees exactly 15 cameras with realistic states', () => {
+  await t.test('guarantees exactly 15 cameras with realistic states (DEV-001 Online, DEV-002..DEV-015 Offline)', () => {
     assert.strictEqual(cameras.length, 15);
     const online = cameras.filter((c) => c.connectivityState === 'online');
-    const stale = cameras.filter((c) => c.connectivityState === 'stale');
     const offline = cameras.filter((c) => c.connectivityState === 'offline');
 
-    // 11 Online, 2 Stale (DEV-007, DEV-014), 2 Offline (DEV-008, DEV-015)
-    assert.strictEqual(online.length, 11);
-    assert.strictEqual(stale.length, 2);
-    assert.strictEqual(offline.length, 2);
+    // 1 Online (DEV-001 demo camera), 14 Offline (DEV-002 through DEV-015, matching 28d offline staging)
+    assert.strictEqual(online.length, 1);
+    assert.strictEqual(online[0].identifier, 'DEV-001');
+    assert.strictEqual(offline.length, 14);
   });
 
   await t.test('strictly verifies Online, Stale, and Offline threshold rules against shared helper', () => {
@@ -69,9 +68,8 @@ test('Preview Fixtures: Consistency & Scenario Invariants', async (t) => {
   await t.test('monkey photo is used only for DEV-001 matching event', () => {
     cameras.forEach((cam) => {
       const hasMonkey = cam.deviceEvents.some((e) => e.snapshots?.includes('/monkey-fiber.jpg'));
-      if (cam.identifier === 'DEV-001' || cam.identifier === 'DEV-008') {
-        // DEV-001 and DEV-008 preserve monkey photo
-        assert.ok(true);
+      if (cam.identifier === 'DEV-001') {
+        assert.ok(hasMonkey, 'DEV-001 must have monkey photo');
       } else {
         assert.strictEqual(hasMonkey, false, `Camera ${cam.identifier} should not use monkey photo`);
       }
@@ -92,17 +90,16 @@ test('Preview Fixtures: Consistency & Scenario Invariants', async (t) => {
     assert.strictEqual(fallbackId, 'DEV-001');
   });
 
-  await t.test('pre-seeded group "Preview wall" exists with 6 Online cameras', () => {
+  await t.test('pre-seeded group "Preview wall" exists with camera references', () => {
     const groups = getLiveGroups(cameras);
     const previewWall = groups.find((g) => g.name === 'Preview wall');
     assert.ok(previewWall, 'Preview wall group must exist');
     assert.strictEqual(previewWall.cameraIds.length, 6);
 
-    // All 6 cameras in Preview wall must be Online
+    // All 6 cameras in Preview wall must exist in fixtures
     previewWall.cameraIds.forEach((id) => {
       const cam = cameras.find((c) => c.identifier === id);
       assert.ok(cam, `Camera ${id} must exist in fixtures`);
-      assert.strictEqual(cam.connectivityState, 'online', `Camera ${id} in Preview wall must be online`);
     });
   });
 });

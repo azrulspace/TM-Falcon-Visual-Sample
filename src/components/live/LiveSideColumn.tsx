@@ -136,8 +136,23 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             <span className="text-muted-foreground">Connectivity</span>
             <div className="flex items-center gap-2" title={unifiedState.reason}>
               <StatusBadge status={unifiedState.state} size="sm" />
-              <span className="text-muted-foreground text-xs">({unifiedState.relativeTime})</span>
+              <span className="text-muted-foreground text-xs">
+                {unifiedState.state === 'online' ? `(${unifiedState.relativeTime} · heartbeat active)` : `(${unifiedState.relativeTime})`}
+              </span>
             </div>
+          </div>
+
+          {/* Stream availability */}
+          <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+            <span className="text-muted-foreground">Stream availability</span>
+            {unifiedState.state === 'online' ? (
+              <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
+                <span className="size-1.5 rounded-full bg-status-success animate-pulse" />
+                <span>Ready · 1080p 25fps</span>
+              </span>
+            ) : (
+              <span className="text-muted-foreground italic">Unavailable (device offline)</span>
+            )}
           </div>
 
           {/* Model */}

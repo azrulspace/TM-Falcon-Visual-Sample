@@ -32,7 +32,7 @@ const DEFAULT_PREVIEW_SESSION_STATE: PreviewSessionState = {
 };
 
 /**
- * Check if the explicit preview mode is active.
+ * Check if the explicit preview/demo mode is active.
  * Excluded or returns false in production environments.
  */
 export function isLivePreviewEnabled(): boolean {
@@ -48,13 +48,28 @@ export function isLivePreviewEnabled(): boolean {
     return true;
   }
 
-  // URL override ?preview=true / ?preview=false
+  // URL overrides: ?demo=online / ?demo=false / ?preview=true / ?preview=false
   const params = new URLSearchParams(window.location.search);
-  if (params.get('preview') === 'false') return false;
-  if (params.get('preview') === 'true') return true;
+  if (params.get('demo') === 'false' || params.get('demo') === 'off' || params.get('preview') === 'false') {
+    return false;
+  }
+  if (params.get('demo') === 'online' || params.get('demo') === 'true' || params.get('preview') === 'true') {
+    return true;
+  }
 
   const session = getPreviewSessionState();
   return session.enabled;
+}
+
+/**
+ * Toggle preview / demo mode on and off.
+ * Dispatches event so all mounted components update immediately.
+ */
+export function toggleLivePreviewMode(): boolean {
+  const current = getPreviewSessionState();
+  const nextEnabled = !current.enabled;
+  setPreviewSessionState({ enabled: nextEnabled });
+  return nextEnabled;
 }
 
 export function getPreviewSessionState(): PreviewSessionState {

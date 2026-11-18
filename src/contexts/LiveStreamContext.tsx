@@ -27,6 +27,7 @@ interface LiveStreamContextValue {
   connectingStep: string | null;
   connectionElapsedSeconds: number;
   isTakingLonger: boolean;
+  isPaused: boolean;
   isMuted: boolean;
   volume: number;
   isPtzMoving: boolean;
@@ -40,6 +41,7 @@ interface LiveStreamContextValue {
   startStream: (deviceId: string, cameraName?: string, isAutostart?: boolean) => Promise<void>;
   stopStream: (reason?: LiveSessionAuditRecord['stopReason']) => void;
   retryStream: (deviceId: string) => Promise<void>;
+  togglePlayPause: () => void;
   cancelConnecting: () => void;
   toggleMute: () => void;
   setVolume: (vol: number) => void;
@@ -82,6 +84,7 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [connectingStep, setConnectingStep] = useState<string | null>(null);
   const [connectionElapsedSeconds, setConnectionElapsedSeconds] = useState(0);
   const [isTakingLonger, setIsTakingLonger] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Stream stats
   const [streamStats, setStreamStats] = useState<LiveStreamStats>({
@@ -236,6 +239,7 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsPtzMoving(false);
       setActivePtzDirection(null);
       setIsTakingLonger(false);
+      setIsPaused(false);
 
       if (activeStreamingDeviceId && sessionStartTimeRef.current) {
         const elapsed = Math.max(1, Math.round((Date.now() - sessionStartTimeRef.current) / 1000));
@@ -328,6 +332,7 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setStreamState('connecting');
       setConnectionElapsedSeconds(0);
       setIsTakingLonger(false);
+      setIsPaused(false);
       setConnectingStep('Connecting to the camera through Edge...');
 
       // Notify other tabs to stop their streams
@@ -602,6 +607,10 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     stopStream('user_stopped');
   }, [stopStream]);
 
+  const togglePlayPause = useCallback(() => {
+    setIsPaused((prev) => !prev);
+  }, []);
+
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
   }, []);
@@ -826,6 +835,7 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     connectingStep,
     connectionElapsedSeconds,
     isTakingLonger,
+    isPaused,
     isMuted,
     volume,
     isPtzMoving,
@@ -839,6 +849,7 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     startStream,
     stopStream,
     retryStream,
+    togglePlayPause,
     cancelConnecting,
     toggleMute,
     setVolume,

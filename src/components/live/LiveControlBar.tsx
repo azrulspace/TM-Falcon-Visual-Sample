@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/popover';
 import {
   Play,
+  Pause,
   Square,
   Volume2,
   VolumeX,
@@ -57,6 +58,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
     activeStreamingDeviceId,
     streamState,
     streamStats,
+    isPaused,
     isMuted,
     volume,
     setVolume,
@@ -67,6 +69,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
     isTalkToggleMode,
     startStream,
     stopStream,
+    togglePlayPause,
     toggleMute,
     startPtz,
     stopPtz,
@@ -121,7 +124,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         if (document.activeElement === player || player?.contains(document.activeElement)) {
           e.preventDefault();
           if (isLive) {
-            stopStream('user_stopped');
+            togglePlayPause();
           } else if (!isOffline) {
             startStream(camera.identifier, camera.name);
           }
@@ -147,7 +150,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLive, isOffline, camera.identifier, camera.name, startStream, stopStream, toggleMute, takeSnapshot]);
+  }, [isLive, isOffline, camera.identifier, camera.name, startStream, stopStream, togglePlayPause, toggleMute, takeSnapshot]);
 
   // Apply preset
   const handleApplyPreset = (presetId: string) => {
@@ -215,8 +218,29 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
   // State B: Live (Active 56px control bar with progressive disclosure)
   return (
     <div className="h-14 px-4 bg-card flex items-center justify-between w-full select-none">
-      {/* Left Group: Playback Controls (Stop, Audio, Snapshot) */}
+      {/* Left Group: Playback Controls (Play/Pause, Stop, Audio, Snapshot) */}
       <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={togglePlayPause}
+          className="h-8 px-2.5 text-xs font-medium gap-1.5 cursor-pointer border-border bg-card hover:bg-muted text-foreground"
+          aria-label={isPaused ? 'Resume live video' : 'Pause live video'}
+          title={isPaused ? 'Resume (Space)' : 'Pause (Space)'}
+        >
+          {isPaused ? (
+            <>
+              <Play className="size-3 fill-current" />
+              <span>Resume</span>
+            </>
+          ) : (
+            <>
+              <Pause className="size-3 fill-current" />
+              <span>Pause</span>
+            </>
+          )}
+        </Button>
+
         <Button
           size="sm"
           variant="destructive"
@@ -280,9 +304,9 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         </Button>
       </div>
 
-      {/* Middle Group: "Move camera" Popover (PTZ, Zoom, Speed, Presets) */}
-      {capabilities.supportsPtz && (
-        <div className="flex items-center">
+      {/* Middle Group: "Move camera" Popover (PTZ, Zoom, Speed, Presets) and Stream Status */}
+      <div className="flex items-center gap-2">
+        {capabilities.supportsPtz && (
           <Popover>
             <PopoverTrigger
               render={
@@ -439,8 +463,16 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               )}
             </PopoverContent>
           </Popover>
+        )}
+
+        {/* Stream status indicator pill */}
+        <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border text-xs font-mono text-muted-foreground select-none">
+          <span className={`size-1.5 rounded-full ${isPaused ? 'bg-status-warning' : 'bg-status-success animate-pulse'}`} />
+          <span>
+            {isPaused ? 'Paused · 1080p' : `${streamStats.resolution.replace('1920x', '') || '1080p'} · ${streamStats.fps} FPS · ${streamStats.bitrateMbps} Mbps`}
+          </span>
         </div>
-      )}
+      </div>
 
       {/* Right Group: Tools & Telemetry (Talk, Stream Info, Shortcuts, PiP, Fullscreen) */}
       <div className="flex items-center gap-1.5">

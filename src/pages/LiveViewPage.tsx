@@ -39,6 +39,7 @@ import {
   Bookmark,
   ChevronRight,
   HardDrive,
+  Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { CameraSwitcherCombobox } from '@/components/live/CameraSwitcherCombobox';
@@ -306,10 +307,17 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                   </Badge>
                 )}
 
-                {/* Preview data chip */}
-                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
-                  Preview data
-                </Badge>
+                {/* Demo mode / preview indicator */}
+                {isLivePreviewEnabled() ? (
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs px-2 py-0.5 gap-1 font-medium select-none">
+                    <Sparkles className="size-3 stroke-[1.5]" />
+                    <span>Demo mode</span>
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
+                    Preview data
+                  </Badge>
+                )}
               </div>
 
               {/* Secondary line: model • site • pole link with ChevronRight */}
@@ -338,9 +346,16 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   Monitor Wall
                 </h1>
-                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
-                  Preview data
-                </Badge>
+                {isLivePreviewEnabled() ? (
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs px-2 py-0.5 gap-1 font-medium select-none">
+                    <Sparkles className="size-3 stroke-[1.5]" />
+                    <span>Demo mode</span>
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
+                    Preview data
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-muted-foreground">
                 Simultaneous multi-camera grid and group management
