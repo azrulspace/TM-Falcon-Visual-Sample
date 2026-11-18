@@ -30,7 +30,7 @@ export function createPreviewCanvasStream(camera: PreviewCameraInfo): PreviewStr
   canvas.height = 720;
   const ctx = canvas.getContext('2d', { alpha: false });
 
-  let animationFrameId: number;
+  let animationFrameId: number | null = null;
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let panX = 0; // -300 to +300
   let panY = 0; // -200 to +200
