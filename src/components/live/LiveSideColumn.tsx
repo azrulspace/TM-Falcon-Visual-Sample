@@ -6,7 +6,7 @@ import type { FalconEvent } from '@/data/events';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatRelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
+import { formatRelativeTime } from '@/lib/dateTime';
 import {
   ExternalLink,
   MapPin,
@@ -15,9 +15,16 @@ import {
   HardDrive,
   Sparkles,
   ChevronRight,
+  Trees,
+  ShieldAlert,
+  Compass,
+  Truck,
+  Wrench,
+  Activity,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { MapCanvas } from '@/components/MapCanvas';
+import { computeUnifiedDeviceState } from '@/lib/liveCameras';
 
 interface LiveSideColumnProps {
   camera: DeviceWithRelations;
@@ -35,8 +42,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const isOnline = camera.connectivityState === 'online';
-  const isStale = camera.connectivityState === 'stale';
+  const unifiedState = computeUnifiedDeviceState(camera.lastContactAt, camera.connectivityState);
 
   const hasLocation = Boolean(
     installedPole?.location &&
@@ -53,6 +59,59 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
       navigator.clipboard.writeText(coordsString);
       addToast('info', `Copied ${coordsString} to clipboard.`, 'Coordinates Copied');
     }
+  };
+
+  const renderEventThumbnail = (evt: FalconEvent) => {
+    const typeLower = (evt.type || '').toLowerCase();
+    if (typeLower.includes('wildlife') || typeLower.includes('animal') || typeLower.includes('monkey')) {
+      return (
+        <img
+          src="/monkey-fiber.jpg"
+          alt={evt.type}
+          className="size-9 rounded object-cover shrink-0 border border-border"
+        />
+      );
+    }
+    if (typeLower.includes('vegetation') || typeLower.includes('tree') || typeLower.includes('branch')) {
+      return (
+        <div className="size-9 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0" title={evt.type}>
+          <Trees className="size-4" />
+        </div>
+      );
+    }
+    if (typeLower.includes('vandalism') || typeLower.includes('intrusion') || typeLower.includes('theft')) {
+      return (
+        <div className="size-9 rounded bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shrink-0" title={evt.type}>
+          <ShieldAlert className="size-4" />
+        </div>
+      );
+    }
+    if (typeLower.includes('tilt') || typeLower.includes('lean') || typeLower.includes('structural')) {
+      return (
+        <div className="size-9 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0" title={evt.type}>
+          <Compass className="size-4" />
+        </div>
+      );
+    }
+    if (typeLower.includes('vehicle') || typeLower.includes('overheight') || typeLower.includes('truck')) {
+      return (
+        <div className="size-9 rounded bg-sky-500/10 border border-sky-500/20 text-sky-500 flex items-center justify-center shrink-0" title={evt.type}>
+          <Truck className="size-4" />
+        </div>
+      );
+    }
+    if (typeLower.includes('fault') || typeLower.includes('sensor') || typeLower.includes('camera') || typeLower.includes('hardware')) {
+      return (
+        <div className="size-9 rounded bg-orange-500/10 border border-orange-500/20 text-orange-500 flex items-center justify-center shrink-0" title={evt.type}>
+          <Wrench className="size-4" />
+        </div>
+      );
+    }
+    return (
+      <div className="size-9 rounded bg-muted border border-border text-muted-foreground flex items-center justify-center shrink-0" title={evt.type}>
+        <Activity className="size-4" />
+      </div>
+    );
   };
 
   return (
@@ -92,13 +151,17 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
 
           <div className="flex justify-between items-center py-0.5 border-b border-border/40">
             <span className="text-muted-foreground">Connectivity</span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" title={unifiedState.reason}>
               <span
                 className={`size-2 rounded-full ${
-                  isOnline ? 'bg-emerald-500' : isStale ? 'bg-amber-500' : 'bg-rose-500'
+                  unifiedState.state === 'online'
+                    ? 'bg-emerald-500'
+                    : unifiedState.state === 'stale'
+                    ? 'bg-amber-500'
+                    : 'bg-rose-500'
                 }`}
               />
-              <span className="capitalize font-medium text-foreground">{camera.connectivityState}</span>
+              <span className="capitalize font-medium text-foreground">{unifiedState.state}</span>
             </div>
           </div>
 
@@ -106,9 +169,9 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             <span className="text-muted-foreground">Last Contact</span>
             <span
               className="text-foreground cursor-help"
-              title={camera.lastContactAt ? formatAbsoluteMYT(camera.lastContactAt) : 'Never'}
+              title={unifiedState.absoluteMYT}
             >
-              {camera.lastContactAt ? formatRelativeTime(camera.lastContactAt) : 'Never'}
+              {unifiedState.relativeTime}
             </span>
           </div>
 
@@ -168,11 +231,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                   className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src="/monkey-fiber.jpg"
-                      alt={evt.type}
-                      className="size-9 rounded object-cover shrink-0 border border-border"
-                    />
+                    {renderEventThumbnail(evt)}
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="font-medium text-xs text-foreground group-hover:text-primary transition-colors truncate">

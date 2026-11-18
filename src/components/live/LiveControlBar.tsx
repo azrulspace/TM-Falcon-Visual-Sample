@@ -189,20 +189,39 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         {/* Audio Mute & Volume */}
         {capabilities.supportsAudio && (
           <div className="relative flex items-center gap-1 pl-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleMute}
-              onMouseEnter={() => setShowVolumeSlider(true)}
-              className="size-9 p-0 cursor-pointer"
-              aria-label={isMuted ? 'Unmute stream audio' : 'Mute stream audio'}
-              title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
-            >
-              {isMuted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-foreground" />}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <span className={!isLive ? 'inline-flex cursor-not-allowed' : 'inline-flex'}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!isLive}
+                        onClick={toggleMute}
+                        onMouseEnter={() => {
+                          if (isLive) setShowVolumeSlider(true);
+                        }}
+                        className="size-9 p-0 cursor-pointer disabled:pointer-events-none disabled:opacity-50"
+                        aria-label={isMuted ? 'Unmute stream audio' : 'Mute stream audio'}
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                        title={!isLive ? undefined : isMuted ? 'Unmute (M)' : 'Mute (M)'}
+                      >
+                        {isMuted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-foreground" />}
+                      </Button>
+                    </span>
+                  }
+                />
+                {!isLive && (
+                  <TooltipContent side="top" className="text-xs">
+                    Start the video to use these controls
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
 
             {/* Inline mini volume slider on hover */}
-            {showVolumeSlider && (
+            {isLive && showVolumeSlider && (
               <div
                 onMouseLeave={() => setShowVolumeSlider(false)}
                 className="absolute left-10 z-30 p-2 bg-popover border border-border shadow-md rounded-lg flex items-center gap-2 w-28"
@@ -223,217 +242,281 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         )}
 
         {/* Snapshot button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const video = document.querySelector<HTMLVideoElement>('#falcon-live-player video');
-            takeSnapshot(camera.identifier, video);
-          }}
-          className="h-9 px-3 text-xs gap-1.5 cursor-pointer"
-          aria-label="Take high resolution snapshot"
-          title="Save snapshot image (S)"
-        >
-          <Camera className="size-3.5" />
-          <span className="hidden sm:inline">Snapshot</span>
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className={!isLive ? 'inline-flex cursor-not-allowed' : 'inline-flex'}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!isLive}
+                    onClick={() => {
+                      const video = document.querySelector<HTMLVideoElement>('#falcon-live-player video');
+                      takeSnapshot(camera.identifier, video);
+                    }}
+                    className="h-9 px-3 text-xs gap-1.5 cursor-pointer disabled:pointer-events-none disabled:opacity-50"
+                    aria-label="Take high resolution snapshot"
+                    aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                    title={!isLive ? undefined : 'Save snapshot image (S)'}
+                  >
+                    <Camera className="size-3.5" />
+                    <span className="hidden sm:inline">Snapshot</span>
+                  </Button>
+                </span>
+              }
+            />
+            {!isLive && (
+              <TooltipContent side="top" className="text-xs">
+                Start the video to use these controls
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Center Group: Desktop PTZ controls (only when supported) */}
       {capabilities.supportsPtz && (
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted/30 border border-border/50">
-          <span className="text-[11px] font-semibold text-muted-foreground hidden lg:inline mr-1">
-            PTZ
-          </span>
-          <div
-            tabIndex={0}
-            role="group"
-            aria-label="Pan and tilt controls"
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                startPtz('pan_left');
-              } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                startPtz('pan_right');
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                startPtz('tilt_up');
-              } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                startPtz('tilt_down');
-              }
-            }}
-            onKeyUp={stopPtz}
-            className="flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded p-0.5"
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              onPointerDown={() => startPtz('pan_left')}
-              onPointerUp={stopPtz}
-              onPointerLeave={stopPtz}
-              onPointerCancel={stopPtz}
-              className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'pan_left' ? 'bg-primary text-primary-foreground' : ''}`}
-              title="Pan left (ArrowLeft)"
-              aria-label="Pan camera left"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <div className="flex flex-col gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onPointerDown={() => startPtz('tilt_up')}
-                onPointerUp={stopPtz}
-                onPointerLeave={stopPtz}
-                onPointerCancel={stopPtz}
-                className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'tilt_up' ? 'bg-primary text-primary-foreground' : ''}`}
-                title="Tilt up (ArrowUp)"
-                aria-label="Tilt camera up"
-              >
-                <ChevronUp className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onPointerDown={() => startPtz('tilt_down')}
-                onPointerUp={stopPtz}
-                onPointerLeave={stopPtz}
-                onPointerCancel={stopPtz}
-                className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'tilt_down' ? 'bg-primary text-primary-foreground' : ''}`}
-                title="Tilt down (ArrowDown)"
-                aria-label="Tilt camera down"
-              >
-                <ChevronDown className="size-4" />
-              </Button>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onPointerDown={() => startPtz('pan_right')}
-              onPointerUp={stopPtz}
-              onPointerLeave={stopPtz}
-              onPointerCancel={stopPtz}
-              className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'pan_right' ? 'bg-primary text-primary-foreground' : ''}`}
-              title="Pan right (ArrowRight)"
-              aria-label="Pan camera right"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-
-          {/* Zoom In/Out */}
-          {capabilities.supportsZoom && (
-            <div className="flex items-center gap-1 border-l border-border pl-2 ml-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onPointerDown={() => startPtz('zoom_in')}
-                onPointerUp={stopPtz}
-                onPointerLeave={stopPtz}
-                onPointerCancel={stopPtz}
-                className="size-8 p-0 cursor-pointer"
-                title="Zoom in"
-                aria-label="Zoom in"
-              >
-                <ZoomIn className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onPointerDown={() => startPtz('zoom_out')}
-                onPointerUp={stopPtz}
-                onPointerLeave={stopPtz}
-                onPointerCancel={stopPtz}
-                className="size-8 p-0 cursor-pointer"
-                title="Zoom out"
-                aria-label="Zoom out"
-              >
-                <ZoomOut className="size-4" />
-              </Button>
-            </div>
-          )}
-
-          {/* Speed Selector */}
-          <div className="flex items-center gap-0.5 border-l border-border pl-2 ml-1">
-            {(['1x', '2x', '4x'] as const).map((spd) => (
-              <button
-                key={spd}
-                type="button"
-                onClick={() => setPtzSpeed(spd)}
-                className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                  ptzSpeed === spd
-                    ? 'bg-primary text-primary-foreground font-bold'
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {spd}
-              </button>
-            ))}
-          </div>
-
-          {/* Presets Popover */}
-          {capabilities.supportsPresets && (
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 text-xs gap-1 ml-1 cursor-pointer"
-                    aria-label="Camera position presets"
-                    title="Camera presets"
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <div className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-muted/30 border border-border/50 ${!isLive ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  <span className="text-[11px] font-semibold text-muted-foreground hidden lg:inline mr-1">
+                    PTZ
+                  </span>
+                  <div
+                    tabIndex={isLive ? 0 : -1}
+                    role="group"
+                    aria-label="Pan and tilt controls"
+                    aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                    onKeyDown={(e) => {
+                      if (!isLive) return;
+                      if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        startPtz('pan_left');
+                      } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        startPtz('pan_right');
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        startPtz('tilt_up');
+                      } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        startPtz('tilt_down');
+                      }
+                    }}
+                    onKeyUp={isLive ? stopPtz : undefined}
+                    className="flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded p-0.5"
                   >
-                    <Bookmark className="size-3" />
-                    <span className="hidden xl:inline text-[11px]">Presets</span>
-                  </Button>
-                }
-              />
-              <PopoverContent align="center" className="w-64 p-2 text-xs bg-popover text-popover-foreground border-border shadow-md">
-                <div className="font-semibold text-foreground px-2 py-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Saved PTZ Positions
-                </div>
-                <div className="space-y-1 pt-1">
-                  {PRESETS.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleApplyPreset(p.id)}
-                      className={`w-full flex items-center justify-between p-2 rounded text-left transition-colors cursor-pointer ${
-                        activePreset === p.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted text-foreground'
-                      }`}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!isLive}
+                      onPointerDown={() => isLive && startPtz('pan_left')}
+                      onPointerUp={stopPtz}
+                      onPointerLeave={stopPtz}
+                      onPointerCancel={stopPtz}
+                      className={`size-8 p-0 cursor-pointer disabled:pointer-events-none ${activePtzDirection === 'pan_left' ? 'bg-primary text-primary-foreground' : ''}`}
+                      title={!isLive ? undefined : 'Pan left (ArrowLeft)'}
+                      aria-label="Pan camera left"
+                      aria-description={!isLive ? 'Start the video to use these controls' : undefined}
                     >
-                      <div className="flex flex-col">
-                        <span className="text-xs">{p.name}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{p.angle}</span>
-                      </div>
-                      {activePreset === p.id && <Check className="size-3 text-primary shrink-0" />}
-                    </button>
-                  ))}
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!isLive}
+                        onPointerDown={() => isLive && startPtz('tilt_up')}
+                        onPointerUp={stopPtz}
+                        onPointerLeave={stopPtz}
+                        onPointerCancel={stopPtz}
+                        className={`size-8 p-0 cursor-pointer disabled:pointer-events-none ${activePtzDirection === 'tilt_up' ? 'bg-primary text-primary-foreground' : ''}`}
+                        title={!isLive ? undefined : 'Tilt up (ArrowUp)'}
+                        aria-label="Tilt camera up"
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                      >
+                        <ChevronUp className="size-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!isLive}
+                        onPointerDown={() => isLive && startPtz('tilt_down')}
+                        onPointerUp={stopPtz}
+                        onPointerLeave={stopPtz}
+                        onPointerCancel={stopPtz}
+                        className={`size-8 p-0 cursor-pointer disabled:pointer-events-none ${activePtzDirection === 'tilt_down' ? 'bg-primary text-primary-foreground' : ''}`}
+                        title={!isLive ? undefined : 'Tilt down (ArrowDown)'}
+                        aria-label="Tilt camera down"
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                      >
+                        <ChevronDown className="size-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!isLive}
+                      onPointerDown={() => isLive && startPtz('pan_right')}
+                      onPointerUp={stopPtz}
+                      onPointerLeave={stopPtz}
+                      onPointerCancel={stopPtz}
+                      className={`size-8 p-0 cursor-pointer disabled:pointer-events-none ${activePtzDirection === 'pan_right' ? 'bg-primary text-primary-foreground' : ''}`}
+                      title={!isLive ? undefined : 'Pan right (ArrowRight)'}
+                      aria-label="Pan camera right"
+                      aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+
+                  {/* Zoom In/Out */}
+                  {capabilities.supportsZoom && (
+                    <div className="flex items-center gap-1 border-l border-border pl-2 ml-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!isLive}
+                        onPointerDown={() => isLive && startPtz('zoom_in')}
+                        onPointerUp={stopPtz}
+                        onPointerLeave={stopPtz}
+                        onPointerCancel={stopPtz}
+                        className="size-8 p-0 cursor-pointer disabled:pointer-events-none"
+                        title={!isLive ? undefined : 'Zoom in'}
+                        aria-label="Zoom in"
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                      >
+                        <ZoomIn className="size-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!isLive}
+                        onPointerDown={() => isLive && startPtz('zoom_out')}
+                        onPointerUp={stopPtz}
+                        onPointerLeave={stopPtz}
+                        onPointerCancel={stopPtz}
+                        className="size-8 p-0 cursor-pointer disabled:pointer-events-none"
+                        title={!isLive ? undefined : 'Zoom out'}
+                        aria-label="Zoom out"
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                      >
+                        <ZoomOut className="size-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Speed Selector */}
+                  <div className="flex items-center gap-0.5 border-l border-border pl-2 ml-1">
+                    {(['1x', '2x', '4x'] as const).map((spd) => (
+                      <button
+                        key={spd}
+                        type="button"
+                        disabled={!isLive}
+                        onClick={() => setPtzSpeed(spd)}
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer transition-colors disabled:pointer-events-none ${
+                          ptzSpeed === spd
+                            ? 'bg-primary text-primary-foreground font-bold'
+                            : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {spd}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Presets Popover */}
+                  {capabilities.supportsPresets && (
+                    <Popover>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!isLive}
+                            className="h-8 px-2 text-xs gap-1 ml-1 cursor-pointer disabled:pointer-events-none"
+                            aria-label="Camera position presets"
+                            aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                            title={!isLive ? undefined : 'Camera presets'}
+                          >
+                            <Bookmark className="size-3" />
+                            <span className="hidden xl:inline text-[11px]">Presets</span>
+                          </Button>
+                        }
+                      />
+                      <PopoverContent align="center" className="w-64 p-2 text-xs bg-popover text-popover-foreground border-border shadow-md">
+                        <div className="font-semibold text-foreground px-2 py-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                          Saved PTZ Positions
+                        </div>
+                        <div className="space-y-1 pt-1">
+                          {PRESETS.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleApplyPreset(p.id)}
+                              className={`w-full flex items-center justify-between p-2 rounded text-left transition-colors cursor-pointer ${
+                                activePreset === p.id ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted text-foreground'
+                              }`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-xs">{p.name}</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">{p.angle}</span>
+                              </div>
+                              {activePreset === p.id && <Check className="size-3 text-primary shrink-0" />}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
+              }
+            />
+            {!isLive && (
+              <TooltipContent side="top" className="text-xs">
+                Start the video to use these controls
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {/* Mobile/Tablet Portrait: "Move camera" button opening bottom Sheet */}
       {capabilities.supportsPtz && (
         <div className="sm:hidden">
-          <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
-            <SheetTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 px-3 text-xs gap-1.5 cursor-pointer"
-                >
-                  <Compass className="size-4" />
-                  <span>Move camera</span>
-                </Button>
-              }
-            />
+          <Sheet open={mobileSheetOpen && isLive} onOpenChange={(open) => isLive && setMobileSheetOpen(open)}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <span className={!isLive ? 'inline-flex cursor-not-allowed' : 'inline-flex'}>
+                      <SheetTrigger
+                        render={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!isLive}
+                            className="h-9 px-3 text-xs gap-1.5 cursor-pointer disabled:pointer-events-none disabled:opacity-50"
+                            aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                          >
+                            <Compass className="size-4" />
+                            <span>Move camera</span>
+                          </Button>
+                        }
+                      />
+                    </span>
+                  }
+                />
+                {!isLive && (
+                  <TooltipContent side="top" className="text-xs">
+                    Start the video to use these controls
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <SheetContent side="bottom" className="p-4 bg-card border-t border-border rounded-t-2xl">
               <SheetHeader className="mb-4">
                 <SheetTitle className="text-sm font-bold flex items-center gap-2">
@@ -537,62 +620,69 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Button
-                      variant={isTalkActive ? 'default' : 'outline'}
-                      size="sm"
-                      onPointerDown={() => {
-                        if (!isTalkToggleMode) startTalk();
-                      }}
-                      onPointerUp={() => {
-                        if (!isTalkToggleMode) stopTalk();
-                      }}
-                      onPointerLeave={() => {
-                        if (!isTalkToggleMode) stopTalk();
-                      }}
-                      onPointerCancel={() => {
-                        if (!isTalkToggleMode) stopTalk();
-                      }}
-                      onClick={() => {
-                        if (talkPrecondition === 'blocked_mic') {
-                          requestMicPermission();
-                        } else if (isTalkToggleMode) {
-                          toggleTalk();
-                        }
-                      }}
-                      className={`h-9 px-3 text-xs gap-1.5 transition-all select-none cursor-pointer ${
-                        isTalkActive
-                          ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
-                          : isPtzMoving
-                          ? 'opacity-60 cursor-not-allowed'
-                          : talkPrecondition === 'blocked_mic'
-                          ? 'border-amber-500/50 text-amber-500'
-                          : ''
-                      }`}
-                      aria-label="Two-way audio intercom"
-                    >
-                      {isPtzMoving ? (
-                        <MicOff className="size-4 text-amber-500" />
-                      ) : isTalkActive ? (
-                        <Mic className="size-4 text-white" />
-                      ) : talkPrecondition === 'blocked_mic' ? (
-                        <MicOff className="size-4 text-amber-500" />
-                      ) : (
-                        <Mic className="size-4 text-muted-foreground" />
-                      )}
-                      <span className="hidden md:inline">
-                        {isTalkActive
-                          ? 'Talking'
-                          : talkPrecondition === 'blocked_mic'
-                          ? 'Grant mic'
-                          : isTalkToggleMode
-                          ? 'Talk (Toggle)'
-                          : 'Talk'}
-                      </span>
-                    </Button>
+                    <span className={!isLive ? 'inline-flex cursor-not-allowed' : 'inline-flex'}>
+                      <Button
+                        variant={isTalkActive ? 'default' : 'outline'}
+                        size="sm"
+                        disabled={!isLive || isPtzMoving}
+                        onPointerDown={() => {
+                          if (isLive && !isTalkToggleMode) startTalk();
+                        }}
+                        onPointerUp={() => {
+                          if (isLive && !isTalkToggleMode) stopTalk();
+                        }}
+                        onPointerLeave={() => {
+                          if (isLive && !isTalkToggleMode) stopTalk();
+                        }}
+                        onPointerCancel={() => {
+                          if (isLive && !isTalkToggleMode) stopTalk();
+                        }}
+                        onClick={() => {
+                          if (!isLive) return;
+                          if (talkPrecondition === 'blocked_mic') {
+                            requestMicPermission();
+                          } else if (isTalkToggleMode) {
+                            toggleTalk();
+                          }
+                        }}
+                        className={`h-9 px-3 text-xs gap-1.5 transition-all select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50 ${
+                          isTalkActive
+                            ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                            : isPtzMoving
+                            ? 'opacity-60 cursor-not-allowed'
+                            : talkPrecondition === 'blocked_mic'
+                            ? 'border-amber-500/50 text-amber-500'
+                            : ''
+                        }`}
+                        aria-label="Two-way audio intercom"
+                        aria-description={!isLive ? 'Start the video to use these controls' : undefined}
+                      >
+                        {isPtzMoving ? (
+                          <MicOff className="size-4 text-amber-500" />
+                        ) : isTalkActive ? (
+                          <Mic className="size-4 text-white" />
+                        ) : talkPrecondition === 'blocked_mic' ? (
+                          <MicOff className="size-4 text-amber-500" />
+                        ) : (
+                          <Mic className="size-4 text-muted-foreground" />
+                        )}
+                        <span className="hidden md:inline">
+                          {isTalkActive
+                            ? 'Talking'
+                            : talkPrecondition === 'blocked_mic'
+                            ? 'Grant mic'
+                            : isTalkToggleMode
+                            ? 'Talk (Toggle)'
+                            : 'Talk'}
+                        </span>
+                      </Button>
+                    </span>
                   }
                 />
                 <TooltipContent side="top" className="text-xs max-w-xs">
-                  {isPtzMoving
+                  {!isLive
+                    ? 'Start the video to use these controls'
+                    : isPtzMoving
                     ? 'The camera mutes the microphone while it moves.'
                     : talkPrecondition === 'blocked_https'
                     ? 'Needs a secure connection (HTTPS) to access microphone.'
@@ -612,20 +702,25 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                   render={
                     <button
                       type="button"
-                      onClick={() => setTalkToggleMode(!isTalkToggleMode)}
-                      className={`size-7 rounded flex items-center justify-center text-[10px] font-mono cursor-pointer border ${
+                      disabled={!isLive}
+                      onClick={() => isLive && setTalkToggleMode(!isTalkToggleMode)}
+                      className={`size-7 rounded flex items-center justify-center text-[10px] font-mono cursor-pointer border disabled:pointer-events-none disabled:opacity-50 ${
                         isTalkToggleMode
                           ? 'bg-primary/20 text-primary border-primary/40'
                           : 'text-muted-foreground/60 border-transparent hover:bg-muted'
                       }`}
-                      title={isTalkToggleMode ? 'Switch to hold-to-talk mode' : 'Switch to toggle-mode talk for accessibility'}
+                      title={!isLive ? undefined : isTalkToggleMode ? 'Switch to hold-to-talk mode' : 'Switch to toggle-mode talk for accessibility'}
                     >
                       {isTalkToggleMode ? 'TOG' : 'HOLD'}
                     </button>
                   }
                 />
                 <TooltipContent side="top" className="text-xs">
-                  {isTalkToggleMode ? 'Mode: Click to start/stop speech' : 'Mode: Hold button to talk'}
+                  {!isLive
+                    ? 'Start the video to use these controls'
+                    : isTalkToggleMode
+                    ? 'Mode: Click to start/stop speech'
+                    : 'Mode: Hold button to talk'}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -684,6 +779,9 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               </div>
               <div className="text-[10px] text-muted-foreground/70 pt-0.5 text-right italic">
                 * Estimated from bitrate and session duration
+              </div>
+              <div className="pt-2 mt-2 border-t border-border/60 text-[10px] text-muted-foreground/80 leading-normal font-sans">
+                Note: Server viewing session audit API is pending backend implementation. Local session duration logged to browser storage.
               </div>
             </div>
           </PopoverContent>

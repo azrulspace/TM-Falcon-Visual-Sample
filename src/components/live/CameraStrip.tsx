@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
 import { useEvents } from '@/contexts/EventsContext';
 import { formatRelativeTime } from '@/lib/dateTime';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { computeUnifiedDeviceState } from '@/lib/liveCameras';
+import { ChevronLeft, ChevronRight, Camera as CameraIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CameraStripProps {
@@ -114,8 +115,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
       >
         {cameras.map((camera) => {
           const isSelected = camera.identifier === selectedCameraId;
-          const isOnline = camera.connectivityState === 'online';
-          const isStale = camera.connectivityState === 'stale';
+          const unifiedState = computeUnifiedDeviceState(camera.lastContactAt, camera.connectivityState);
           const lastEventLabel =
             lastEventTimeByCameraId.get(camera.identifier.toLowerCase().trim()) || 'None';
 
@@ -147,12 +147,20 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             >
               {/* Thumbnail / Poster frame */}
               <div className="relative aspect-video w-full rounded bg-muted/80 overflow-hidden mb-1.5 flex items-center justify-center border border-border/40">
-                <img
-                  src="/monkey-fiber.jpg"
-                  alt={`Last event snapshot for ${camera.identifier}`}
-                  className="w-full h-full object-cover filter brightness-90 group-hover:brightness-100 transition-all"
-                  loading="lazy"
-                />
+                {camera.identifier === 'DEV-001' ? (
+                  <img
+                    src="/monkey-fiber.jpg"
+                    alt={`Last event snapshot for ${camera.identifier}`}
+                    className="w-full h-full object-cover filter brightness-90 group-hover:brightness-100 transition-all"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center text-zinc-500 relative">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:12px_12px]" />
+                    <CameraIcon className="size-5 text-zinc-500/80 relative z-10" />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-0.5 relative z-10">Standby</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                 <span className="absolute bottom-1 left-1.5 text-[9px] font-mono text-zinc-300 drop-shadow-xs truncate max-w-[90%]">
                   Last event, {lastEventLabel}
@@ -165,11 +173,11 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                   {camera.identifier}
                 </span>
                 <span
-                  title={camera.connectivityState}
+                  title={unifiedState.reason}
                   className={`size-2 rounded-full shrink-0 ${
-                    isOnline
+                    unifiedState.state === 'online'
                       ? 'bg-emerald-500'
-                      : isStale
+                      : unifiedState.state === 'stale'
                       ? 'bg-amber-500'
                       : 'bg-rose-500'
                   }`}

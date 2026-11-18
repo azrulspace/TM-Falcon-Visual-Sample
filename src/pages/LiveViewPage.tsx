@@ -3,7 +3,14 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAssets } from '@/contexts/AssetsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useLiveStream } from '@/contexts/LiveStreamContext';
-import { filterCamerasOnly, getDefaultCameraId, getCameraCapabilities, getRecentEventsForCamera, getPoleForCamera } from '@/lib/liveCameras';
+import {
+  filterCamerasOnly,
+  getDefaultCameraId,
+  getCameraCapabilities,
+  getRecentEventsForCamera,
+  getPoleForCamera,
+  computeUnifiedDeviceState,
+} from '@/lib/liveCameras';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +26,6 @@ import {
   MapPin,
   Radio,
   Copy,
-  ShieldCheck,
   AlertCircle,
   Clock,
   Video,
@@ -102,6 +108,10 @@ export const LiveViewPage: React.FC = () => {
     [events, currentCamera]
   );
 
+  const unifiedState = useMemo(() => {
+    return computeUnifiedDeviceState(currentCamera?.lastContactAt, currentCamera?.connectivityState);
+  }, [currentCamera?.lastContactAt, currentCamera?.connectivityState]);
+
   // If deviceId in URL is invalid or missing, redirect to default camera
   useEffect(() => {
     if (cameras.length === 0) return;
@@ -142,9 +152,6 @@ export const LiveViewPage: React.FC = () => {
     );
   }
 
-  const isOnline = currentCamera.connectivityState === 'online';
-  const isStale = currentCamera.connectivityState === 'stale';
-
   return (
     <div className="flex flex-col gap-5 w-full max-w-[1720px] mx-auto pb-10">
       {/* 4.2 Frame Header */}
@@ -179,28 +186,22 @@ export const LiveViewPage: React.FC = () => {
 
         {/* Right: State Badge & Overflow Menu */}
         <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-          {isOnline ? (
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium">
+          {unifiedState.state === 'online' ? (
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium" title={unifiedState.reason}>
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Online
             </Badge>
-          ) : isStale ? (
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium">
+          ) : unifiedState.state === 'stale' ? (
+            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium" title={unifiedState.reason}>
               <Clock className="size-3" />
               Stale
             </Badge>
           ) : (
-            <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium">
+            <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium" title={unifiedState.reason}>
               <AlertCircle className="size-3" />
               Offline
             </Badge>
           )}
-
-          {/* Audit indicator */}
-          <div className="hidden md:flex items-center gap-1 text-[11px] text-muted-foreground/80 bg-muted/40 px-2 py-1 rounded border border-border/40" title="All viewing sessions are recorded to system audit log">
-            <ShieldCheck className="size-3 text-muted-foreground" />
-            <span>Viewing logged</span>
-          </div>
 
           {/* Overflow Menu */}
           <DropdownMenu>

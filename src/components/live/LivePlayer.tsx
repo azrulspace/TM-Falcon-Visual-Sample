@@ -163,11 +163,15 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-zinc-950">
           {/* Dimmed poster background with real snapshot */}
           <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-            <img
-              src="/monkey-fiber.jpg"
-              alt="Idle poster frame"
-              className="w-full h-full object-cover filter blur-[2px]"
-            />
+            {camera.identifier === 'DEV-001' ? (
+              <img
+                src="/monkey-fiber.jpg"
+                alt="Idle poster frame"
+                className="w-full h-full object-cover filter blur-[2px]"
+              />
+            ) : (
+              <div className="w-full h-full bg-zinc-900 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
+            )}
           </div>
 
           <div className="relative z-10 flex flex-col items-center max-w-md">

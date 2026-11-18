@@ -243,16 +243,25 @@ function generateEvents(): FalconEvent[] {
       assignee = 'Field Team Beta';
     }
 
-    // Exact priority partition for remaining 141:
-    // Critical: 62 (Total Critical = 23 + 62 = 85)
-    // High: 24 (Total High = 63 + 24 = 87) -> Total High & Critical = 172!
-    // Medium: 25 (Total Medium = 31 + 25 = 56)
-    // Low: 30 (Total Low = 0 + 30 = 30)
-    let priority: FalconEvent['priority'] = 'Medium';
-    if (j < 62) priority = 'Critical';
-    else if (j < 62 + 24) priority = 'High';
-    else if (j < 62 + 24 + 25) priority = 'Medium';
-    else priority = 'Low';
+    // Exact priority partition for remaining 141 (Total Critical: 85, Total High: 87 -> High+Critical = 172):
+    // Interleaved smoothly across devices to avoid clumping
+    const remainingPriorities: FalconEvent['priority'][] = [
+      "Critical","High","Medium","Critical","Low","Critical","Critical","High","Medium","Critical",
+      "Low","Critical","Critical","High","Medium","Critical","Low","Critical","Critical","High",
+      "Medium","Critical","Low","Critical","Critical","High","Medium","Critical","Low","Critical",
+      "Critical","High","Medium","Critical","Low","Critical","Critical","High","Medium","Critical",
+      "Low","Critical","Critical","High","Medium","Critical","Low","Critical","Critical","High",
+      "Medium","Critical","Low","Critical","Critical","High","Medium","Critical","Low","Critical",
+      "Critical","High","Medium","Critical","Low","Critical","Critical","High","Medium","Critical",
+      "Low","Critical","Critical","High","Medium","Critical","Low","Critical","Critical","High",
+      "Medium","Critical","Low","Critical","Critical","High","Medium","Critical","Low","Critical",
+      "Critical","High","Medium","Critical","Low","Critical","Critical","High","Medium","Critical",
+      "Low","Critical","Critical","High","Medium","Critical","Low","Critical","Critical","High",
+      "Medium","Critical","Low","Critical","Critical","High","Medium","Critical","Low","Critical",
+      "Critical","High","Medium","Critical","Low","High","Medium","Low","High","Medium",
+      "Low","High","Medium","Low","Medium","Low","Low","Low","Low","Low","Low"
+    ];
+    const priority: FalconEvent['priority'] = remainingPriorities[j] || 'Medium';
 
     const isToday = 117 + j < 122; // First 122 events are Today
     const minutesAgo = isToday ? 20 + j * 45 : 1440 + (j - 5) * 60; // < 24h for first 122
