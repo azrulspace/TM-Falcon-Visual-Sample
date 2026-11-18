@@ -292,7 +292,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             <div className="flex flex-col">
               <div className="relative w-full h-48 bg-muted overflow-hidden">
                 <MapCanvas
-                  selectedId={camera.identifier.replace('-', '_')}
+                  selectedId={installedPole ? installedPole.identifier : camera.identifier.replace('-', '_')}
                   onMarkerClick={() => {}}
                   basemap="satellite"
                   activeLayers={{
@@ -305,8 +305,11 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                   }}
                   className="w-full h-full pointer-events-none"
                 />
-                <div className="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-xs text-white text-xs font-mono px-2 py-0.5 rounded border border-white/10">
-                  Pole {installedPole!.identifier}
+                <div className="absolute top-2 left-2 z-10 bg-black/80 backdrop-blur-xs text-white text-xs font-mono px-2.5 py-1 rounded-md border border-white/15 shadow-sm flex items-center gap-1.5">
+                  <MapPin className="size-3 text-primary shrink-0" />
+                  <span>Pole {installedPole!.identifier}</span>
+                  <span className="text-white/40">•</span>
+                  <span className="text-white/80 font-sans">{camera.siteName || 'Teluk Panglima Garang'}</span>
                 </div>
               </div>
 
