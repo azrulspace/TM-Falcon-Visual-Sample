@@ -160,15 +160,15 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-card border border-border shadow-xs">
-      {/* Left Group: Start/Stop, Mute/Volume, Snapshot */}
+      {/* Group 1: Playback Controls (Start/Stop, Audio, Snapshot) */}
       <div className="flex items-center gap-2">
-        {/* Primary Start / Stop toggle button */}
+        {/* Secondary Start / Destructive Stop toggle button (Primary Play is inside the video) */}
         {isLive ? (
           <Button
             size="sm"
             variant="destructive"
             onClick={() => stopStream('user_stopped')}
-            className="h-9 px-4 text-xs font-semibold gap-1.5 shadow-xs cursor-pointer"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-xs cursor-pointer"
             aria-label="Stop live stream"
           >
             <Square className="size-3.5 fill-current" />
@@ -176,9 +176,10 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
           </Button>
         ) : (
           <Button
+            variant="outline"
             size="sm"
             onClick={() => startStream(camera.identifier, camera.name)}
-            className="h-9 px-4 text-xs font-semibold gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer"
             aria-label="Start live stream"
           >
             <Play className="size-3.5 fill-current" />
@@ -275,7 +276,12 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         </TooltipProvider>
       </div>
 
-      {/* Center Group: Desktop PTZ controls (only when supported) */}
+      {/* 1px divider between Group 1 (Playback) and Group 2 (Camera Movement) */}
+      {capabilities.supportsPtz && (
+        <div className="hidden sm:block h-6 w-px bg-border my-auto" />
+      )}
+
+      {/* Group 2: Camera Movement (PTZ, Zoom, Presets - only when supported) */}
       {capabilities.supportsPtz && (
         <TooltipProvider>
           <Tooltip>
@@ -611,7 +617,10 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         </div>
       )}
 
-      {/* Right Group: Talk intercom, Stream Info, Fullscreen, PiP, Shortcuts */}
+      {/* 1px divider between Group 2 and Group 3 (Tools & Telemetry) */}
+      <div className="hidden sm:block h-6 w-px bg-border my-auto" />
+
+      {/* Group 3: Tools & Telemetry (Talk, Stream Info, Shortcuts, PiP, Fullscreen) */}
       <div className="flex items-center gap-2">
         {/* Talk Intercom Button with Precondition handling */}
         {capabilities.supportsTalk && (

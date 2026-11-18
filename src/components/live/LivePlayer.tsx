@@ -27,13 +27,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface LivePlayerProps {
   camera: DeviceWithRelations;
   capabilities: LiveCameraCapabilities;
-  installedPole: PoleRecord | null;
+  installedPole?: PoleRecord | null;
 }
 
 export const LivePlayer: React.FC<LivePlayerProps> = ({
   camera,
   capabilities,
-  installedPole,
 }) => {
   const navigate = useNavigate();
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -68,9 +67,6 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
   const lastEvent = useMemo(() => {
     return events.find((e) => (e.device || '').toLowerCase().trim() === camera.identifier.toLowerCase().trim()) || null;
   }, [events, camera.identifier]);
-
-  // Vendor secondary label (e.g. KT-001)
-  const vendorName = camera.vendorDeviceId && camera.vendorDeviceId !== camera.identifier ? camera.vendorDeviceId : null;
 
   // Format elapsed time in MM:SS
   const formatElapsed = (sec: number) => {
@@ -118,63 +114,43 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
       aria-label={`Live camera feed for ${camera.identifier}`}
       className="relative w-full aspect-video rounded-xl bg-zinc-950 border border-border shadow-md overflow-hidden select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
-      {/* Top Corners Overlay: Never covers burned-in camera text (sits in top header band) */}
-      <div
-        className={`absolute top-0 inset-x-0 h-12 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20 flex items-center justify-between px-4 pointer-events-none transition-opacity duration-300 ${
-          isFullscreen && !showControlsInFullscreen ? 'opacity-0' : 'opacity-100'
-        }`}
-      >
-        {/* Top Left: Identifier & Secondary Vendor Name */}
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-white drop-shadow-md">
-            {camera.identifier}
+      {/* Live Badge + Elapsed timer overlay: strictly while Live, positioned in top right */}
+      {currentEffectiveState === 'live' && (
+        <div
+          className={`absolute top-3 right-3 z-20 flex items-center gap-2 pointer-events-none transition-opacity duration-300 ${
+            isFullscreen && !showControlsInFullscreen ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <Badge
+            variant="outline"
+            className="bg-rose-500/90 text-white border-rose-600 text-xs px-2.5 py-0.5 gap-1.5 font-bold shadow-md animate-pulse"
+          >
+            <span className="size-2 rounded-full bg-white" />
+            LIVE
+          </Badge>
+          <span className="font-mono text-xs font-semibold text-white bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded border border-white/10">
+            {formatElapsed(streamStats.elapsedSeconds)}
           </span>
-          {vendorName && (
-            <span className="text-xs text-zinc-300 font-mono drop-shadow-md bg-black/40 px-1.5 py-0.5 rounded border border-white/10">
-              {vendorName}
-            </span>
-          )}
-          {installedPole && (
-            <span className="text-[11px] text-zinc-400 font-mono drop-shadow-xs hidden sm:inline">
-              • Pole {installedPole.identifier}
-            </span>
-          )}
         </div>
-
-        {/* Top Right: Live Badge + Elapsed time (strictly while Live) */}
-        {currentEffectiveState === 'live' && (
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-rose-500/90 text-white border-rose-600 text-xs px-2.5 py-0.5 gap-1.5 font-bold shadow-md animate-pulse"
-            >
-              <span className="size-2 rounded-full bg-white" />
-              LIVE
-            </Badge>
-            <span className="font-mono text-xs font-semibold text-zinc-200 bg-black/60 px-2 py-0.5 rounded border border-white/10">
-              {formatElapsed(streamStats.elapsedSeconds)}
-            </span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* STATE 1: IDLE */}
       {currentEffectiveState === 'idle' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-zinc-950">
-          {/* Dimmed poster background with real snapshot */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+          {/* Dimmed poster background with real snapshot at 50% brightness */}
+          <div className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden">
             {camera.identifier === 'DEV-001' ? (
               <img
                 src="/monkey-fiber.jpg"
                 alt="Idle poster frame"
-                className="w-full h-full object-cover filter blur-[2px]"
+                className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-zinc-900 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px]" />
             )}
           </div>
 
-          <div className="relative z-10 flex flex-col items-center max-w-md">
+          <div className="relative z-10 flex flex-col items-center max-w-md p-6 rounded-2xl bg-black/55 backdrop-blur-sm border border-white/10 shadow-2xl">
             <Button
               size="lg"
               onClick={() => startStream(camera.identifier, camera.name)}
@@ -192,14 +168,14 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
             </p>
 
             {lastEvent && (
-              <span className="text-[11px] text-zinc-400 mb-2">
+              <span className="text-xs text-zinc-400 mb-2">
                 Last recorded event: {lastEvent.type} ({formatRelativeTime(lastEvent.captured)})
               </span>
             )}
 
             {capabilities.isMobileData && (
-              <div className="text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 mt-1">
-                <Radio className="size-3 shrink-0" />
+              <div className="text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 mt-2">
+                <Radio className="size-3.5 shrink-0" />
                 <span>This camera uses mobile data. Live video adds to its usage.</span>
               </div>
             )}
