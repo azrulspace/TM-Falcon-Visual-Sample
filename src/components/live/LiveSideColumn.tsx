@@ -79,7 +79,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 1. Camera Info Card */}
+      {/* 1. Camera Details & Location Card */}
       <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -94,17 +94,52 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             <ChevronRight className="size-3.5" />
           </Link>
         </CardHeader>
+
+        {/* Top of Card 1: Map (176px, solid card surface chip, no glass blur) */}
+        {hasLocation ? (
+          <div className="relative w-full h-44 bg-muted overflow-hidden border-b border-border">
+            <MapCanvas
+              selectedId={installedPole ? installedPole.identifier : camera.identifier.replace('-', '_')}
+              onMarkerClick={() => {}}
+              basemap="satellite"
+              activeLayers={{
+                devices: true,
+                cableRoutes: true,
+                poles: true,
+                cctv: true,
+                sites: false,
+                clusters: false,
+              }}
+              className="w-full h-full pointer-events-none"
+            />
+            {/* Solid Card Surface Label Chip */}
+            <div className="absolute top-2 left-2 z-10 bg-card border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1.5">
+              <MapPin className="size-3 text-primary shrink-0" />
+              <span className="font-mono">Pole {installedPole!.identifier}</span>
+              <span className="text-border">•</span>
+              <span className="text-muted-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 text-center text-xs text-muted-foreground border-b border-border bg-muted/20">
+            <span>Location not mapped (device unmounted)</span>
+          </div>
+        )}
+
         <CardContent className="p-5 text-xs divide-y divide-border">
+          {/* Row 1: Model */}
           <div className="flex justify-between items-center py-2.5 first:pt-0 min-h-[44px]">
             <span className="text-muted-foreground">Model</span>
             <span className="font-medium text-foreground">{camera.model || 'Standard IP Camera'}</span>
           </div>
 
+          {/* Row 2: Vendor and driver */}
           <div className="flex justify-between items-center py-2.5 min-h-[44px]">
             <span className="text-muted-foreground">Vendor and driver</span>
             <span className="text-foreground">{camera.manufacturer || 'Hikvision'} ({camera.library || 'HIK_OpenAPI'})</span>
           </div>
 
+          {/* Row 3: Connectivity */}
           <div className="flex justify-between items-center py-2.5 min-h-[44px]">
             <span className="text-muted-foreground">Connectivity</span>
             <div className="flex items-center gap-2" title={unifiedState.reason}>
@@ -115,6 +150,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             </div>
           </div>
 
+          {/* Row 4: Installed pole */}
           <div className="flex justify-between items-center py-2.5 min-h-[44px]">
             <span className="text-muted-foreground">Installed pole</span>
             {installedPole ? (
@@ -130,10 +166,30 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             )}
           </div>
 
-          <div className="flex justify-between items-center py-2.5 last:pb-0 min-h-[44px]">
+          {/* Row 5: Site */}
+          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
             <span className="text-muted-foreground">Site</span>
             <span className="text-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
           </div>
+
+          {/* Row 6: Coordinates with Copy */}
+          {coordsString && (
+            <div className="flex justify-between items-center py-2.5 last:pb-0 min-h-[44px]">
+              <span className="text-muted-foreground">Coordinates</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs text-foreground">{coordsString}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyCoords}
+                  className="size-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  title="Copy coordinates"
+                >
+                  <Copy className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -152,7 +208,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             <ChevronRight className="size-3.5" />
           </Link>
         </CardHeader>
-        <CardContent className="p-2 space-y-1 divide-y divide-border">
+        <CardContent className="p-3 space-y-1 divide-y divide-border">
           {recentEvents.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground">
               No recent events recorded from this camera.
@@ -194,77 +250,6 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                 </div>
               );
             })
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 3. Location Mini Map Card */}
-      <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
-        <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
-          <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <MapPin className="size-4 text-primary" />
-            <span>Camera location</span>
-          </CardTitle>
-          {installedPole && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/overview?pole=${encodeURIComponent(installedPole.identifier)}`)}
-              className="h-7 px-2 text-xs text-primary hover:underline p-0 flex items-center gap-1"
-            >
-              <span>Open on map</span>
-              <ChevronRight className="size-3.5" />
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
-          {hasLocation ? (
-            <div className="flex flex-col">
-              <div className="relative w-full h-44 bg-muted overflow-hidden">
-                <MapCanvas
-                  selectedId={installedPole ? installedPole.identifier : camera.identifier.replace('-', '_')}
-                  onMarkerClick={() => {}}
-                  basemap="satellite"
-                  activeLayers={{
-                    devices: true,
-                    cableRoutes: true,
-                    poles: true,
-                    cctv: true,
-                    sites: false,
-                    clusters: false,
-                  }}
-                  className="w-full h-full pointer-events-none"
-                />
-                <div className="absolute top-2 left-2 z-10 bg-card border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1.5">
-                  <MapPin className="size-3 text-primary shrink-0" />
-                  <span className="font-mono">Pole {installedPole!.identifier}</span>
-                  <span className="text-border">•</span>
-                  <span className="text-muted-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
-                </div>
-              </div>
-
-              {/* Coordinates bar with copy button */}
-              <div className="h-11 px-5 bg-muted/30 border-t border-border flex items-center justify-between text-xs">
-                <span className="font-mono text-xs text-muted-foreground">
-                  {coordsString}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyCoords}
-                  className="h-8 px-2 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
-                >
-                  <Copy className="size-3.5" />
-                  <span>Copy</span>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-xs text-muted-foreground space-y-1">
-              <MapPin className="size-6 text-muted-foreground/40 mx-auto mb-2" />
-              <div className="font-medium text-foreground">Location not available</div>
-              <div>This device is not mounted on a physical pole with GPS coordinates.</div>
-            </div>
           )}
         </CardContent>
       </Card>
