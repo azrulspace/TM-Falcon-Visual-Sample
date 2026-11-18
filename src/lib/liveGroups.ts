@@ -19,6 +19,15 @@ export const MAX_CAMERAS_PER_GROUP = 30;
 
 export const DEFAULT_GROUPS: LiveCameraGroup[] = [
   {
+    id: 'grp-preview-wall',
+    name: 'Preview wall',
+    description: 'Pre-seeded preview wall with 6 online cameras.',
+    cameraIds: ['DEV-001', 'DEV-002', 'DEV-009', 'DEV-010', 'DEV-011', 'DEV-012'],
+    isSystem: false,
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-01T10:00:00.000Z',
+  },
+  {
     id: 'grp-all',
     name: 'All cameras',
     description: 'System group containing all active cameras in the fleet.',
@@ -244,8 +253,8 @@ export function removeCameraFromGroup(groupId: string, cameraId: string): { succ
  * Gets the active group ID or falls back to 'grp-all'.
  */
 export function getActiveGroupId(): string {
-  if (typeof window === 'undefined') return 'grp-all';
-  return localStorage.getItem(STORAGE_KEY_ACTIVE_GROUP) || 'grp-all';
+  if (typeof window === 'undefined') return 'grp-preview-wall';
+  return localStorage.getItem(STORAGE_KEY_ACTIVE_GROUP) || 'grp-preview-wall';
 }
 
 /**

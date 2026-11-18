@@ -50,13 +50,18 @@ import { MonitorWall } from '@/components/live/MonitorWall';
 import { AddToGroupDialog } from '@/components/live/AddToGroupDialog';
 import { GroupManageDialog } from '@/components/live/GroupManageDialog';
 import { StillWatchingDialog } from '@/components/live/StillWatchingDialog';
+import type { PoleRecord } from '@/types/assets';
+import { isLivePreviewEnabled } from '@/preview/live/previewConfig';
+import { getPreviewCameras } from '@/preview/live/previewFixtures';
 
 export const LiveViewRedirect: React.FC = () => {
-  const { richDevices } = useAssets();
+  const { richDevices, poles } = useAssets();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const cameras = filterCamerasOnly(richDevices);
+    const cameras = isLivePreviewEnabled()
+      ? getPreviewCameras(richDevices, poles)
+      : filterCamerasOnly(richDevices);
     if (cameras.length > 0) {
       const lastMode = getLastLiveMode();
       if (lastMode === 'monitor') {
@@ -68,7 +73,7 @@ export const LiveViewRedirect: React.FC = () => {
         navigate(`/live/single/${encodeURIComponent(defaultId)}`, { replace: true });
       }
     }
-  }, [richDevices, navigate]);
+  }, [richDevices, poles, navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">
@@ -113,8 +118,13 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
     return 'single';
   }, [explicitMode, location.pathname]);
 
-  // All valid cameras (speakers and sensors excluded)
-  const cameras = useMemo(() => filterCamerasOnly(richDevices), [richDevices]);
+  // All valid cameras (speakers and sensors excluded; uses dynamic preview fixtures when enabled)
+  const cameras = useMemo(() => {
+    if (isLivePreviewEnabled()) {
+      return getPreviewCameras(richDevices, poles);
+    }
+    return filterCamerasOnly(richDevices);
+  }, [richDevices, poles]);
 
   // Handle legacy route redirect: /live/:deviceId -> /live/single/:deviceId or /live/monitor
   useEffect(() => {
@@ -147,14 +157,27 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
   const capabilities = useMemo(() => getCameraCapabilities(currentCamera), [currentCamera]);
 
   // Related pole and recent events
-  const installedPole = useMemo(
-    () => getPoleForCamera(poles, currentCamera?.installedPoleId),
-    [poles, currentCamera?.installedPoleId]
-  );
-  const recentEvents = useMemo(
-    () => (currentCamera ? getRecentEventsForCamera(events, currentCamera.identifier, 5) : []),
-    [events, currentCamera]
-  );
+  const installedPole = useMemo(() => {
+    const found = getPoleForCamera(poles, currentCamera?.installedPoleId);
+    if (found) return found;
+    if (currentCamera?.installedPoleId) {
+      return {
+        identifier: currentCamera.installedPoleId,
+        name: `Pole ${currentCamera.installedPoleId}`,
+        siteName: currentCamera.siteName || 'Teluk Panglima Garang',
+        location: currentCamera.location || { lat: 2.90958, lng: 101.47013 },
+        lifecycle: 'Active',
+      } as unknown as PoleRecord;
+    }
+    return null;
+  }, [poles, currentCamera]);
+
+  const recentEvents = useMemo(() => {
+    if (!currentCamera) return [];
+    const fromEvents = getRecentEventsForCamera(events, currentCamera.identifier, 5);
+    if (fromEvents.length > 0) return fromEvents;
+    return currentCamera.deviceEvents || [];
+  }, [events, currentCamera]);
 
   const lastEventTimeByCameraId = useMemo(() => {
     const map = new Map<string, string>();
