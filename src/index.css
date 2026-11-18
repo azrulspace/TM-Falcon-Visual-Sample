@@ -184,12 +184,13 @@
     --separator: var(--neutral-smoke);
     --ring: var(--neutral-smoke);
 
-    /* 6. Ash (#62666d): Muted body text, inactive icons, secondary metadata, dim captions */
-    --muted-foreground: var(--neutral-ash);
+    /* 6. Ash (#62666d): Disabled text, placeholders, decorative separators */
+    --disabled: var(--neutral-ash);
     --icon-inactive: var(--neutral-ash);
-    --text-muted: var(--neutral-ash);
 
-    /* 7. Fog (#8a8f98): Tertiary text, placeholders, standard icon fills */
+    /* 7. Fog (#8a8f98): Tertiary text (labels, subtitles, captions, ~5.9:1 AA contrast) */
+    --muted-foreground: var(--neutral-fog);
+    --text-muted: var(--neutral-fog);
     --placeholder: var(--neutral-fog);
     --text-tertiary: var(--neutral-fog);
     --icon-default: var(--neutral-fog);

@@ -22,6 +22,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useClipLifecycle } from '@/hooks/useClipLifecycle';
+import { getRelativeTimeCalculation } from '@/lib/dateTime';
 import {
   getFailureDetails,
   formatClipDuration,
@@ -500,41 +501,41 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
       className={`flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden select-none ${className}`}
       data-testid="evidence-viewer-full"
     >
-      {/* 1. Header with Channel, Rule Chips and Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
+      {/* 1. Header with Channel, Rule Chips and Toolbar (V8, V14, V15) */}
+      <div className="h-12 px-4 flex items-center justify-between border-b border-border bg-muted/20 select-none">
         <div className="flex items-center gap-2.5">
-          <Camera className="size-4 text-primary shrink-0" />
-          <h2 className="text-sm font-bold text-foreground">Evidence</h2>
-          <span className="px-2 py-0.5 rounded bg-muted text-[11px] font-mono text-muted-foreground border border-border">
+          <Camera className="size-4 text-primary shrink-0 stroke-[1.5]" />
+          <h2 className="text-sm font-semibold text-foreground">Evidence</h2>
+          <span className="px-2 py-0.5 rounded-md bg-muted text-xs font-mono text-muted-foreground border border-border">
             {channelName}
           </span>
-          <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-muted text-[11px] font-mono text-muted-foreground border border-border truncate max-w-[200px]">
+          <span className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-muted text-xs font-mono text-muted-foreground border border-border truncate max-w-[200px]">
             {detectionRule}
           </span>
           {isPreviewAsset && (
-            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-              <Sparkles className="size-2.5" />
+            <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-sans font-medium flex items-center gap-1">
+              <Sparkles className="size-3" />
               Preview data
             </span>
           )}
         </div>
 
-        {/* Toolbar: Zoom In, Zoom Out, Fit, Download, Lightbox */}
-        <div className="flex items-center gap-1">
+        {/* Toolbar: Zoom In, Zoom Out, Fit, Download, Lightbox (V15: 32px desktop, 44px tablet) */}
+        <div className="flex items-center gap-1.5">
           {activeTab === 'snapshot' && (
             <>
               <button
                 type="button"
                 onClick={() => setZoomLevel((z) => Math.max(1, z - 0.25))}
                 disabled={zoomLevel <= 1}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-                title="Zoom out"
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="Zoom out (Ctrl + -)"
                 aria-label="Zoom out"
               >
-                <ZoomOut className="size-3.5" />
+                <ZoomOut className="size-4 stroke-[1.5]" />
               </button>
               {zoomLevel > 1 && (
-                <span className="text-[11px] font-mono text-muted-foreground px-1 select-none">
+                <span className="text-xs font-mono text-muted-foreground px-1 select-none tabular-nums">
                   {Math.round(zoomLevel * 100)}%
                 </span>
               )}
@@ -542,11 +543,11 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                 type="button"
                 onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
                 disabled={zoomLevel >= 3}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
-                title="Zoom in"
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="Zoom in (Ctrl + +)"
                 aria-label="Zoom in"
               >
-                <ZoomIn className="size-3.5" />
+                <ZoomIn className="size-4 stroke-[1.5]" />
               </button>
               <button
                 type="button"
@@ -554,23 +555,24 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
                   setZoomLevel(1);
                   setPan({ x: 0, y: 0 });
                 }}
-                className={`px-2 py-1 rounded text-[11px] transition-colors cursor-pointer ${
+                className={`h-8 px-2.5 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   zoomLevel === 1
                     ? 'bg-muted font-semibold text-foreground border border-border shadow-2xs'
                     : 'hover:bg-muted font-medium text-muted-foreground hover:text-foreground'
                 }`}
+                title="Fit to frame (Ctrl + 0)"
               >
                 Fit
               </button>
-              <div className="h-4 w-px bg-border mx-1" />
+              <div className="h-4 w-px bg-border mx-0.5" />
               <button
                 type="button"
                 onClick={handleDownloadSnapshot}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                title="Download snapshot"
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="Download snapshot image"
                 aria-label="Download snapshot"
               >
-                <Download className="size-3.5" />
+                <Download className="size-4 stroke-[1.5]" />
               </button>
             </>
           )}
@@ -580,20 +582,20 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadClip}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 title="Download video clip"
                 aria-label="Download video clip"
               >
-                <Download className="size-3.5" />
+                <Download className="size-4 stroke-[1.5]" />
               </button>
               <button
                 type="button"
                 onClick={handleFullscreen}
-                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                title="Fullscreen"
+                className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="Fullscreen (F)"
                 aria-label="Fullscreen"
               >
-                <Maximize2 className="size-3.5" />
+                <Maximize2 className="size-4 stroke-[1.5]" />
               </button>
             </>
           )}
@@ -602,18 +604,18 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
             <button
               type="button"
               onClick={() => onOpenLightbox(activeFrameIndex)}
-              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Open lightbox"
+              className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title="Open full size in lightbox (Space)"
               aria-label="Open lightbox"
             >
-              <Maximize2 className="size-3.5" />
+              <Maximize2 className="size-4 stroke-[1.5]" />
             </button>
           )}
         </div>
       </div>
 
-      {/* 2. Main Stage */}
-      <div className="relative aspect-video w-full bg-slate-950 flex items-center justify-center overflow-hidden">
+      {/* 2. Main Stage (V2: canvas token background, centered contain, min-h 320px, max-h min(560px, 60vh), 1px border) */}
+      <div className="relative w-full min-h-[320px] max-h-[min(560px,60vh)] h-[440px] bg-[#08090a] flex items-center justify-center overflow-hidden border-y border-border select-none">
         {/* ================= SNAPSHOT TAB ================= */}
         {activeTab === 'snapshot' && (
           <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
@@ -631,7 +633,7 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
 
         {/* ================= CLIP TAB ================= */}
         {activeTab === 'clip' && (
-          <div className="relative w-full h-full flex items-center justify-center bg-slate-950 p-6 text-center">
+          <div className="relative w-full h-full flex items-center justify-center bg-[#08090a] p-6 text-center">
             {/* NOT REQUESTED */}
             {clipState.status === 'not_requested' && (
               <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -876,98 +878,126 @@ export const EvidenceViewer: React.FC<EvidenceViewerProps> = ({
         )}
       </div>
 
-      {/* 3. Caption below stage (Section 6.2) */}
-      <div className="px-4 py-2 border-b border-border bg-muted/10 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      {/* 3. Caption below stage (V16: sans 12/16 tertiary text, left aligned, capture time in MYT, relative time on hover) */}
+      <div className="h-10 px-4 border-b border-border bg-muted/10 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground font-sans select-none">
         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
           {activeTab === 'snapshot' ? (
-            <span>Snapshot, captured {capturedTimeMYT}</span>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="cursor-default">
+                    Snapshot, captured <span className="tabular-nums font-medium text-foreground">{capturedTimeMYT}</span>
+                  </span>
+                }
+              />
+              <TooltipContent side="top" className="text-xs font-sans">
+                Relative capture time: {getRelativeTimeCalculation(capturedTimeMYT).text}
+              </TooltipContent>
+            </Tooltip>
           ) : (
             <span>
-              Clip, from {clipState.windowStartTime || windowStartTimeMYT} to {clipState.windowEndTime || windowEndTimeMYT} in MYT
+              Clip, from <span className="tabular-nums font-medium text-foreground">{clipState.windowStartTime || windowStartTimeMYT}</span> to <span className="tabular-nums font-medium text-foreground">{clipState.windowEndTime || windowEndTimeMYT}</span> in MYT
               {clipState.isPartial && <span className="text-amber-400 ml-1 font-semibold">(Partial clip)</span>}
             </span>
           )}
           {cameraTimestampFootnote && (
-            <span className="text-[11px] text-muted-foreground/80">({cameraTimestampFootnote})</span>
+            <span className="text-xs text-muted-foreground/80">({cameraTimestampFootnote})</span>
           )}
         </div>
         {clipState.autoUploaded && (
-          <span className="text-[11px] font-mono text-primary font-medium">Uploaded automatically</span>
+          <span className="text-xs text-primary font-medium">Uploaded automatically</span>
         )}
       </div>
 
-      {/* 4. Media Tile Strip Below Stage (Section 6.2) */}
-      <div className="p-3 bg-muted/20 flex items-center gap-3 overflow-x-auto">
-        {/* Tile 1: Snapshot */}
+      {/* 4. Media Tile Strip Below Stage (V12: equal size 168x64px, 2px primary ring, clear lifecycle states) */}
+      <div className="p-4 bg-muted/20 flex items-center gap-3 overflow-x-auto select-none" role="tablist" aria-label="Evidence media types">
+        {/* Tile 1: Snapshot (168px x 64px) */}
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'snapshot'}
           onClick={() => setActiveTab('snapshot')}
-          className={`flex items-center gap-2.5 p-1.5 rounded-lg border transition-all cursor-pointer ${
+          className={`w-[168px] h-16 flex items-center gap-2.5 p-2 rounded-lg border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
             activeTab === 'snapshot'
-              ? 'border-primary bg-primary/10 ring-1 ring-primary/40 shadow-xs'
+              ? 'border-primary bg-primary/10 ring-2 ring-primary shadow-xs'
               : 'border-border bg-card hover:bg-muted/60'
           }`}
           aria-label="Select snapshot media"
         >
-          <div className="size-11 rounded overflow-hidden bg-slate-900 shrink-0 border border-border">
+          <div className="size-11 rounded-md overflow-hidden bg-muted shrink-0 border border-border">
             <img src={snapshotUrl} alt="Snapshot thumbnail" className="w-full h-full object-cover" />
           </div>
-          <div className="text-left pr-2">
-            <span className="text-xs font-semibold text-foreground block">Snapshot</span>
-            <span className="text-[10px] text-muted-foreground block">Still frame</span>
+          <div className="text-left flex-1 min-w-0">
+            <span className="text-xs font-semibold text-foreground block truncate">Snapshot</span>
+            <span className="text-xs text-muted-foreground block truncate">Still frame</span>
           </div>
         </button>
 
-        {/* Tile 2: Clip */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('clip')}
-          className={`flex items-center gap-2.5 p-1.5 rounded-lg border transition-all cursor-pointer ${
-            activeTab === 'clip'
-              ? 'border-primary bg-primary/10 ring-1 ring-primary/40 shadow-xs'
-              : 'border-border bg-card hover:bg-muted/60'
-          }`}
-          aria-label="Select clip media"
-        >
-          <div className="size-11 rounded overflow-hidden bg-slate-900 shrink-0 border border-border flex items-center justify-center text-muted-foreground">
-            {clipState.status === 'ready' ? (
-              <Play className="size-5 fill-emerald-400 text-emerald-400" />
-            ) : clipState.status === 'uploading' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
-            ) : clipState.status === 'requested' ? (
-              <Clock className="size-5 text-sky-400" />
-            ) : clipState.status === 'failed' ? (
-              <AlertTriangle className="size-5 text-amber-500" />
-            ) : clipState.status === 'device_offline' ? (
-              <VideoOff className="size-5 text-slate-400" />
-            ) : (
-              <Film className="size-5 text-muted-foreground" />
-            )}
-          </div>
-          <div className="text-left pr-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-foreground">Clip</span>
-              {clipState.hasNewVersionAvailable && (
-                <span className="size-1.5 rounded-full bg-primary" />
-              )}
-            </div>
-            <span className="text-[10px] text-muted-foreground block font-mono">
-              {clipState.status === 'ready'
-                ? formatClipDuration(clipState.durationSeconds)
-                : clipState.status === 'uploading'
-                ? `${clipState.progress || 15}%`
-                : clipState.status === 'requested'
-                ? 'Waiting'
-                : clipState.status === 'failed'
-                ? 'Failed'
-                : clipState.status === 'expired'
-                ? 'Expired'
-                : clipState.status === 'device_offline'
-                ? 'Offline'
-                : 'Not requested'}
-            </span>
-          </div>
-        </button>
+        {/* Tile 2: Clip (168px x 64px) with truthful lifecycle copy */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'clip'}
+                onClick={() => setActiveTab('clip')}
+                className={`w-[168px] h-16 flex items-center gap-2.5 p-2 rounded-lg border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  activeTab === 'clip'
+                    ? 'border-primary bg-primary/10 ring-2 ring-primary shadow-xs'
+                    : 'border-border bg-card hover:bg-muted/60'
+                }`}
+                aria-label="Select video clip media"
+              >
+                <div className="size-11 rounded-md overflow-hidden bg-muted shrink-0 border border-border flex items-center justify-center text-muted-foreground">
+                  {clipState.status === 'ready' ? (
+                    <Play className="size-5 fill-emerald-400 text-emerald-400 stroke-[1.5]" />
+                  ) : clipState.status === 'uploading' ? (
+                    <Loader2 className="size-5 animate-spin text-primary stroke-[1.5]" />
+                  ) : clipState.status === 'requested' ? (
+                    <Clock className="size-5 text-sky-400 stroke-[1.5]" />
+                  ) : clipState.status === 'failed' ? (
+                    <AlertTriangle className="size-5 text-amber-500 stroke-[1.5]" />
+                  ) : clipState.status === 'device_offline' ? (
+                    <VideoOff className="size-5 text-muted-foreground stroke-[1.5]" />
+                  ) : (
+                    <Film className="size-5 text-muted-foreground stroke-[1.5]" />
+                  )}
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-foreground truncate">Clip</span>
+                    {clipState.hasNewVersionAvailable && (
+                      <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground block truncate">
+                    {clipState.status === 'ready'
+                      ? formatClipDuration(clipState.durationSeconds)
+                      : clipState.status === 'uploading'
+                      ? `${clipState.progress || 15}%`
+                      : clipState.status === 'requested'
+                      ? 'Requested'
+                      : clipState.status === 'failed'
+                      ? 'Failed'
+                      : clipState.status === 'expired'
+                      ? 'Expired'
+                      : clipState.status === 'device_offline'
+                      ? 'Camera offline'
+                      : 'Not requested'}
+                  </span>
+                </div>
+              </button>
+            }
+          />
+          <TooltipContent side="top" className="text-xs font-sans">
+            {clipState.status === 'device_offline'
+              ? 'The camera is offline. Recorded clips cannot be requested until it returns online.'
+              : clipState.status === 'ready'
+              ? `Video recording ready (${formatClipDuration(clipState.durationSeconds)})`
+              : 'On-demand 38s video extraction from camera'}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

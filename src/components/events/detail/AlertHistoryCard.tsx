@@ -25,47 +25,52 @@ export const AlertHistoryCard: React.FC<AlertHistoryCardProps> = ({ event }) => 
     }).length;
   }, [events, assetId, event.id]);
 
+  // V10: "add the 'Event alert history' card only if the older events count exists in the data."
+  if (olderCount <= 0) {
+    return null;
+  }
+
   const targetInboxUrl = `/events?asset=${assetId}&captured_before=${event.id}&from=${event.id}`;
 
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-      {/* 1. Header with History Icon, "Alert history", and Asset Chip (DETAIL_FINAL) */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+    <div className="flex flex-col rounded-xl border border-border bg-card shadow-xs overflow-hidden select-none">
+      {/* 1. Header: Unified 48px anatomy (V8) */}
+      <div className="h-12 px-4 flex items-center justify-between border-b border-border bg-muted/20">
         <div className="flex items-center gap-2">
-          <History className="size-4 text-primary" />
+          <History className="size-4 text-primary shrink-0 stroke-[1.5]" />
           <h3 className="text-sm font-semibold text-foreground">Alert history</h3>
         </div>
-        <span className="font-mono text-[11px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+        <span className="font-mono text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border">
           {formatId(assetId)}
         </span>
       </div>
 
-      {/* 2. Content */}
-      <div className="p-4 flex flex-col gap-3.5 text-xs">
+      {/* 2. Content (V9: 20px padding, V3: 24px metric count within strict 24/14/12 scale) */}
+      <div className="p-5 flex flex-col gap-4 text-xs font-sans">
         <div className="flex flex-col gap-1">
-          <span className="text-3xl font-extrabold text-foreground tabular-nums tracking-tight">
+          <span className="text-2xl font-bold text-foreground tabular-nums tracking-tight">
             {olderCount}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground font-sans">
             older events recorded on this span
           </span>
         </div>
 
         {/* Span Infrastructure Label */}
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border">
-          <Cable className="size-3.5 shrink-0 text-primary" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border font-sans">
+          <Cable className="size-4 shrink-0 text-primary stroke-[1.5]" />
           <span>
-            Infrastructure span {formatId(assetId)} ({formatId(poles[0])} → {formatId(poles[1])}).
+            Infrastructure span <span className="font-mono text-foreground font-medium">{formatId(assetId)}</span> ({formatId(poles[0])} → {formatId(poles[1])}).
           </span>
         </div>
 
-        {/* Deep Link to Scoped Event Inbox (Section 4.6 & 6) */}
+        {/* Deep Link to Scoped Event Inbox */}
         <Link
           to={targetInboxUrl}
-          className="text-xs text-primary hover:underline font-medium flex items-center gap-1.5 pt-1 cursor-pointer group"
+          className="text-xs text-primary hover:underline font-medium flex items-center gap-1.5 pt-1 cursor-pointer group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-xs"
         >
           <span>View all {olderCount} events in Event inbox</span>
-          <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 stroke-[1.5]" />
         </Link>
       </div>
     </div>

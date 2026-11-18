@@ -32,7 +32,11 @@ export function getServerNow(): Date {
   if (hasExplicitServerTime) {
     return new Date(Date.now() + serverTimeOffsetMs);
   }
-  // Prototype default anchor: 21 Oct 2026 08:37:00 MYT
+  // In browser runtime, always use real clock (V5)
+  if (typeof window !== 'undefined') {
+    return new Date();
+  }
+  // Prototype default anchor for offline unit test runner
   return new Date(DEFAULT_SERVER_TIME_ISO);
 }
 

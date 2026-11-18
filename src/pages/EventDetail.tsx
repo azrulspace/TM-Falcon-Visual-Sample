@@ -250,7 +250,6 @@ export default function EventDetail() {
   const ruleLabel = (event as any).detectionRule || (event as any).detection || 'CCTV-01-Motion Detection';
   const frames = (event as any).evidence?.frames || [(event as any).snapshotUrl || '/monkey-fiber.jpg'];
 
-  const hasAlertHistory = Boolean((event as any).hasAlertHistory);
 
   const handleWatchLive = () => {
     navigate(`/live/${encodeURIComponent(formatId(rawDeviceId))}?autostart=1`);
@@ -266,7 +265,7 @@ export default function EventDetail() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-background text-foreground antialiased ${isPortrait ? 'pb-24' : 'pb-20 sm:pb-8'}`}>
-      <main className="flex-1 flex flex-col p-4 sm:p-6 gap-6 max-w-[1920px] w-full mx-auto">
+      <main className="flex-1 flex flex-col px-6 2xl:px-8 py-6 gap-6 max-w-[1920px] w-full mx-auto">
         {/* 1. Header (Breadcrumb, Title, Chips, Create case, Watch live, Overflow menu) */}
         <EventDetailHeader
           event={event as any}
@@ -292,7 +291,7 @@ export default function EventDetail() {
                 size="sm"
                 variant="outline"
                 onClick={() => setConflictNotice(null)}
-                className="h-7 px-2.5 text-xs border-border hover:bg-muted cursor-pointer"
+                className="h-8 px-2.5 text-xs border-border hover:bg-muted cursor-pointer"
               >
                 Dismiss
               </Button>
@@ -302,7 +301,7 @@ export default function EventDetail() {
                   setConflictNotice(null);
                   window.location.reload();
                 }}
-                className="h-7 px-2.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer"
+                className="h-8 px-2.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer"
               >
                 Reload
               </Button>
@@ -312,8 +311,8 @@ export default function EventDetail() {
 
         {/* 2. Responsive Layout */}
         {isPortrait ? (
-          /* Portrait Tablet Order: Evidence, Key Facts, Location (collapsible), Detection Spec, Vendor Data */
-          <div className="flex flex-col gap-6">
+          /* Portrait Tablet Order: Evidence, Key Facts, Location (collapsible), Detection Spec, Alert History, Vendor Data (Section 7) */
+          <div className="flex flex-col gap-4">
             <EvidenceViewer
               eventId={event.id}
               snapshots={frames}
@@ -340,15 +339,15 @@ export default function EventDetail() {
 
             <DetectionSpecificationCard event={event as any} />
 
-            <VendorDataCard event={event as any} />
+            <AlertHistoryCard event={event as any} />
 
-            {hasAlertHistory && <AlertHistoryCard event={event as any} />}
+            <VendorDataCard event={event as any} />
           </div>
         ) : (
-          /* Landscape & Desktop: 2-Column Grid (~60% and ~40%) matching Staging Screenshots 3 & 4 */
+          /* Landscape & Desktop: 2-Column Grid (~66% and ~33%) with sticky right column (V9, V10) */
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-            {/* Main Column (60% on tablet, 66% on desktop) */}
-            <div className="md:col-span-7 xl:col-span-8 flex flex-col gap-6">
+            {/* Main Column (66% on desktop, 58% on tablet) with 16px stacked card gap (V9) */}
+            <div className="md:col-span-7 xl:col-span-8 flex flex-col gap-4">
               <EvidenceViewer
                 eventId={event.id}
                 snapshots={frames}
@@ -368,15 +367,15 @@ export default function EventDetail() {
               <VendorDataCard event={event as any} />
             </div>
 
-            {/* Side Column (40% on tablet, 33% on desktop) */}
-            <div className="md:col-span-5 xl:col-span-4 flex flex-col gap-6">
+            {/* Side Column with Sticky Behavior under header (V10) and 16px stacked card gap (V9) */}
+            <div className="md:col-span-5 xl:col-span-4 flex flex-col gap-4 sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
               <LocationCard event={event as any} defaultCollapsed={false} />
               <KeyFactsCard
                 event={event as any}
                 onOpenCreateCase={() => setCreateCaseOpen(true)}
                 onOpenAssign={() => setAssignOpen(true)}
               />
-              {hasAlertHistory && <AlertHistoryCard event={event as any} />}
+              <AlertHistoryCard event={event as any} />
             </div>
           </div>
         )}

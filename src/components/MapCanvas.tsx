@@ -26,6 +26,8 @@ export interface MapCanvasProps {
   zoomOutSignal?: number;
   centerOffsetX?: number;
   centerOffsetY?: number;
+  embedded?: boolean;
+  fitEntity?: boolean;
 }
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
@@ -48,6 +50,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   zoomOutSignal,
   centerOffsetX,
   centerOffsetY,
+  embedded = false,
+  fitEntity = false,
 }) => {
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -145,13 +149,15 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       return Math.sqrt(dx * dx + dy * dy) < 45;
     });
 
-    const targetScale = isNearCluster ? 1.8 : 1.45;
-    // Offset center (~360px on SVG viewBox for Overview with docked right panel, or custom offset)
-    const targetX = ((centerOffsetX ?? 360) - targetCoords.x) * 0.65;
-    const targetY = ((centerOffsetY ?? 350) - targetCoords.y) * 0.65;
+    const targetScale = embedded || fitEntity ? 1.35 : (isNearCluster ? 1.8 : 1.45);
+    const effCenterX = centerOffsetX ?? (embedded || fitEntity ? 500 : 360);
+    const effCenterY = centerOffsetY ?? 350;
+    // Mathematically exact transform centering: S * (targetCoords + pan) = effCenter
+    const targetX = (effCenterX / targetScale) - targetCoords.x;
+    const targetY = (effCenterY / targetScale) - targetCoords.y;
     setPan({ x: targetX, y: targetY });
     setScale(targetScale);
-  }, [flyToSignal, resolvedEntity, selectedId, centerOffsetX, centerOffsetY]);
+  }, [flyToSignal, resolvedEntity, selectedId, centerOffsetX, centerOffsetY, embedded, fitEntity]);
 
   // Convert SVG marker coordinates to viewport container pixel coordinates
   const getMarkerScreenCoords = useCallback((svgX: number, svgY: number) => {
@@ -362,12 +368,23 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     }
   };
 
-  // Real GIS tile grid calculation around Kuching (z=12, x=3303, y=2030)
-  // Generous grid spanning 11 columns and 10 rows to cover any viewport without gaps
+  // Dynamic GIS tile grid calculation centered on active focus area
   const tiles = useMemo(() => {
     const list: { tx: number; ty: number; x: number; y: number }[] = [];
-    const cols = [3298, 3299, 3300, 3301, 3302, 3303, 3304, 3305, 3306, 3307, 3308];
-    const rows = [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034];
+    let baseTx = 3303;
+    let baseTy = 2030;
+
+    if (selectedId) {
+      const m = mapMarkers.find((mk) => mk.id === selectedId);
+      if (m) {
+        baseTx = Math.round((m.x - 372) / 256) + 3303;
+        baseTy = Math.round((m.y - 222) / 256) + 2030;
+      }
+    }
+
+    // Centered 7x6 tile cluster guaranteed to cover active target under any scale
+    const cols = [-3, -2, -1, 0, 1, 2, 3].map((d) => baseTx + d);
+    const rows = [-2, -1, 0, 1, 2, 3].map((d) => baseTy + d);
 
     rows.forEach((ty) => {
       cols.forEach((tx) => {
@@ -377,7 +394,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       });
     });
     return list;
-  }, []);
+  }, [selectedId]);
 
   const getTileUrl = (tx: number, ty: number, bm: string) => {
     if (bm === 'satellite') {

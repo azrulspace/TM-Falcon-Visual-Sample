@@ -140,38 +140,38 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
 
   return (
     <div className="flex flex-col gap-3 pb-3 border-b border-border select-none">
-      {/* 1. Breadcrumb with Back Arrow (Section 6.1) */}
-      <div className="flex items-center text-xs text-muted-foreground">
+      {/* 1. Breadcrumb with Back Arrow (V15: min 32px desktop, 44px tablet) */}
+      <div className="flex items-center text-xs text-muted-foreground font-sans">
         <button
           type="button"
           onClick={handleBack}
-          className={`hover:text-primary transition-colors flex items-center gap-1 font-medium cursor-pointer ${
-            isTablet ? 'min-h-[44px]' : ''
+          className={`hover:text-primary transition-colors flex items-center gap-1.5 font-medium cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
+            isTablet ? 'min-h-[44px]' : 'min-h-[32px]'
           }`}
           title={isFromOverview ? 'Return to Overview map' : 'Return to Event inbox'}
         >
-          <ArrowLeft className={isTablet ? 'size-4' : 'size-3.5'} />
+          <ArrowLeft className={isTablet ? 'size-4 stroke-[1.5]' : 'size-3.5 stroke-[1.5]'} />
           <span>{isFromOverview ? 'Overview' : 'Event inbox'}</span>
         </button>
-        <span className="mx-2">/</span>
+        <span className="mx-2 text-border">/</span>
         <span className="font-mono text-foreground font-semibold">
           {formatId(event.id)}
         </span>
       </div>
 
-      {/* 2. Main Title Row & Actions matching Staging Screenshot 3 */}
+      {/* 2. Main Title Row & Actions matching Staging (V3, V7, V17) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Title & Badges */}
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <span className="font-mono font-bold">{formatId(event.id)}</span>
             <span className="text-muted-foreground font-normal">·</span>
-            <span>{event.type}</span>
+            <span className="font-sans">{event.type}</span>
           </h1>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Neutral Mono Edge-service badge */}
-            <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-muted text-muted-foreground border border-border">
+            {/* Neutral Outlined Edge-service badge (V17: 24px height, px-2, 6px radius, sans font) */}
+            <span className="h-6 px-2 rounded-md text-xs font-sans font-medium bg-muted/40 text-muted-foreground border border-border inline-flex items-center">
               {source}
             </span>
             {/* Priority Badge */}
@@ -183,13 +183,13 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <div className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 text-[11px] font-mono flex items-center gap-1.5 animate-in fade-in transition-opacity cursor-help">
+                    <div className="h-6 px-2 rounded-md bg-primary/10 text-primary border border-primary/30 text-xs font-sans font-medium flex items-center gap-1.5 animate-in fade-in transition-opacity cursor-help">
                       <span className="size-1.5 rounded-full bg-primary animate-pulse" />
                       <span>Updated at {updatedNotice.time}</span>
                     </div>
                   }
                 />
-                <TooltipContent side="bottom" className="text-xs">
+                <TooltipContent side="bottom" className="text-xs font-sans">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold text-foreground">Recent changes:</span>
                     {updatedNotice.changes.map((c, i) => (
@@ -204,20 +204,20 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
 
         {/* Action Buttons: Create Case, Watch live, Overflow menu */}
         <div className="flex items-center gap-2">
-          {/* Primary Action: Create Case */}
+          {/* Primary Action: Create Case (Sole primary button on page, V6) */}
           <Button
             size="sm"
             onClick={onOpenCreateCase}
             className={`${
-              isTablet ? 'h-[44px] px-4 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5'
-            } bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs cursor-pointer`}
-            title="Create operational case"
+              isTablet ? 'h-11 px-4 text-sm gap-2' : 'h-9 px-4 text-xs gap-1.5'
+            } bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+            title="Create operational case (C)"
           >
-            <Briefcase className={`${isTablet ? 'size-4' : 'size-3.5'}`} />
+            <Briefcase className={`${isTablet ? 'size-4 stroke-[1.5]' : 'size-3.5 stroke-[1.5]'}`} />
             <span>Create case</span>
           </Button>
 
-          {/* Secondary Action: Watch live (camera icon, staging behavior) */}
+          {/* Secondary Action: Watch live with accessible disabled reason (V7) */}
           <Tooltip>
             <TooltipTrigger
               render={
@@ -227,17 +227,19 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
                   disabled={!isDeviceOnline}
                   onClick={handleWatchLiveClick}
                   className={`${
-                    isTablet ? 'h-[44px] px-4 text-sm gap-2' : 'h-8 px-3 text-xs gap-1.5'
-                  } border-border hover:bg-muted text-foreground font-medium disabled:opacity-40 cursor-pointer`}
-                  title={isDeviceOnline ? 'Watch live camera stream' : 'The device is offline'}
+                    isTablet ? 'h-11 px-4 text-sm gap-2' : 'h-9 px-3.5 text-xs gap-1.5'
+                  } border-border hover:bg-muted text-foreground font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+                  aria-description={!isDeviceOnline ? `The camera is offline. Last contact ${devRecord?.lastContact || 'recently'}` : undefined}
                 >
-                  <Video className={`${isTablet ? 'size-4' : 'size-3.5'}`} />
+                  <Video className={`${isTablet ? 'size-4 stroke-[1.5]' : 'size-3.5 stroke-[1.5]'}`} />
                   <span>Watch live</span>
                 </Button>
               }
             />
-            <TooltipContent side="bottom" className="text-xs">
-              {isDeviceOnline ? 'Watch live camera stream' : 'The device is offline'}
+            <TooltipContent side="bottom" className="text-xs font-sans">
+              {isDeviceOnline
+                ? 'Watch live camera stream'
+                : `The camera is offline. Last contact ${devRecord?.lastContact || 'recently'}`}
             </TooltipContent>
           </Tooltip>
 
@@ -248,11 +250,11 @@ export const EventDetailHeader: React.FC<EventDetailHeaderProps> = ({
                 <button
                   type="button"
                   className={`${
-                    isTablet ? 'size-11' : 'size-8'
-                  } rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer focus-visible:outline-none`}
+                    isTablet ? 'size-11' : 'size-9'
+                  } rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground border border-border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
                   aria-label="More actions"
                 >
-                  <MoreHorizontal className={isTablet ? 'size-5' : 'size-4'} />
+                  <MoreHorizontal className={isTablet ? 'size-5 stroke-[1.5]' : 'size-4 stroke-[1.5]'} />
                 </button>
               }
             />
