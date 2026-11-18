@@ -263,7 +263,7 @@ export const LiveViewPage: React.FC = () => {
         </div>
 
         {/* Side Column (~4 cols) */}
-        <div className="xl:col-span-4 flex flex-col gap-5 min-w-0">
+        <div className="xl:col-span-4 flex flex-col gap-5 min-w-0 xl:sticky xl:top-6 self-start">
           <LiveSideColumn
             camera={currentCamera}
             installedPole={installedPole}
