@@ -182,6 +182,7 @@ export function getRecentEventsForCamera(
       const dev = (e.device || (e as any).sourceDevice?.id || '').toLowerCase().trim();
       return dev === normalizedId;
     })
+    .sort((a, b) => new Date(b.captured).getTime() - new Date(a.captured).getTime())
     .slice(0, limit);
 }
 
