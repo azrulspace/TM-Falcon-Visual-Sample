@@ -62,12 +62,19 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, cameras]);
 
-  // Scroll active item into view smoothly
+  // Scroll active item into view smoothly within the horizontal strip container only
   useEffect(() => {
-    if (!scrollContainerRef.current) return;
-    const activeElem = scrollContainerRef.current.querySelector<HTMLElement>(`[data-camera-id="${selectedCameraId}"]`);
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const activeElem = container.querySelector<HTMLElement>(`[data-camera-id="${selectedCameraId}"]`);
     if (activeElem) {
-      activeElem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      const elemLeft = activeElem.offsetLeft;
+      const elemWidth = activeElem.offsetWidth;
+      const containerWidth = container.offsetWidth;
+      container.scrollTo({
+        left: Math.max(0, elemLeft - containerWidth / 2 + elemWidth / 2),
+        behavior: 'smooth',
+      });
     }
   }, [selectedCameraId]);
 

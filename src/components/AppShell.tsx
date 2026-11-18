@@ -205,6 +205,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     if (path.startsWith('/reports') || path.startsWith('/planned/reports')) return ['System', 'Reports'];
     if (path === '/live' || path.startsWith('/live/')) {
       const parts = path.split('/');
+      if (parts[2] === 'single') {
+        const id = parts[3];
+        return id ? ['Live view', 'Single', decodeURIComponent(id)] : ['Live view', 'Single'];
+      }
+      if (parts[2] === 'monitor') {
+        return ['Live view', 'Monitor'];
+      }
       const deviceId = parts[2];
       return deviceId ? ['Live view', decodeURIComponent(deviceId)] : ['Live view'];
     }
