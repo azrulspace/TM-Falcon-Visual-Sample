@@ -77,6 +77,10 @@ export default function App() {
                       <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
                       
                       <Route path="/live" element={<ProtectedRoute><LiveViewRedirect /></ProtectedRoute>} />
+                      <Route path="/live/single" element={<ProtectedRoute><LiveViewRedirect /></ProtectedRoute>} />
+                      <Route path="/live/single/:deviceId" element={<ProtectedRoute><LiveViewPage mode="single" /></ProtectedRoute>} />
+                      <Route path="/live/monitor" element={<ProtectedRoute><LiveViewRedirect /></ProtectedRoute>} />
+                      <Route path="/live/monitor/:groupId" element={<ProtectedRoute><LiveViewPage mode="monitor" /></ProtectedRoute>} />
                       <Route path="/live/:deviceId" element={<ProtectedRoute><LiveViewPage /></ProtectedRoute>} />
                       <Route path="/planned/live" element={<Navigate to="/live" replace />} />
                       <Route path="/planned/live/*" element={<Navigate to="/live" replace />} />
