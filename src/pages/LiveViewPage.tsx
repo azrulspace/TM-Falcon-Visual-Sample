@@ -386,18 +386,20 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Main Column (~8 cols) */}
           <div className="xl:col-span-8 flex flex-col gap-4 min-w-0">
-            {/* Live Player */}
-            <LivePlayer
-              camera={currentCamera}
-              capabilities={capabilities}
-              installedPole={installedPole}
-            />
-
-            {/* External Control Bar */}
-            <LiveControlBar
-              camera={currentCamera}
-              capabilities={capabilities}
-            />
+            {/* Unified Player Card (Video Frame + 1px Divider + 56px Control Bar) */}
+            <div className="rounded-xl border border-border bg-card shadow-none overflow-hidden flex flex-col">
+              <LivePlayer
+                camera={currentCamera}
+                capabilities={capabilities}
+                installedPole={installedPole}
+              />
+              <div className="border-t border-border">
+                <LiveControlBar
+                  camera={currentCamera}
+                  capabilities={capabilities}
+                />
+              </div>
+            </div>
 
             {/* Horizontal Camera Strip */}
             <CameraStrip

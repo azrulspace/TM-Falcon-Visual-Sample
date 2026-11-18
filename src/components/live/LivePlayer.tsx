@@ -120,7 +120,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
         onPointerMove={handlePointerActivity}
         onKeyDown={handlePointerActivity}
         aria-label={`Live camera feed for ${camera.identifier}`}
-        className="relative w-full aspect-video rounded-t-xl bg-muted overflow-hidden select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative w-full aspect-video bg-black overflow-hidden select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         {/* Live Badge + Elapsed timer overlay: strictly while Live, positioned in top right */}
         {currentEffectiveState === 'live' && (
