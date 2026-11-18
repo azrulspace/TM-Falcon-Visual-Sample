@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
 import {
   Popover,
@@ -22,6 +22,10 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('all');
   const [selectedSite, setSelectedSite] = useState<string>('all');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Vendors list
   const vendors = useMemo(() => {
@@ -59,6 +63,29 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
     });
   }, [cameras, selectedVendor, selectedSite, searchQuery]);
 
+  // Reset highlighted index on filter or search change
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [filteredCameras.length]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev < filteredCameras.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : filteredCameras.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredCameras[highlightedIndex]) {
+        onSelectCamera(filteredCameras[highlightedIndex]);
+        setOpen(false);
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -67,6 +94,8 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
             type="button"
             className="group flex items-center gap-2 px-3 py-1.5 -ml-3 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="Select camera"
+            aria-haspopup="listbox"
+            aria-expanded={open}
           >
             <div className="flex items-center gap-2">
               <span className="font-mono text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
@@ -88,9 +117,11 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
+              ref={inputRef}
               type="text"
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Search identifier, model, or pole..."
               className="w-full pl-9 pr-3 h-9 text-xs rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
               autoFocus
@@ -134,14 +165,19 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
         </div>
 
         {/* Camera List */}
-        <div className="max-h-[320px] overflow-y-auto divide-y divide-border/40 p-1">
+        <div
+          ref={listRef}
+          role="listbox"
+          className="max-h-[320px] overflow-y-auto divide-y divide-border/40 p-1"
+        >
           {filteredCameras.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground">
               No matching cameras found
             </div>
           ) : (
-            filteredCameras.map((camera) => {
+            filteredCameras.map((camera, index) => {
               const isSelected = camera.identifier === currentCamera.identifier;
+              const isHighlighted = index === highlightedIndex;
               const isOnline = camera.connectivityState === 'online';
               const isStale = camera.connectivityState === 'stale';
 
@@ -149,13 +185,18 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
                 <button
                   key={camera.identifier}
                   type="button"
+                  role="option"
+                  aria-selected={isSelected}
                   onClick={() => {
                     onSelectCamera(camera);
                     setOpen(false);
                   }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
                   className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${
                     isSelected
                       ? 'bg-primary/10 text-foreground font-medium'
+                      : isHighlighted
+                      ? 'bg-muted/70 text-foreground'
                       : 'hover:bg-muted/60 text-foreground'
                   }`}
                 >

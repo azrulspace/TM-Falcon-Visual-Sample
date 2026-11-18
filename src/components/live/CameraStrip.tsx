@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
+import { useEvents } from '@/contexts/EventsContext';
+import { formatRelativeTime } from '@/lib/dateTime';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +17,19 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
   onSelectCamera,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { events } = useEvents();
+
+  // Precompute last event time per camera identifier
+  const lastEventTimeByCameraId = useMemo(() => {
+    const map = new Map<string, string>();
+    events.forEach((e) => {
+      const devId = (e.device || '').toLowerCase().trim();
+      if (devId && !map.has(devId) && e.captured) {
+        map.set(devId, formatRelativeTime(e.captured));
+      }
+    });
+    return map;
+  }, [events]);
 
   const currentIndex = cameras.findIndex((c) => c.identifier === selectedCameraId);
 
@@ -30,7 +45,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
     }
   };
 
-  // Keyboard navigation "[" and "]" and left/right arrows when focused
+  // Keyboard navigation "[" and "]" globally when not typing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
@@ -70,7 +85,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             size="sm"
             onClick={handlePrev}
             disabled={currentIndex <= 0}
-            className="size-7 p-0"
+            className="size-7 p-0 cursor-pointer"
             aria-label="Previous camera"
             title="Previous camera ([)"
           >
@@ -81,7 +96,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             size="sm"
             onClick={handleNext}
             disabled={currentIndex >= cameras.length - 1}
-            className="size-7 p-0"
+            className="size-7 p-0 cursor-pointer"
             aria-label="Next camera"
             title="Next camera (])"
           >
@@ -90,7 +105,7 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
         </div>
       </div>
 
-      {/* Horizontal Scroll Strip */}
+      {/* Horizontal Scroll Strip (Listbox) */}
       <div
         ref={scrollContainerRef}
         role="listbox"
@@ -101,6 +116,8 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
           const isSelected = camera.identifier === selectedCameraId;
           const isOnline = camera.connectivityState === 'online';
           const isStale = camera.connectivityState === 'stale';
+          const lastEventLabel =
+            lastEventTimeByCameraId.get(camera.identifier.toLowerCase().trim()) || 'None';
 
           return (
             <div
@@ -122,9 +139,9 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                   handleNext();
                 }
               }}
-              className={`group flex-shrink-0 w-[148px] rounded-lg border text-left p-2 transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`group flex-shrink-0 w-[152px] rounded-lg border text-left p-2 transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isSelected
-                  ? 'border-primary bg-primary/10 shadow-sm'
+                  ? 'border-primary bg-primary/10 shadow-xs'
                   : 'border-border bg-card hover:bg-muted/50 hover:border-border/80'
               }`}
             >
@@ -137,8 +154,8 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                <span className="absolute bottom-1 left-1.5 text-[9px] font-mono text-zinc-300 drop-shadow-xs">
-                  Last event
+                <span className="absolute bottom-1 left-1.5 text-[9px] font-mono text-zinc-300 drop-shadow-xs truncate max-w-[90%]">
+                  Last event, {lastEventLabel}
                 </span>
               </div>
 
