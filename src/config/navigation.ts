@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   History,
   Clock,
+  Video,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -194,6 +195,19 @@ export const navigationConfig: NavSection[] = [
             route: '/planned/fleet',
           },
         ],
+      },
+    ],
+  },
+  {
+    id: 'streaming',
+    label: 'LIVE STREAMING & EDGE TELEMETRY',
+    items: [
+      {
+        id: 'live-view',
+        label: 'Live view',
+        icon: Video,
+        route: '/live',
+        description: 'On-demand edge video telemetry from installed field cameras',
       },
     ],
   },

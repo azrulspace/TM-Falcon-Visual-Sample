@@ -28,6 +28,8 @@ import Reports from './pages/Reports';
 import SchedulesPage from './pages/SchedulesPage';
 import SavedRunsPage from './pages/SavedRunsPage';
 import { ReportViewerPage } from './pages/ReportViewerPage';
+import { LiveViewPage, LiveViewRedirect } from './pages/LiveViewPage';
+import { LiveStreamProvider } from './contexts/LiveStreamContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { accountLabel } = useAppContext();
@@ -49,40 +51,47 @@ export default function App() {
           <EventsProvider>
             <CasesProvider>
               <AssetsProvider>
-                <TooltipProvider>
-                  <Routes>
-                    <Route path="/" element={<DefaultRedirect />} />
-                    <Route path="/signin" element={<SignIn />} />
-                    <Route path="/signup" element={<SignUp />} />
-                    
-                    <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
-                    <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-                    <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-                    <Route path="/cases" element={<ProtectedRoute><Cases /></ProtectedRoute>} />
-                    <Route path="/cases/:id" element={<ProtectedRoute><CaseDetail /></ProtectedRoute>} />
-                    <Route path="/planned/cases" element={<Navigate to="/cases" replace />} />
-                    <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
-                    <Route path="/assets" element={<Navigate to="/assets/poles" replace />} />
-                    <Route path="/assets/poles" element={<ProtectedRoute><Poles /></ProtectedRoute>} />
-                    <Route path="/assets/poles/:id" element={<ProtectedRoute><PoleDetail /></ProtectedRoute>} />
-                    <Route path="/assets/cable-spans" element={<ProtectedRoute><CableSpans /></ProtectedRoute>} />
-                    <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-                    <Route path="/assets/devices" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/vendor-discovery" element={<ProtectedRoute><VendorDiscovery /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
-                    <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
-                    
-                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                    <Route path="/reports/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
-                    <Route path="/reports/saved" element={<ProtectedRoute><SavedRunsPage /></ProtectedRoute>} />
-                    <Route path="/reports/:slug" element={<ProtectedRoute><ReportViewerPage /></ProtectedRoute>} />
-                    <Route path="/planned/reports" element={<Navigate to="/reports" replace />} />
-                    <Route path="/planned/reports/*" element={<Navigate to="/reports" replace />} />
-                    <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
-                  </Routes>
-                  <PreviewFrameModal />
-                </TooltipProvider>
+                <LiveStreamProvider>
+                  <TooltipProvider>
+                    <Routes>
+                      <Route path="/" element={<DefaultRedirect />} />
+                      <Route path="/signin" element={<SignIn />} />
+                      <Route path="/signup" element={<SignUp />} />
+                      
+                      <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
+                      <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+                      <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+                      <Route path="/cases" element={<ProtectedRoute><Cases /></ProtectedRoute>} />
+                      <Route path="/cases/:id" element={<ProtectedRoute><CaseDetail /></ProtectedRoute>} />
+                      <Route path="/planned/cases" element={<Navigate to="/cases" replace />} />
+                      <Route path="/risk" element={<ProtectedRoute><Risk /></ProtectedRoute>} />
+                      <Route path="/assets" element={<Navigate to="/assets/poles" replace />} />
+                      <Route path="/assets/poles" element={<ProtectedRoute><Poles /></ProtectedRoute>} />
+                      <Route path="/assets/poles/:id" element={<ProtectedRoute><PoleDetail /></ProtectedRoute>} />
+                      <Route path="/assets/cable-spans" element={<ProtectedRoute><CableSpans /></ProtectedRoute>} />
+                      <Route path="/assets/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                      <Route path="/assets/devices" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+                      <Route path="/assets/inventory/vendor-discovery" element={<ProtectedRoute><VendorDiscovery /></ProtectedRoute>} />
+                      <Route path="/assets/inventory/devices/new" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                      <Route path="/assets/inventory/devices/:id" element={<ProtectedRoute><DeviceDetail /></ProtectedRoute>} />
+                      <Route path="/assets/inventory/devices/:id/edit" element={<ProtectedRoute><CreateDevice /></ProtectedRoute>} />
+                      
+                      <Route path="/live" element={<ProtectedRoute><LiveViewRedirect /></ProtectedRoute>} />
+                      <Route path="/live/:deviceId" element={<ProtectedRoute><LiveViewPage /></ProtectedRoute>} />
+                      <Route path="/planned/live" element={<Navigate to="/live" replace />} />
+                      <Route path="/planned/live/*" element={<Navigate to="/live" replace />} />
+
+                      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                      <Route path="/reports/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
+                      <Route path="/reports/saved" element={<ProtectedRoute><SavedRunsPage /></ProtectedRoute>} />
+                      <Route path="/reports/:slug" element={<ProtectedRoute><ReportViewerPage /></ProtectedRoute>} />
+                      <Route path="/planned/reports" element={<Navigate to="/reports" replace />} />
+                      <Route path="/planned/reports/*" element={<Navigate to="/reports" replace />} />
+                      <Route path="*" element={<ProtectedRoute><PlannedPage /></ProtectedRoute>} />
+                    </Routes>
+                    <PreviewFrameModal />
+                  </TooltipProvider>
+                </LiveStreamProvider>
               </AssetsProvider>
             </CasesProvider>
           </EventsProvider>

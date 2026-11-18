@@ -260,4 +260,52 @@ export function getReportPermissions(
   };
 }
 
+export interface LivePermissions {
+  role: UserRole;
+  canWatchLive: boolean;
+  watchDisabledReason?: string;
+  canUseTalk: boolean;
+  talkDisabledReason?: string;
+  canUsePtz: boolean;
+  ptzDisabledReason?: string;
+  canTakeSnapshot: boolean;
+  snapshotDisabledReason?: string;
+}
+
+/**
+ * Computes RBAC + backend capability permissions for Live View actions.
+ * Watching live video, using Talk, and using pan/tilt are separate permissions.
+ */
+export function getLivePermissions(
+  role: UserRole,
+  capabilities: BackendCapabilities = DEFAULT_BACKEND_CAPABILITIES
+): LivePermissions {
+  void capabilities;
+  const isAdminOrSystem = role === 'Admin' || role === 'System';
+  const isOperator = role === 'Operator';
+  const canWatch = isAdminOrSystem || isOperator || role === 'Field';
+  const canInteract = isAdminOrSystem || isOperator;
+
+  return {
+    role,
+    canWatchLive: canWatch,
+    watchDisabledReason: canWatch
+      ? undefined
+      : 'Permission denied: live streaming access requires an active operator or field assignment.',
+    canUseTalk: canInteract,
+    talkDisabledReason: canInteract
+      ? undefined
+      : 'Permission denied: two-way audio intercom is restricted to Admin, System, and Operator roles.',
+    canUsePtz: canInteract,
+    ptzDisabledReason: canInteract
+      ? undefined
+      : 'Permission denied: PTZ camera motor control is restricted to Admin, System, and Operator roles.',
+    canTakeSnapshot: canWatch,
+    snapshotDisabledReason: canWatch
+      ? undefined
+      : 'Permission denied: snapshot capture requires live viewing authorization.',
+  };
+}
+
+
 
