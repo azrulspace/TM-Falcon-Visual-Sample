@@ -8,6 +8,8 @@ import { useEvents } from '@/contexts/EventsContext';
 import { useToast } from '@/contexts/ToastContext';
 import { formatRelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
 import { computeUnifiedDeviceState } from '@/lib/liveCameras';
+import { isLivePreviewEnabled } from '@/preview/live/previewConfig';
+import { createPreviewCanvasStream, type PreviewStreamController } from '@/preview/live/previewStreamGenerator';
 import {
   Play,
   RotateCw,
@@ -49,6 +51,10 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const fullscreenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const previewCtrlRef = useRef<PreviewStreamController | null>(null);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [zoomFactor, setZoomFactor] = useState(1.0);
+
   const {
     activeStreamingDeviceId,
     streamState,
@@ -60,6 +66,8 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
     isTakingLonger,
     isMuted,
     volume,
+    isPtzMoving,
+    activePtzDirection,
     startStream,
     retryStream,
     cancelConnecting,
@@ -94,6 +102,73 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
       videoRef.current.volume = volume;
     }
   }, [isMuted, volume]);
+
+  // Synthetic canvas preview stream attachment
+  useEffect(() => {
+    if (currentEffectiveState === 'live' && isLivePreviewEnabled()) {
+      if (!previewCtrlRef.current) {
+        const ctrl = createPreviewCanvasStream({
+          identifier: camera.identifier,
+          name: camera.name,
+          installedPoleId: camera.installedPoleId,
+          siteName: camera.siteName,
+          isMobileData: capabilities.isMobileData,
+        });
+        previewCtrlRef.current = ctrl;
+        if (videoRef.current) {
+          videoRef.current.srcObject = ctrl.stream;
+          videoRef.current.play().catch(() => {});
+        }
+      }
+    } else {
+      if (previewCtrlRef.current) {
+        previewCtrlRef.current.destroy();
+        previewCtrlRef.current = null;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+    }
+
+    return () => {
+      if (previewCtrlRef.current) {
+        previewCtrlRef.current.destroy();
+        previewCtrlRef.current = null;
+      }
+    };
+  }, [currentEffectiveState, camera.identifier, camera.name, camera.installedPoleId, camera.siteName, capabilities.isMobileData]);
+
+  // Wire interactive PTZ movement into canvas stream
+  useEffect(() => {
+    if (!isPtzMoving || !activePtzDirection || !previewCtrlRef.current) return;
+    const interval = setInterval(() => {
+      setPanOffset((prev) => {
+        let newX = prev.x;
+        let newY = prev.y;
+        if (activePtzDirection === 'pan_left') newX -= 12;
+        if (activePtzDirection === 'pan_right') newX += 12;
+        if (activePtzDirection === 'tilt_up') newY -= 12;
+        if (activePtzDirection === 'tilt_down') newY += 12;
+        previewCtrlRef.current?.updatePtz({ x: newX, y: newY }, zoomFactor);
+        return { x: newX, y: newY };
+      });
+      if (activePtzDirection === 'zoom_in') {
+        setZoomFactor((z) => {
+          const newZ = Math.min(4.0, z + 0.1);
+          previewCtrlRef.current?.updatePtz(panOffset, newZ);
+          return newZ;
+        });
+      }
+      if (activePtzDirection === 'zoom_out') {
+        setZoomFactor((z) => {
+          const newZ = Math.max(1.0, z - 0.1);
+          previewCtrlRef.current?.updatePtz(panOffset, newZ);
+          return newZ;
+        });
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isPtzMoving, activePtzDirection, zoomFactor, panOffset]);
 
   // Handle Fullscreen tracking and auto-hide
   useEffect(() => {
@@ -146,6 +221,14 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
               isFullscreen && !showControlsInFullscreen ? 'opacity-0' : 'opacity-100'
             }`}
           >
+            {isLivePreviewEnabled() && (
+              <Badge
+                variant="outline"
+                className="bg-black/60 text-muted-foreground border-border text-xs px-2 py-0.5"
+              >
+                Preview stream
+              </Badge>
+            )}
             <Badge
               variant="outline"
               className="bg-destructive text-destructive-foreground border-destructive text-xs px-2.5 py-0.5 gap-1.5 font-bold animate-pulse"
@@ -156,6 +239,19 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
             <span className="font-mono text-xs font-semibold text-white bg-black/70 px-2 py-0.5 rounded border border-border">
               {formatElapsed(streamStats.elapsedSeconds)}
             </span>
+          </div>
+        )}
+
+        {/* High latency feed warning for DEV-007 */}
+        {currentEffectiveState === 'live' && camera.identifier === 'DEV-007' && (
+          <div className="absolute top-3 left-3 z-20 pointer-events-none">
+            <Badge
+              variant="outline"
+              className="bg-status-warning-tint text-status-warning border-status-warning-border text-xs px-2.5 py-1 gap-1.5 font-medium"
+            >
+              <AlertTriangle className="size-3 shrink-0 stroke-[1.5]" />
+              High latency feed from remote pole
+            </Badge>
           </div>
         )}
 
@@ -275,34 +371,15 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
         {/* STATE 3: LIVE VIDEO STREAM */}
         {currentEffectiveState === 'live' && (
           <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
-            {/* Simulated Edge RTSP video stream */}
+            {/* Simulated Edge RTSP video stream or Synthetic Canvas Stream */}
             <video
               ref={videoRef}
-              src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              src={isLivePreviewEnabled() ? undefined : "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"}
               autoPlay
               loop
               playsInline
               className="w-full h-full object-cover"
             />
-
-            {/* Burned-in camera text simulation (unobstructed) */}
-            {camera.identifier === 'DEV-001' && (
-              <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between text-yellow-300 font-mono text-xs opacity-90 select-none">
-                <div className="flex justify-between items-start">
-                  <span>11-18-2026 Wed 13:25:13</span>
-                  <span className="border border-yellow-300 px-1 py-0.2 rounded text-xs">
-                    [🔋 94%]
-                  </span>
-                </div>
-                <div className="flex justify-between items-end">
-                  <div className="leading-tight">
-                    <div>Data usage pre alarm</div>
-                    <div>Data Plan: 1000MB  Data Used: 2GB 692MB</div>
-                  </div>
-                  <div>KT 001</div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -311,7 +388,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
           <div className="absolute inset-0 z-20 bg-background/70 flex items-center justify-center text-center p-4">
             <div className="flex items-center gap-2 bg-popover text-foreground px-4 py-2 rounded-lg border border-border">
               <Loader2 className="size-4 animate-spin text-primary" />
-              <span className="text-xs font-medium">Reconnecting live telemetry stream...</span>
+              <span className="text-xs font-medium">{failureMessage || 'Edge reconnecting to camera... attempt 1 of 3'}</span>
             </div>
           </div>
         )}
@@ -501,11 +578,15 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
             )}
           </div>
           {lastEvent?.type && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 font-sans">
               <span className="text-muted-foreground hidden sm:inline">Event:</span>
-              <span className="font-mono text-xs font-semibold text-foreground px-2 py-0.5 rounded bg-muted/60 border border-border">
+              <button
+                type="button"
+                onClick={() => navigate(`/events/${encodeURIComponent(lastEvent.id)}`)}
+                className="text-xs font-medium text-foreground hover:text-primary hover:underline cursor-pointer"
+              >
                 {lastEvent.type}
-              </span>
+              </button>
             </div>
           )}
         </div>

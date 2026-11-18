@@ -4,6 +4,11 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAppContext } from './AppContext';
 import { getRoleFromAccountLabel, getLivePermissions, type UserRole } from '@/lib/permissions';
 import { formatAbsoluteMYT } from '@/lib/dateTime';
+import {
+  isLivePreviewEnabled,
+  getPreviewSessionState,
+  setPreviewSessionState,
+} from '@/preview/live/previewConfig';
 import type {
   LiveStreamState,
   LiveFailureVariant,
@@ -60,7 +65,11 @@ const DEFAULT_BITRATE_MBPS = 2.4;
 export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { accountLabel } = useAppContext();
-  const userRole = getRoleFromAccountLabel(accountLabel);
+
+  // Preview Lab role simulation or default user role
+  const previewEnabled = isLivePreviewEnabled();
+  const previewSession = previewEnabled ? getPreviewSessionState() : null;
+  const userRole = (previewSession?.roleOverride) || getRoleFromAccountLabel(accountLabel);
   const permissions = getLivePermissions(userRole);
 
   const [activeStreamingDeviceId, setActiveStreamingDeviceId] = useState<string | null>(null);
@@ -101,7 +110,8 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isStillWatchingPromptOpen, setIsStillWatchingPromptOpen] = useState(false);
   const [inactivityRemainingSeconds, setInactivityRemainingSeconds] = useState(INACTIVITY_PROMPT_DURATION_SEC);
 
-  // Refs for tracking active session timers
+  // Refs for tracking active session timers & preview state
+  const dev003FailedOnceRef = useRef(false);
   const sessionStartTimeRef = useRef<number | null>(null);
   const streamTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const connectingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -114,6 +124,10 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Check Talk Preconditions (HTTPS & Microphone)
   const checkTalkPreconditions = useCallback(async (): Promise<TalkPreconditionState> => {
     if (typeof window === 'undefined') return 'ready';
+    if (isLivePreviewEnabled() && getPreviewSessionState().simulateInsecureHttp) {
+      setTalkPrecondition('blocked_https');
+      return 'blocked_https';
+    }
     const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
     if (!isHttps) {
       setTalkPrecondition('blocked_https');
@@ -180,6 +194,9 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       durationSec: number,
       dataMb: number
     ) => {
+      if (isLivePreviewEnabled() && !getPreviewSessionState().viewingSessionsRecorded) {
+        return;
+      }
       try {
         const stored = localStorage.getItem('falcon_live_view_sessions');
         const list: LiveSessionAuditRecord[] = stored ? JSON.parse(stored) : [];
@@ -256,11 +273,16 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (promptCountdownTimerRef.current) clearInterval(promptCountdownTimerRef.current);
     setIsStillWatchingPromptOpen(false);
 
+    const isPreview = isLivePreviewEnabled();
+    const session = isPreview ? getPreviewSessionState() : null;
+    const inactivityTimeoutMs = session?.fastTimers ? 20 * 1000 : INACTIVITY_TIMEOUT_MS;
+    const promptDurationSec = session?.fastTimers ? 5 : INACTIVITY_PROMPT_DURATION_SEC;
+
     inactivityTimerRef.current = setTimeout(() => {
       setIsStillWatchingPromptOpen(true);
-      setInactivityRemainingSeconds(INACTIVITY_PROMPT_DURATION_SEC);
+      setInactivityRemainingSeconds(promptDurationSec);
 
-      let remaining = INACTIVITY_PROMPT_DURATION_SEC;
+      let remaining = promptDurationSec;
       promptCountdownTimerRef.current = setInterval(() => {
         remaining -= 1;
         setInactivityRemainingSeconds(remaining);
@@ -269,12 +291,12 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           stopStream('inactivity');
           addToast(
             'info',
-            'Live streaming disconnected after 10 minutes without interaction.',
+            'Live streaming disconnected after inactivity timeout.',
             'Stream stopped due to inactivity'
           );
         }
       }, 1000);
-    }, INACTIVITY_TIMEOUT_MS);
+    }, inactivityTimeoutMs);
   }, [stopStream, addToast]);
 
   const confirmStillWatching = useCallback(() => {
@@ -329,7 +351,165 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }, 1000);
 
-      // Staging device simulation & error mapping
+      // Section 4 Scenario Matrix & Reviewer Lab Overrides
+      if (isLivePreviewEnabled()) {
+        const session = getPreviewSessionState();
+        const fast = session.fastTimers;
+
+        // 1. Session Camera State Override
+        const stateOverride = session.cameraStateOverrides[deviceId];
+        if (stateOverride === 'offline') {
+          setTimeout(() => {
+            if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+            setStreamState('failed');
+            setFailureVariant('camera_offline');
+            setFailureMessage('The camera is offline.');
+          }, fast ? 200 : 600);
+          return;
+        }
+
+        // 2. Session Next Start Result Override
+        if (session.nextStartResult && session.nextStartResult !== 'success') {
+          const variant = session.nextStartResult;
+          setPreviewSessionState({ nextStartResult: 'success' });
+          const messages: Record<string, string> = {
+            edge_timeout: 'Edge service timeout. Could not reach Edge.',
+            vendor_unknown: 'The vendor does not know this camera.',
+            stream_unsupported: 'This camera does not support live video.',
+            camera_offline: 'The camera is offline.',
+            no_permission: 'You do not have permission to watch live video.',
+          };
+          setTimeout(() => {
+            if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+            setStreamState('failed');
+            setFailureVariant(variant);
+            setFailureMessage(messages[variant] || 'Stream initialization failed.');
+          }, fast ? 200 : 600);
+          return;
+        }
+
+        // 3. Deterministic Scenario Matrix
+        if (deviceId === 'DEV-008' || deviceId === 'DEV-015') {
+          setTimeout(() => {
+            if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+            setStreamState('failed');
+            setFailureVariant('camera_offline');
+            setFailureMessage('The camera is offline. Last contact was over 24h ago.');
+          }, fast ? 200 : 600);
+          return;
+        }
+
+        if (deviceId === 'DEV-004') {
+          setTimeout(() => {
+            if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+            setStreamState('failed');
+            setFailureVariant('vendor_unknown');
+            setFailureMessage('The vendor does not know this camera.');
+          }, fast ? 200 : 600);
+          return;
+        }
+
+        if (deviceId === 'DEV-006') {
+          setTimeout(() => {
+            if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+            setStreamState('failed');
+            setFailureVariant('stream_unsupported');
+            setFailureMessage('This camera does not support live video.');
+          }, fast ? 200 : 600);
+          return;
+        }
+
+        if (deviceId === 'DEV-003') {
+          if (!dev003FailedOnceRef.current) {
+            dev003FailedOnceRef.current = true;
+            setTimeout(() => {
+              if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+              setStreamState('failed');
+              setFailureVariant('edge_timeout');
+              setFailureMessage('Edge service timeout. Could not reach Edge.');
+            }, fast ? 400 : 1800);
+            return;
+          }
+        }
+
+        // Progressive connection steps for operational transparency
+        const stepDelay = fast ? 200 : 600;
+        connectingStepTimeoutRef.current = setTimeout(() => {
+          setConnectingStep('Edge reached. Requesting RTSP feed...');
+
+          connectingStepTimeoutRef.current = setTimeout(() => {
+            setConnectingStep('Camera answered. Initializing video decoder...');
+
+            connectingStepTimeoutRef.current = setTimeout(() => {
+              setConnectingStep('Video starting...');
+
+              connectingStepTimeoutRef.current = setTimeout(() => {
+                if (connectingTimerRef.current) clearInterval(connectingTimerRef.current);
+                sessionStartTimeRef.current = Date.now();
+                setStreamState('live');
+                setConnectingStep(null);
+                setIsTakingLonger(false);
+
+                if (isAutostart) {
+                  addToast(
+                    'info',
+                    'Started live telemetry via deep link intent.',
+                    `Streaming ${deviceId}`
+                  );
+                }
+
+                // If DEV-005, drop to reconnecting after 20s (or 8s on fastTimers)
+                if (deviceId === 'DEV-005') {
+                  const dropDelay = fast ? 8000 : 20000;
+                  setTimeout(() => {
+                    setActiveStreamingDeviceId((curr) => {
+                      if (curr === 'DEV-005') {
+                        setStreamState('reconnecting');
+                        setFailureMessage('Edge reconnecting to camera... attempt 1 of 3');
+                        setTimeout(() => {
+                          setActiveStreamingDeviceId((c2) => {
+                            if (c2 === 'DEV-005') {
+                              setStreamState('live');
+                              setFailureMessage(null);
+                            }
+                            return c2;
+                          });
+                        }, 3000);
+                      }
+                      return curr;
+                    });
+                  }, dropDelay);
+                }
+
+                // Start stream telemetry ticker
+                let streamElapsed = 0;
+                if (streamTimerRef.current) clearInterval(streamTimerRef.current);
+                streamTimerRef.current = setInterval(() => {
+                  streamElapsed += 1;
+                  const isDev007 = deviceId === 'DEV-007';
+                  const bitrate = isDev007 ? 0.4 : DEFAULT_BITRATE_MBPS;
+                  const estimatedMb =
+                    (bitrate * 1000 * 1000 * streamElapsed) / (8 * 1024 * 1024);
+                  setStreamStats({
+                    resolution: isDev007 ? '1280x720' : '1920x1080',
+                    bitrateMbps: bitrate,
+                    latencyMs: isDev007 ? 380 : 110 + Math.floor(Math.sin(streamElapsed) * 15),
+                    fps: isDev007 ? 15 : 25,
+                    elapsedSeconds: streamElapsed,
+                    estimatedDataMb: Math.round(estimatedMb * 10) / 10,
+                  });
+                }, 1000);
+
+                // Arm safety inactivity timer
+                resetInactivityTimer();
+              }, stepDelay);
+            }, stepDelay);
+          }, stepDelay);
+        }, stepDelay);
+        return;
+      }
+
+      // Production fallback simulation
       // DEV-004 and DEV-011 are offline
       if (deviceId === 'DEV-004' || deviceId === 'DEV-011') {
         setTimeout(() => {
@@ -549,19 +729,23 @@ export const LiveStreamProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [permissions.canTakeSnapshot, permissions.snapshotDisabledReason, addToast]
   );
 
-  // Hidden Page Auto-Stop (2 minutes safety rule)
+  // Hidden Page Auto-Stop (2 minutes safety rule, or 10s on fastTimers)
   useEffect(() => {
     const handleVisibilityChange = () => {
+      const isPreview = isLivePreviewEnabled();
+      const session = isPreview ? getPreviewSessionState() : null;
+      const hiddenTimeout = session?.fastTimers ? 10 * 1000 : HIDDEN_PAGE_TIMEOUT_MS;
+
       if (document.visibilityState === 'hidden') {
         if (streamState === 'live') {
           hiddenTimerRef.current = setTimeout(() => {
             stopStream('page_hidden');
             addToast(
               'info',
-              'The live stream stopped because the page was hidden for more than 2 minutes.',
+              'The live stream stopped because the page was hidden.',
               'Stream paused to save mobile data'
             );
-          }, HIDDEN_PAGE_TIMEOUT_MS);
+          }, hiddenTimeout);
         }
       } else {
         if (hiddenTimerRef.current) {
