@@ -4,6 +4,8 @@ import {
   getDefaultCameraId,
   filterCamerasOnly,
   getCameraCapabilities,
+  getRecentEventsForCamera,
+  getPoleForCamera,
 } from '../lib/liveCameras.ts';
 import { getLivePermissions } from '../lib/permissions.ts';
 
@@ -101,4 +103,36 @@ test('Live View: RBAC permissions restrict Talk and PTZ appropriately', () => {
   assert.ok(field.talkDisabledReason?.includes('Permission denied'));
   assert.equal(field.canUsePtz, false);
   assert.ok(field.ptzDisabledReason?.includes('Permission denied'));
+});
+
+test('Live View: getRecentEventsForCamera caps to limit and filters by device ID', () => {
+  const mockEvents: any[] = [
+    { id: 'EVT-1', device: 'DEV-001', captured: '2026-10-21T06:00:00Z' },
+    { id: 'EVT-2', device: 'DEV-002', captured: '2026-10-21T06:01:00Z' },
+    { id: 'EVT-3', device: 'DEV-001', captured: '2026-10-21T06:02:00Z' },
+    { id: 'EVT-4', device: 'DEV-001', captured: '2026-10-21T06:03:00Z' },
+    { id: 'EVT-5', device: 'DEV-001', captured: '2026-10-21T06:04:00Z' },
+    { id: 'EVT-6', device: 'DEV-001', captured: '2026-10-21T06:05:00Z' },
+    { id: 'EVT-7', device: 'DEV-001', captured: '2026-10-21T06:06:00Z' },
+  ];
+  const dev001Events = getRecentEventsForCamera(mockEvents, 'DEV-001', 5);
+  assert.equal(dev001Events.length, 5);
+  assert.ok(dev001Events.every((e) => e.device === 'DEV-001'));
+
+  const dev002Events = getRecentEventsForCamera(mockEvents, 'DEV-002', 5);
+  assert.equal(dev002Events.length, 1);
+  assert.equal(dev002Events[0].id, 'EVT-2');
+});
+
+test('Live View: getPoleForCamera resolves installed pole record', () => {
+  const mockPoles: any[] = [
+    { identifier: 'AST-002', name: 'Pole AST-002', location: { lat: 2.91, lng: 101.47 } },
+    { identifier: 'TGP_P010', name: 'TGP_P010', location: { lat: 2.92, lng: 101.48 } },
+  ];
+  const p1 = getPoleForCamera(mockPoles, 'TGP_P010');
+  assert.ok(p1);
+  assert.equal(p1?.identifier, 'TGP_P010');
+
+  const pNull = getPoleForCamera(mockPoles, null);
+  assert.equal(pNull, null);
 });
