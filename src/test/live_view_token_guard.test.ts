@@ -9,9 +9,14 @@ test('Live View Token Guard: Automated Style & Forbidden Pattern Scan', async (t
     assert.ok(filesScanned >= 10, `Expected at least 10 live view files to be scanned, got ${filesScanned}`);
   });
 
-  await t.test('tracks baseline violations count', () => {
-    // In Phase 1 baseline, violations are recorded.
-    // In final verification (Phase 9), violations MUST be 0.
-    assert.ok(Array.isArray(violations), 'Violations should be an array');
+  await t.test('strictly enforces 0 token violations across all live view files', () => {
+    if (violations.length > 0) {
+      console.error('Violations found:\n', violations);
+    }
+    assert.strictEqual(
+      violations.length,
+      0,
+      `Expected 0 token violations in Live View, but found ${violations.length}`
+    );
   });
 });
