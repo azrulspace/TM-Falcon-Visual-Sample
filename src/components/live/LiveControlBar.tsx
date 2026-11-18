@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
 import type { LiveCameraCapabilities } from '@/types/live';
 import { useLiveStream } from '@/contexts/LiveStreamContext';
@@ -25,6 +25,7 @@ import {
   ChevronRight,
   ZoomIn,
   ZoomOut,
+  Keyboard,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -42,6 +43,8 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
     streamState,
     streamStats,
     isMuted,
+    volume,
+    setVolume,
     isPtzMoving,
     activePtzDirection,
     talkPrecondition,
@@ -57,6 +60,8 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
     toggleTalk,
     takeSnapshot,
   } = useLiveStream();
+
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const isCurrentStreaming = activeStreamingDeviceId === camera.identifier;
   const isLive = isCurrentStreaming && streamState === 'live';
@@ -85,6 +90,43 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
       // PiP not supported on this browser
     }
   };
+
+  // Keyboard shortcuts: Space, M, S, F
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.code === 'Space') {
+        const player = document.getElementById('falcon-live-player');
+        if (document.activeElement === player || player?.contains(document.activeElement)) {
+          e.preventDefault();
+          if (isLive) {
+            stopStream('user_stopped');
+          } else {
+            startStream(camera.identifier, camera.name);
+          }
+        }
+      } else if (e.key === 'm' || e.key === 'M') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          toggleMute();
+        }
+      } else if (e.key === 's' || e.key === 'S') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          const video = document.querySelector<HTMLVideoElement>('#falcon-live-player video');
+          takeSnapshot(camera.identifier, video);
+        }
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          handleFullscreen();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLive, camera.identifier, camera.name, startStream, stopStream, toggleMute, takeSnapshot]);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-card border border-border shadow-xs">
@@ -116,17 +158,37 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
 
         {/* Audio Mute & Volume */}
         {capabilities.supportsAudio && (
-          <div className="flex items-center gap-1 pl-1">
+          <div className="relative flex items-center gap-1 pl-1">
             <Button
               variant="outline"
               size="sm"
               onClick={toggleMute}
-              className="size-9 p-0"
+              onMouseEnter={() => setShowVolumeSlider(true)}
+              className="size-9 p-0 cursor-pointer"
               aria-label={isMuted ? 'Unmute stream audio' : 'Mute stream audio'}
               title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
             >
               {isMuted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4 text-foreground" />}
             </Button>
+
+            {/* Inline mini volume slider on hover */}
+            {showVolumeSlider && (
+              <div
+                onMouseLeave={() => setShowVolumeSlider(false)}
+                className="absolute left-10 z-30 p-2 bg-popover border border-border shadow-md rounded-lg flex items-center gap-2 w-28"
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                  aria-label="Stream volume"
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -138,7 +200,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
             const video = document.querySelector<HTMLVideoElement>('#falcon-live-player video');
             takeSnapshot(camera.identifier, video);
           }}
-          className="h-9 px-3 text-xs gap-1.5"
+          className="h-9 px-3 text-xs gap-1.5 cursor-pointer"
           aria-label="Take high resolution snapshot"
           title="Save snapshot image (S)"
         >
@@ -160,7 +222,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               onPointerDown={() => startPtz('pan_left')}
               onPointerUp={stopPtz}
               onPointerLeave={stopPtz}
-              className={`size-8 p-0 ${activePtzDirection === 'pan_left' ? 'bg-primary text-primary-foreground' : ''}`}
+              className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'pan_left' ? 'bg-primary text-primary-foreground' : ''}`}
               title="Pan left"
               aria-label="Pan camera left"
             >
@@ -173,7 +235,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                 onPointerDown={() => startPtz('tilt_up')}
                 onPointerUp={stopPtz}
                 onPointerLeave={stopPtz}
-                className={`size-8 p-0 ${activePtzDirection === 'tilt_up' ? 'bg-primary text-primary-foreground' : ''}`}
+                className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'tilt_up' ? 'bg-primary text-primary-foreground' : ''}`}
                 title="Tilt up"
                 aria-label="Tilt camera up"
               >
@@ -185,7 +247,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                 onPointerDown={() => startPtz('tilt_down')}
                 onPointerUp={stopPtz}
                 onPointerLeave={stopPtz}
-                className={`size-8 p-0 ${activePtzDirection === 'tilt_down' ? 'bg-primary text-primary-foreground' : ''}`}
+                className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'tilt_down' ? 'bg-primary text-primary-foreground' : ''}`}
                 title="Tilt down"
                 aria-label="Tilt camera down"
               >
@@ -198,7 +260,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               onPointerDown={() => startPtz('pan_right')}
               onPointerUp={stopPtz}
               onPointerLeave={stopPtz}
-              className={`size-8 p-0 ${activePtzDirection === 'pan_right' ? 'bg-primary text-primary-foreground' : ''}`}
+              className={`size-8 p-0 cursor-pointer ${activePtzDirection === 'pan_right' ? 'bg-primary text-primary-foreground' : ''}`}
               title="Pan right"
               aria-label="Pan camera right"
             >
@@ -215,7 +277,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                 onPointerDown={() => startPtz('zoom_in')}
                 onPointerUp={stopPtz}
                 onPointerLeave={stopPtz}
-                className="size-8 p-0"
+                className="size-8 p-0 cursor-pointer"
                 title="Zoom in"
                 aria-label="Zoom in"
               >
@@ -227,7 +289,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                 onPointerDown={() => startPtz('zoom_out')}
                 onPointerUp={stopPtz}
                 onPointerLeave={stopPtz}
-                className="size-8 p-0"
+                className="size-8 p-0 cursor-pointer"
                 title="Zoom out"
                 aria-label="Zoom out"
               >
@@ -238,7 +300,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
         </div>
       )}
 
-      {/* Right Group: Talk intercom, Stream Info, Fullscreen, PiP */}
+      {/* Right Group: Talk intercom, Stream Info, Fullscreen, PiP, Shortcuts */}
       <div className="flex items-center gap-2">
         {/* Talk Intercom Button */}
         {capabilities.supportsTalk && (
@@ -261,7 +323,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
                     onClick={() => {
                       if (isTalkToggleMode) toggleTalk();
                     }}
-                    className={`h-9 px-3 text-xs gap-1.5 transition-all select-none ${
+                    className={`h-9 px-3 text-xs gap-1.5 transition-all select-none cursor-pointer ${
                       isTalkActive
                         ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
                         : isPtzMoving
@@ -305,7 +367,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="size-9 p-0"
+                className="size-9 p-0 cursor-pointer"
                 aria-label="Stream telemetry metrics"
                 title="Stream telemetry"
               >
@@ -355,12 +417,60 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
           </PopoverContent>
         </Popover>
 
+        {/* Keyboard Shortcuts Help Popover */}
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="size-9 p-0 cursor-pointer hidden sm:flex"
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts"
+              >
+                <Keyboard className="size-4" />
+              </Button>
+            }
+          />
+          <PopoverContent align="end" className="w-64 p-3 text-xs bg-popover text-popover-foreground border-border shadow-md">
+            <h4 className="font-semibold text-foreground mb-2 pb-1 border-b border-border">
+              Keyboard Shortcuts
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Start / Stop stream</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">Space</kbd>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Mute / Unmute audio</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">M</kbd>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Take snapshot</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">S</kbd>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Toggle fullscreen</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">F</kbd>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Previous camera</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">[</kbd>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Next camera</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono text-[11px] border border-border">]</kbd>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
         {/* Fullscreen Button */}
         <Button
           variant="outline"
           size="sm"
           onClick={handleFullscreen}
-          className="size-9 p-0"
+          className="size-9 p-0 cursor-pointer"
           aria-label="Toggle fullscreen video"
           title="Fullscreen (F)"
         >
@@ -372,7 +482,7 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
           variant="outline"
           size="sm"
           onClick={handlePiP}
-          className="size-9 p-0 hidden sm:flex"
+          className="size-9 p-0 hidden sm:flex cursor-pointer"
           aria-label="Toggle picture in picture"
           title="Picture in Picture"
         >
