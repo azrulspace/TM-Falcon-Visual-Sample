@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import fs from 'node:fs';
 
 async function runAudit() {
   const p = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', [
@@ -17,7 +16,7 @@ async function runAudit() {
       res = await fetch('http://127.0.0.1:9224/json');
       targets = await res.json();
       if (targets && targets.length > 0) break;
-    } catch (e) {}
+    } catch (_e) {}
   }
   let target = targets?.find(t => t.type === 'page');
   if (!target) {

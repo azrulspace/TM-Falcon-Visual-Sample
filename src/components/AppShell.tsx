@@ -207,7 +207,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       const parts = path.split('/');
       if (parts[2] === 'single') {
         const id = parts[3];
-        return id ? ['Live view', 'Single', decodeURIComponent(id)] : ['Live view', 'Single'];
+        return id ? ['Live view', decodeURIComponent(id)] : ['Live view'];
       }
       if (parts[2] === 'monitor') {
         return ['Live view', 'Monitor'];

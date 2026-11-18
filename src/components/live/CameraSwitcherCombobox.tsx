@@ -89,28 +89,23 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <h1 className="font-mono text-2xl font-semibold tracking-tight text-foreground">
-        {currentCamera.identifier}
-      </h1>
-
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-3 gap-2 text-xs font-medium border-border bg-card hover:bg-muted text-foreground cursor-pointer rounded-lg shadow-xs"
-              aria-label="Switch camera"
-              aria-haspopup="listbox"
-              aria-expanded={open}
-            >
-              <Video className="size-3.5 text-muted-foreground" />
-              <span>Switch camera</span>
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </Button>
-          }
-        />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 gap-2 text-xs font-medium border-border bg-card hover:bg-muted text-foreground cursor-pointer rounded-lg shadow-xs"
+            aria-label="Switch camera"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+          >
+            <Video className="size-3.5 text-muted-foreground" />
+            <span>Switch camera</span>
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </Button>
+        }
+      />
 
         <PopoverContent
           align="start"
@@ -243,6 +238,5 @@ export const CameraSwitcherCombobox: React.FC<CameraSwitcherComboboxProps> = ({
           </div>
         </PopoverContent>
       </Popover>
-    </div>
   );
 };

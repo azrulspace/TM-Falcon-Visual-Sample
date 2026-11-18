@@ -58,7 +58,6 @@ export const AddToGroupDialog: React.FC<AddToGroupDialogProps> = ({
   };
 
   const handleSave = () => {
-    let changed = 0;
     groups.forEach((g) => {
       const currentlyIn = g.cameraIds.some(
         (id) => id.toLowerCase() === camera.identifier.toLowerCase()
@@ -67,10 +66,8 @@ export const AddToGroupDialog: React.FC<AddToGroupDialogProps> = ({
 
       if (shouldBeIn && !currentlyIn) {
         addCameraToGroup(g.id, camera.identifier);
-        changed++;
       } else if (!shouldBeIn && !g.isSystem && currentlyIn) {
         removeCameraFromGroup(g.id, camera.identifier);
-        changed++;
       }
     });
 
