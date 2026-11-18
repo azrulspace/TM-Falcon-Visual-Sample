@@ -19,6 +19,7 @@ import {
 } from '@/lib/liveGroups';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatRelativeTime } from '@/lib/dateTime';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,6 +155,19 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
     () => (currentCamera ? getRecentEventsForCamera(events, currentCamera.identifier, 5) : []),
     [events, currentCamera]
   );
+
+  const lastEventTimeByCameraId = useMemo(() => {
+    const map = new Map<string, string>();
+    events.forEach((e) => {
+      if (e.device) {
+        const id = e.device.toLowerCase().trim();
+        if (!map.has(id)) {
+          map.set(id, formatRelativeTime(e.captured));
+        }
+      }
+    });
+    return map;
+  }, [events]);
 
   const unifiedState = useMemo(() => {
     return computeUnifiedDeviceState(currentCamera?.lastContactAt, currentCamera?.connectivityState);
@@ -406,6 +420,8 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
               cameras={cameras}
               selectedCameraId={currentCamera.identifier}
               onSelectCamera={(cam) => navigate(`/live/single/${encodeURIComponent(cam.identifier)}`)}
+              lastEventTimeByCameraId={lastEventTimeByCameraId}
+              activeStreamingDeviceId={activeStreamingDeviceId}
             />
           </div>
 
