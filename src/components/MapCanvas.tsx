@@ -473,10 +473,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         ref={svgRef}
         viewBox="0 0 1000 700"
         preserveAspectRatio="xMidYMid slice"
-        className="w-full h-full object-cover origin-center transition-transform duration-300 ease-out"
-        style={{
-          transform: `scale(${scale}) translate(${pan.x}px, ${pan.y}px)`,
-        }}
+        className="w-full h-full object-cover select-none"
         role="img"
         aria-label="Falcon GIS Infrastructure Satellite Map"
       >
@@ -526,8 +523,17 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         {/* 1. Base Fallback Background (Spanning past all viewports) */}
         <rect x="-2000" y="-2000" width="5000" height="5000" fill={basemap === 'satellite' ? '#070f1a' : basemap === 'dark' ? '#090e17' : '#e2e8f0'} />
 
-        {/* 2. Real GIS Tile Imagery Layer (Esri World Imagery / Esri Dark Gray / OSM) */}
-        <g className="tiles-layer transition-opacity duration-300">
+        {/* Viewport content group with pan and zoom transform (replaces CSS transform on svg) */}
+        <g
+          id="map-viewport-transform"
+          className="transition-transform duration-300 ease-out"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+            transformOrigin: '500px 350px',
+          }}
+        >
+          {/* 2. Real GIS Tile Imagery Layer (Esri World Imagery / Esri Dark Gray / OSM) */}
+          <g className="tiles-layer transition-opacity duration-300">
           {tiles.map(({ tx, ty, x, y }) => (
             <image
               key={`base-${tx}-${ty}-${basemap}`}
@@ -1010,6 +1016,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               </g>
             );
           })}
+        </g>
       </svg>
 
       {/* Lightweight Hover Card Preview (Section 7.2.6: hover preview on map markers) */}

@@ -181,10 +181,10 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                     <span
                       className={`size-1.5 rounded-full ${
                         unifiedState.state === 'online'
-                          ? 'bg-emerald-500 animate-pulse'
+                          ? 'bg-status-success animate-pulse'
                           : unifiedState.state === 'stale'
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500/80'
+                          ? 'bg-status-warning'
+                          : 'bg-destructive'
                       }`}
                     />
                     <span className="text-xs text-muted-foreground capitalize">
