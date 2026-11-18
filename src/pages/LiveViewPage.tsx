@@ -247,12 +247,12 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
     <div className="flex flex-col gap-5 w-full max-w-[1720px] mx-auto pb-10">
       {/* 4.2 Frame Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
-        {/* Left: Title, StatusBadge, Switcher Combobox, Preview data chip */}
-        <div className="flex flex-col gap-1 min-w-0">
+        {/* Left: Device identity heading, status badge, preview indicator, and secondary metadata */}
+        <div className="flex flex-col gap-1.5 min-w-0">
           {effectiveMode === 'single' && currentCamera ? (
             <>
               <div className="flex items-center flex-wrap gap-2.5">
-                <h1 className="font-mono text-2xl font-semibold tracking-tight text-foreground">
+                <h1 className="font-mono text-2xl font-bold tracking-tight text-foreground">
                   {currentCamera.identifier}
                 </h1>
 
@@ -264,32 +264,25 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                   </Badge>
                 ) : unifiedState.state === 'stale' ? (
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium" title={unifiedState.reason}>
-                    <Clock className="size-3" />
+                    <Clock className="size-3 stroke-[1.5]" />
                     Stale
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs px-2.5 py-0.5 gap-1.5 font-medium" title={unifiedState.reason}>
-                    <AlertCircle className="size-3" />
+                    <AlertCircle className="size-3 stroke-[1.5]" />
                     Offline
                   </Badge>
                 )}
 
-                {/* Camera switcher combobox (36px outlined) */}
-                <CameraSwitcherCombobox
-                  currentCamera={currentCamera}
-                  cameras={cameras}
-                  onSelectCamera={(cam) => navigate(`/live/single/${encodeURIComponent(cam.identifier)}`)}
-                />
-
                 {/* Preview data chip */}
-                <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
+                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
                   Preview data
                 </Badge>
               </div>
 
               {/* Secondary line: model • site • pole link with ChevronRight */}
               <div className="text-xs text-muted-foreground flex items-center gap-2 pl-0.5 truncate">
-                <span>{currentCamera.model || 'Field Camera'}</span>
+                <span className="font-medium text-foreground">{currentCamera.model || 'Field Camera'}</span>
                 <span className="text-border">•</span>
                 <span>{currentCamera.siteName || 'Teluk Panglima Garang'}</span>
                 {installedPole && (
@@ -299,9 +292,9 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                       to={`/assets/poles/${encodeURIComponent(installedPole.identifier)}`}
                       className="hover:text-primary transition-colors hover:underline inline-flex items-center gap-1 font-medium"
                     >
-                      <MapPin className="size-3" />
+                      <MapPin className="size-3 stroke-[1.5]" />
                       <span>Pole {installedPole.identifier}</span>
-                      <ChevronRight className="size-3 opacity-70" />
+                      <ChevronRight className="size-3 stroke-[1.5] opacity-70" />
                     </Link>
                   </>
                 )}
@@ -310,10 +303,10 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
           ) : (
             <>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   Monitor Wall
                 </h1>
-                <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
+                <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border text-xs px-2 py-0.5 font-normal">
                   Preview data
                 </Badge>
               </div>
@@ -324,8 +317,17 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
           )}
         </div>
 
-        {/* Right: Mode Switcher (36px) + Overflow Menu (36px in Single Mode) */}
+        {/* Right: Consolidated Control Toolbar (Camera Switcher + Mode Switcher + Overflow Menu) */}
         <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          {/* Camera switcher combobox (36px outlined) */}
+          {effectiveMode === 'single' && currentCamera && (
+            <CameraSwitcherCombobox
+              currentCamera={currentCamera}
+              cameras={cameras}
+              onSelectCamera={(cam) => navigate(`/live/single/${encodeURIComponent(cam.identifier)}`)}
+            />
+          )}
+
           {/* Segmented Control for Mode: Single | Monitor */}
           <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border h-9">
             <button
@@ -337,7 +339,7 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Video className="size-3.5" />
+              <Video className="size-3.5 stroke-[1.5]" />
               <span>Single</span>
             </button>
             <button
@@ -349,7 +351,7 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <LayoutGrid className="size-3.5" />
+              <LayoutGrid className="size-3.5 stroke-[1.5]" />
               <span>Monitor</span>
             </button>
           </div>
@@ -359,8 +361,8 @@ export const LiveViewPage: React.FC<LiveViewPageProps> = ({ mode: explicitMode }
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <Button variant="outline" size="sm" className="size-9 p-0 cursor-pointer border-border bg-card" aria-label="Camera actions overflow menu">
-                    <MoreVertical className="size-4" />
+                  <Button variant="outline" size="sm" className="size-9 p-0 cursor-pointer border-border bg-card hover:bg-muted text-foreground rounded-lg shadow-xs" aria-label="Camera actions overflow menu">
+                    <MoreVertical className="size-4 stroke-[1.5]" />
                   </Button>
                 }
               />

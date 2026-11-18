@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/common/StatusBadge';
 import {
   ChevronLeft,
   ChevronRight,
@@ -88,18 +87,18 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
             aria-label="Previous camera"
             title="Previous camera ([)"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-4 stroke-[1.5]" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleNext}
             disabled={currentIndex >= cameras.length - 1}
-            className="size-8 p-0 cursor-pointer border-border"
+            className="size-8 p-0 cursor-pointer border-border rounded-lg"
             aria-label="Next camera"
             title="Next camera (])"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-4 stroke-[1.5]" />
           </Button>
         </div>
       </div>
@@ -142,25 +141,25 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                     handleNext();
                   }
                 }}
-                className={`group flex-shrink-0 w-44 rounded-xl border text-left p-2.5 transition-all cursor-pointer select-none focus-visible:outline-none ${
+                className={`group flex-shrink-0 w-44 rounded-xl border text-left p-2.5 transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
                   isSelected
-                    ? 'ring-2 ring-primary border-border bg-card'
-                    : 'border-border bg-card hover:border-border-strong'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
+                    : 'border-border bg-card hover:bg-muted/40 hover:border-border'
                 }`}
               >
                 {/* 16:9 Thumbnail Frame */}
-                <div className="relative aspect-video w-full rounded-lg bg-muted overflow-hidden mb-2 flex items-center justify-center border border-border">
+                <div className="relative aspect-video w-full rounded-lg bg-muted/40 overflow-hidden mb-2 flex items-center justify-center border border-border/80">
                   {camera.identifier === 'DEV-001' ? (
                     <img
                       src="/monkey-fiber.jpg"
                       alt={`Last event snapshot for ${camera.identifier}`}
-                      className="w-full h-full object-cover filter brightness-90 group-hover:brightness-100 transition-all"
+                      className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 transition-all"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full bg-muted flex flex-col items-center justify-center text-muted-foreground">
-                      <CameraIcon className="size-5 opacity-60" />
-                      <span className="text-xs text-muted-foreground mt-1">No snapshot</span>
+                    <div className="w-full h-full bg-muted/30 flex flex-col items-center justify-center gap-1 text-muted-foreground select-none">
+                      <CameraIcon className="size-4 opacity-40 stroke-[1.5]" />
+                      <span className="text-xs text-muted-foreground/60 font-sans">No snapshot</span>
                     </div>
                   )}
 
@@ -173,21 +172,34 @@ export const CameraStrip: React.FC<CameraStripProps> = ({
                   )}
                 </div>
 
-                {/* Caption below image: ID & State chip */}
-                <div className="flex items-center justify-between gap-1 mb-1">
+                {/* Caption below image: ID & refined status dot */}
+                <div className="flex items-center justify-between gap-1 mb-1 font-sans">
                   <span className={`font-mono text-xs font-semibold truncate ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                     {camera.identifier}
                   </span>
-                  <StatusBadge status={unifiedState.state} size="sm" />
+                  <div className="flex items-center gap-1.5 shrink-0" title={unifiedState.reason}>
+                    <span
+                      className={`size-1.5 rounded-full ${
+                        unifiedState.state === 'online'
+                          ? 'bg-emerald-500 animate-pulse'
+                          : unifiedState.state === 'stale'
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500/80'
+                      }`}
+                    />
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {unifiedState.state}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Pole name */}
-                <div className="text-xs text-muted-foreground truncate mb-0.5">
+                <div className="text-xs text-muted-foreground truncate mb-0.5 font-sans">
                   {camera.installedPoleId ? `Pole ${camera.installedPoleId}` : 'Unmounted'}
                 </div>
 
                 {/* Last event relative time in sans */}
-                <div className="text-xs text-muted-foreground/80 truncate">
+                <div className="text-xs text-muted-foreground/70 truncate font-sans">
                   {lastEventLabel ? `Last event ${lastEventLabel}` : 'No events recorded'}
                 </div>
               </div>

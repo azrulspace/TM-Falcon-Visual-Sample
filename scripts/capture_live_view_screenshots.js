@@ -61,7 +61,7 @@ async function capture() {
   const modes = [
     { url: 'http://localhost:5173/live/single/DEV-001', prefix: 'live_single' },
     { url: 'http://localhost:5173/live/single/DEV-004', prefix: 'live_offline_dev004' },
-    { url: 'http://localhost:5173/live/monitor', prefix: 'live_monitor' },
+    { url: 'http://localhost:5173/live/monitor/all', prefix: 'live_monitor' },
   ];
 
   for (const vp of VIEWPORTS) {
@@ -78,20 +78,24 @@ async function capture() {
         if (m.prefix === 'live_offline_dev004' && vp.name !== '1920') continue;
         if (m.prefix === 'live_monitor' && !['1920', '1180', '390'].includes(vp.name)) continue;
 
-        await send('Page.navigate', { url: m.url });
+        const targetUrl = theme === 'light' ? `${m.url}?theme=light` : m.url;
+        await send('Page.navigate', { url: targetUrl });
         await new Promise(r => setTimeout(r, 1200));
 
         // Set theme
         await send('Runtime.evaluate', {
           expression: `
+            localStorage.setItem('ds_theme', '${theme}');
             if ('${theme}' === 'dark') {
               document.documentElement.classList.add('dark');
               document.documentElement.classList.add('theme_dark');
               document.documentElement.classList.remove('theme_light');
+              document.documentElement.setAttribute('data-theme', 'dark');
             } else {
               document.documentElement.classList.remove('dark');
               document.documentElement.classList.remove('theme_dark');
               document.documentElement.classList.add('theme_light');
+              document.documentElement.setAttribute('data-theme', 'light');
             }
           `
         });

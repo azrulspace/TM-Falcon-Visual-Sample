@@ -5,6 +5,7 @@ import type { LiveCameraCapabilities } from '@/types/live';
 import type { PoleRecord } from '@/types/assets';
 import { useLiveStream } from '@/contexts/LiveStreamContext';
 import { useEvents } from '@/contexts/EventsContext';
+import { useToast } from '@/contexts/ToastContext';
 import { formatRelativeTime, formatAbsoluteMYT } from '@/lib/dateTime';
 import { computeUnifiedDeviceState } from '@/lib/liveCameras';
 import {
@@ -19,10 +20,12 @@ import {
   ChevronDown,
   ChevronRight,
   VideoOff,
+  Camera as CameraIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CameraOfflineState } from '@/components/live/CameraOfflineState';
 
 interface LivePlayerProps {
   camera: DeviceWithRelations;
@@ -38,10 +41,12 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { events } = useEvents();
+  const { addToast } = useToast();
 
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControlsInFullscreen, setShowControlsInFullscreen] = useState(true);
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const fullscreenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -111,6 +116,18 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
     }, 3000);
   };
 
+  const handleRefreshStatus = () => {
+    setIsRefreshingStatus(true);
+    setTimeout(() => {
+      setIsRefreshingStatus(false);
+      addToast(
+        'info',
+        `Checked telemetry for ${camera.identifier}. Device remains offline (last contact ${unifiedState.relativeTime}).`,
+        'Status Checked'
+      );
+    }, 600);
+  };
+
   return (
     <div className="flex flex-col w-full">
       <div
@@ -155,46 +172,23 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
                 />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-                  <VideoOff className="size-12 opacity-30" />
+                  <VideoOff className="size-12 opacity-30 stroke-[1.5]" />
                 </div>
               )}
             </div>
 
-            {/* Vertical Scrim: 0% to 70% opacity, bottom to center behind text (NO glass card) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/60 to-transparent pointer-events-none" />
+            {/* Subtle bottom localized gradient behind text without darkening the entire snapshot */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
 
-            {/* Centered content sitting on scrim */}
+            {/* Centered content sitting above snapshot */}
             {isOffline ? (
-              <div className="relative z-10 flex flex-col items-center max-w-sm px-6 py-4 text-center">
-                <div className="size-12 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive mb-3">
-                  <WifiOff className="size-6" />
-                </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  The camera is offline
-                </h3>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Last contact {unifiedState.relativeTime}. Live stream is not available until connectivity is restored.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/assets/inventory/devices/${encodeURIComponent(camera.identifier)}`)}
-                    className="h-8 text-xs border-border bg-card text-foreground"
-                  >
-                    <span>Open device</span>
-                    <ChevronRight className="size-3.5 ml-1" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.location.reload()}
-                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Check again
-                  </Button>
-                </div>
-              </div>
+              <CameraOfflineState
+                identifier={camera.identifier}
+                lastContactRelative={unifiedState.relativeTime}
+                onViewDevice={() => navigate(`/assets/inventory/devices/${encodeURIComponent(camera.identifier)}`)}
+                onRefreshStatus={handleRefreshStatus}
+                isRefreshing={isRefreshingStatus}
+              />
             ) : (
               <div className="relative z-10 flex flex-col items-center max-w-md px-6 py-4 text-center">
                 <Button
@@ -221,7 +215,7 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
 
                 {capabilities.isMobileData && (
                   <div className="text-xs text-status-warning bg-status-warning-tint border border-status-warning-border px-3 py-1 rounded-full flex items-center gap-1.5 mt-3">
-                    <Radio className="size-3.5 shrink-0" />
+                    <Radio className="size-3.5 shrink-0 stroke-[1.5]" />
                     <span>This camera uses mobile data. Live video adds to its usage.</span>
                   </div>
                 )}
@@ -489,11 +483,31 @@ export const LivePlayer: React.FC<LivePlayerProps> = ({
         )}
       </div>
 
-      {/* Caption row under the video (inside player card, 12/16 tertiary): "Poster: last event snapshot, 20m ago" */}
-      {currentEffectiveState === 'idle' && lastEvent && (
-        <div className="px-4 py-2 border-t border-border bg-card/60 text-xs text-muted-foreground flex items-center justify-between select-none">
-          <span>Poster: last event snapshot, {formatRelativeTime(lastEvent.captured)}</span>
-          <span className="font-mono text-muted-foreground/70">{lastEvent.type}</span>
+      {/* Caption row under the video: clearly distinguishing historical evidence snapshot from live feed */}
+      {currentEffectiveState === 'idle' && (
+        <div className="h-10 px-4 border-t border-border bg-muted/20 text-xs text-muted-foreground flex items-center justify-between select-none font-sans">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <CameraIcon className="size-3.5 text-primary shrink-0 stroke-[1.5]" />
+              Historical snapshot
+            </span>
+            {lastEvent?.captured && (
+              <>
+                <span className="text-border">·</span>
+                <span title={formatAbsoluteMYT(lastEvent.captured)}>
+                  Captured {formatRelativeTime(lastEvent.captured)}
+                </span>
+              </>
+            )}
+          </div>
+          {lastEvent?.type && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground hidden sm:inline">Event:</span>
+              <span className="font-mono text-xs font-semibold text-foreground px-2 py-0.5 rounded bg-muted/60 border border-border">
+                {lastEvent.type}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

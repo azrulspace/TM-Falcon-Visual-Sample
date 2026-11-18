@@ -192,20 +192,20 @@ export const LiveControlBar: React.FC<LiveControlBarProps> = ({
           </TooltipProvider>
         </div>
 
-        {/* Right: Calm tertiary explanation + Fullscreen */}
+        {/* Right: Operational status when offline, or prompt when online + Fullscreen */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground/80 font-normal">
-            Start the video to use camera controls
+          <span className="text-xs text-muted-foreground font-normal">
+            {isOffline ? 'Camera offline · Controls unavailable' : 'Start the video to use camera controls'}
           </span>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleFullscreen}
-            className="size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+            className="size-8 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
             title="Enter fullscreen (F)"
             aria-label="Enter fullscreen"
           >
-            <Maximize2 className="size-4" />
+            <Maximize2 className="size-4 stroke-[1.5]" />
           </Button>
         </div>
       </div>

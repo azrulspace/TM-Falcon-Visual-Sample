@@ -234,7 +234,7 @@ export const MonitorTile: React.FC<MonitorTileProps> = ({
       </div>
 
       {/* 3. Bottom Toolbar */}
-      <div className="h-10 bg-card/90 border-t border-border px-2 flex items-center justify-between text-xs z-20">
+      <div className="h-10 bg-card border-t border-border px-2 flex items-center justify-between text-xs z-20">
         <div className="flex items-center gap-1">
           {/* Start / Stop Toggle */}
           {isStreaming ? (

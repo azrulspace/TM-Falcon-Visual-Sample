@@ -62,17 +62,17 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
         <img
           src={evt.snapshots[0]}
           alt={evt.type}
-          className="w-12 h-9 rounded-[6px] object-cover shrink-0 border border-border"
+          className="w-12 h-9 rounded-md object-cover shrink-0 border border-border"
           loading="lazy"
         />
       );
     }
     return (
       <div
-        className="w-12 h-9 rounded-[6px] bg-muted border border-border text-muted-foreground flex items-center justify-center shrink-0"
+        className="w-12 h-9 rounded-md bg-muted/60 border border-border text-muted-foreground flex items-center justify-center shrink-0"
         title={evt.type}
       >
-        <Activity className="size-4" />
+        <Activity className="size-4 stroke-[1.5]" />
       </div>
     );
   };
@@ -83,7 +83,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
       <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <HardDrive className="size-4 text-primary" />
+            <HardDrive className="size-4 text-primary stroke-[1.5]" />
             <span>Camera details</span>
           </CardTitle>
           <Link
@@ -91,15 +91,16 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             className="text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium"
           >
             <span>Device record</span>
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="size-3.5 stroke-[1.5]" />
           </Link>
         </CardHeader>
 
-        {/* Top of Card 1: Map (176px, solid card surface chip, no glass blur) */}
+        {/* Top of Card 1: Map (160px embedded, solid card surface chip) */}
         {hasLocation ? (
-          <div className="relative w-full h-44 bg-muted overflow-hidden border-b border-border">
+          <div className="relative w-full h-40 bg-muted overflow-hidden border-b border-border">
             <MapCanvas
-              selectedId={installedPole ? installedPole.identifier : camera.identifier.replace('-', '_')}
+              selectedId={camera.identifier.replace('-', '_')}
+              embedded={true}
               onMarkerClick={() => {}}
               basemap="satellite"
               activeLayers={{
@@ -114,7 +115,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             />
             {/* Solid Card Surface Label Chip */}
             <div className="absolute top-2 left-2 z-10 bg-card border border-border text-foreground text-xs font-medium px-2.5 py-1 rounded-md shadow-xs flex items-center gap-1.5">
-              <MapPin className="size-3 text-primary shrink-0" />
+              <MapPin className="size-3 text-primary shrink-0 stroke-[1.5]" />
               <span className="font-mono">Pole {installedPole!.identifier}</span>
               <span className="text-border">•</span>
               <span className="text-muted-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
@@ -126,70 +127,87 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
           </div>
         )}
 
-        <CardContent className="p-5 text-xs divide-y divide-border">
-          {/* Row 1: Model */}
-          <div className="flex justify-between items-center py-2.5 first:pt-0 min-h-[44px]">
-            <span className="text-muted-foreground">Model</span>
-            <span className="font-medium text-foreground">{camera.model || 'Standard IP Camera'}</span>
-          </div>
-
-          {/* Row 2: Vendor and driver */}
-          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
-            <span className="text-muted-foreground">Vendor and driver</span>
-            <span className="text-foreground">{camera.manufacturer || 'Hikvision'} ({camera.library || 'HIK_OpenAPI'})</span>
-          </div>
-
-          {/* Row 3: Connectivity */}
-          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
-            <span className="text-muted-foreground">Connectivity</span>
-            <div className="flex items-center gap-2" title={unifiedState.reason}>
+        <CardContent className="p-5 text-xs flex flex-col gap-4">
+          {/* Group 1: Operational & Connectivity Status (Prominent) */}
+          <div className="p-3.5 rounded-lg bg-muted/30 border border-border/80 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-foreground">Operational status</span>
               <StatusBadge status={unifiedState.state} size="sm" />
-              <span className="text-muted-foreground cursor-help" title={unifiedState.absoluteMYT}>
-                ({unifiedState.relativeTime})
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Last contact</span>
+              <span className="font-mono text-foreground font-medium" title={unifiedState.absoluteMYT}>
+                {unifiedState.relativeTime}
               </span>
             </div>
-          </div>
-
-          {/* Row 4: Installed pole */}
-          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
-            <span className="text-muted-foreground">Installed pole</span>
-            {installedPole ? (
-              <Link
-                to={`/assets/poles/${encodeURIComponent(installedPole.identifier)}`}
-                className="font-mono text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>{installedPole.identifier}</span>
-                <ChevronRight className="size-3.5" />
-              </Link>
-            ) : (
-              <span className="text-muted-foreground italic">Not installed</span>
+            {unifiedState.reason && (
+              <div className="text-xs text-muted-foreground/80 pt-2 border-t border-border/60">
+                {unifiedState.reason}
+              </div>
             )}
           </div>
 
-          {/* Row 5: Site */}
-          <div className="flex justify-between items-center py-2.5 min-h-[44px]">
-            <span className="text-muted-foreground">Site</span>
-            <span className="text-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
+          {/* Group 2: Device Specification */}
+          <div className="flex flex-col">
+            <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/80 pb-1">
+              Device specification
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+              <span className="text-muted-foreground">Identifier</span>
+              <span className="font-mono font-medium text-foreground">{camera.identifier}</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+              <span className="text-muted-foreground">Model</span>
+              <span className="font-medium text-foreground">{camera.model || 'Standard IP Camera'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+              <span className="text-muted-foreground">Vendor & driver</span>
+              <span className="text-foreground">{camera.manufacturer || 'Hikvision'} ({camera.library || 'HIK_OpenAPI'})</span>
+            </div>
           </div>
 
-          {/* Row 6: Coordinates with Copy */}
-          {coordsString && (
-            <div className="flex justify-between items-center py-2.5 last:pb-0 min-h-[44px]">
-              <span className="text-muted-foreground">Coordinates</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs text-foreground">{coordsString}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyCoords}
-                  className="size-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                  title="Copy coordinates"
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
+          {/* Group 3: Installation & Location */}
+          <div className="flex flex-col">
+            <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground/80 pb-1">
+              Installation & location
             </div>
-          )}
+            <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+              <span className="text-muted-foreground">Site</span>
+              <span className="text-foreground">{camera.siteName || 'Teluk Panglima Garang'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-border/60 min-h-[44px]">
+              <span className="text-muted-foreground">Installed pole</span>
+              {installedPole ? (
+                <Link
+                  to={`/assets/poles/${encodeURIComponent(installedPole.identifier)}`}
+                  className="font-mono text-primary hover:underline inline-flex items-center gap-1 font-medium"
+                >
+                  <span>{installedPole.identifier}</span>
+                  <ChevronRight className="size-3.5 stroke-[1.5]" />
+                </Link>
+              ) : (
+                <span className="text-muted-foreground italic">Not installed</span>
+              )}
+            </div>
+            {coordsString && (
+              <div className="flex justify-between items-center py-2.5 min-h-[44px]">
+                <span className="text-muted-foreground">Coordinates</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs text-foreground">{coordsString}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyCoords}
+                    className="size-8 p-0 cursor-pointer text-muted-foreground hover:text-foreground rounded-lg"
+                    title="Copy coordinates"
+                    aria-label="Copy coordinates"
+                  >
+                    <Copy className="size-3.5 stroke-[1.5]" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -197,7 +215,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
       <Card className="border-border bg-card rounded-xl overflow-hidden shadow-none">
         <CardHeader className="h-12 px-5 py-0 flex flex-row items-center justify-between border-b border-border space-y-0">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Radio className="size-4 text-primary" />
+            <Radio className="size-4 text-primary stroke-[1.5]" />
             <span>Recent events ({recentEvents.length})</span>
           </CardTitle>
           <Link
@@ -205,10 +223,10 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
             className="text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium"
           >
             <span>View all ({totalEventsCount})</span>
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="size-3.5 stroke-[1.5]" />
           </Link>
         </CardHeader>
-        <CardContent className="p-3 space-y-1 divide-y divide-border">
+        <CardContent className="p-3 space-y-1">
           {recentEvents.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground">
               No recent events recorded from this camera.
@@ -221,7 +239,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                 <div
                   key={evt.id}
                   onClick={() => navigate(`/events/${encodeURIComponent(evt.id)}`)}
-                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group"
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {renderEventThumbnail(evt)}
@@ -232,7 +250,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
                         </span>
                         {isSim && (
                           <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border font-medium">
-                            <Sparkles className="size-3" />
+                            <Sparkles className="size-3 stroke-[1.5]" />
                             Sim
                           </span>
                         )}
@@ -245,7 +263,7 @@ export const LiveSideColumn: React.FC<LiveSideColumnProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0 pl-2">
                     <PriorityBadge priority={evt.priority} size="sm" />
-                    <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+                    <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5 stroke-[1.5]" />
                   </div>
                 </div>
               );
