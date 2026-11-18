@@ -136,3 +136,58 @@ test('Live View: getPoleForCamera resolves installed pole record', () => {
   const pNull = getPoleForCamera(mockPoles, null);
   assert.equal(pNull, null);
 });
+
+test('Live View Phase 7: RBAC full matrix permits only authorised live operations', () => {
+  const admin = getLivePermissions('Admin');
+  assert.equal(admin.canWatchLive, true);
+  assert.equal(admin.canUseTalk, true);
+  assert.equal(admin.canUsePtz, true);
+  assert.equal(admin.canTakeSnapshot, true);
+
+  const system = getLivePermissions('System');
+  assert.equal(system.canWatchLive, true);
+  assert.equal(system.canUseTalk, true);
+  assert.equal(system.canUsePtz, true);
+  assert.equal(system.canTakeSnapshot, true);
+
+  const op = getLivePermissions('Operator');
+  assert.equal(op.canWatchLive, true);
+  assert.equal(op.canUseTalk, true);
+  assert.equal(op.canUsePtz, true);
+  assert.equal(op.canTakeSnapshot, true);
+
+  const field = getLivePermissions('Field');
+  assert.equal(field.canWatchLive, true);
+  assert.equal(field.canUseTalk, false);
+  assert.equal(field.canUsePtz, false);
+  assert.equal(field.canTakeSnapshot, true);
+  assert.ok(field.talkDisabledReason?.includes('Permission denied'));
+  assert.ok(field.ptzDisabledReason?.includes('Permission denied'));
+
+  const viewer = getLivePermissions('Viewer' as any);
+  assert.equal(viewer.canWatchLive, false);
+  assert.equal(viewer.canUseTalk, false);
+  assert.equal(viewer.canUsePtz, false);
+  assert.ok(viewer.watchDisabledReason?.includes('Permission denied'));
+});
+
+test('Live View Phase 7: Session audit record structure conformance', () => {
+  const auditRecord = {
+    id: 'audit-1700000000000-abcd',
+    deviceId: 'DEV-001',
+    cameraName: 'KT 001',
+    user: 'Operator Ahmad',
+    role: 'Operator',
+    startedAt: '2026-11-18T05:00:00.000Z',
+    stoppedAt: '2026-11-18T05:05:00.000Z',
+    durationSeconds: 300,
+    stopReason: 'user_stopped' as const,
+    estimatedDataMb: 85.8,
+  };
+
+  assert.ok(auditRecord.id.startsWith('audit-'));
+  assert.equal(auditRecord.deviceId, 'DEV-001');
+  assert.equal(auditRecord.durationSeconds, 300);
+  assert.ok(['user_stopped', 'inactivity', 'page_hidden', 'tab_closed', 'page_unmount', 'camera_switched'].includes(auditRecord.stopReason));
+  assert.ok(auditRecord.estimatedDataMb > 0);
+});
