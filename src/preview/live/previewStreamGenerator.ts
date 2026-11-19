@@ -48,9 +48,11 @@ export function createPreviewCanvasStream(camera: PreviewCameraInfo): PreviewStr
     bgImg.src = '/monkey-fiber.jpg';
     bgImg.onload = () => {
       isImgLoaded = true;
+      render();
     };
     if (bgImg.complete) {
       isImgLoaded = true;
+      render();
     }
   }
 

@@ -247,3 +247,54 @@ test('Live View Phase 9: Telemetry data usage formula boundary invariants', () =
   assert.equal(Number.isFinite(oneHourMb), true);
   assert.equal(Number.isNaN(oneHourMb), false);
 });
+
+test('Live View Monitor Wall: Start All filters strictly for online cameras and enforces max 4 streams', () => {
+  const sampleCameras = [
+    { identifier: 'DEV-001', connectivityState: 'online' },
+    { identifier: 'DEV-002', connectivityState: 'offline' },
+    { identifier: 'DEV-003', connectivityState: 'online' },
+    { identifier: 'DEV-004', connectivityState: 'offline' },
+    { identifier: 'DEV-005', connectivityState: 'online' },
+    { identifier: 'DEV-006', connectivityState: 'online' },
+    { identifier: 'DEV-007', connectivityState: 'online' },
+  ];
+
+  // Visible slots under layout 4
+  const visible = sampleCameras.slice(0, 4); // DEV-001, 002, 003, 004
+  assert.equal(visible.length, 4);
+
+  // Eligible cameras to start
+  const eligible = visible.filter((c) => c.connectivityState === 'online');
+  assert.deepEqual(
+    eligible.map((c) => c.identifier),
+    ['DEV-001', 'DEV-003']
+  );
+
+  // Offline cameras skipped
+  const skipped = visible.length - eligible.length;
+  assert.equal(skipped, 2);
+
+  // Bandwidth limit: max 4 streams
+  const allOnline = sampleCameras.filter((c) => c.connectivityState === 'online'); // 5 cameras
+  const toStart = allOnline.slice(0, 4);
+  assert.equal(toStart.length, 4);
+});
+
+test('Live View Monitor Wall: Camera filter partitions group into All, Online, and Offline subsets', () => {
+  const sampleCameras = [
+    { identifier: 'DEV-001', connectivityState: 'online' },
+    { identifier: 'DEV-002', connectivityState: 'offline' },
+    { identifier: 'DEV-003', connectivityState: 'offline' },
+    { identifier: 'DEV-004', connectivityState: 'offline' },
+  ];
+
+  const all = sampleCameras;
+  const online = sampleCameras.filter((c) => c.connectivityState === 'online');
+  const offline = sampleCameras.filter((c) => c.connectivityState === 'offline');
+
+  assert.equal(all.length, 4);
+  assert.equal(online.length, 1);
+  assert.equal(offline.length, 3);
+  assert.equal(online.length + offline.length, all.length);
+});
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { DeviceWithRelations } from '@/types/devices';
 import type { LiveCameraGroup } from '@/lib/liveGroups';
 import {
@@ -7,7 +7,7 @@ import {
   restoreLiveGroup,
   setActiveGroupId,
 } from '@/lib/liveGroups';
-import { MonitorTile } from './MonitorTile';
+import { MonitorTile, type TilePlaybackState } from './MonitorTile';
 import { GroupManageDialog } from './GroupManageDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +33,11 @@ import {
   Info,
   Radio,
   Sparkles,
+  WifiOff,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
+import { computeUnifiedDeviceState } from '@/lib/liveCameras';
+import { isLivePreviewEnabled } from '@/preview/live/previewConfig';
 
 interface MonitorWallProps {
   currentGroupId: string;
@@ -52,7 +55,9 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
 
   const [groups, setGroups] = useState<LiveCameraGroup[]>([]);
   const [layout, setLayout] = useState<'1' | '2' | '4' | '6'>('4');
+  const [cameraFilter, setCameraFilter] = useState<'all' | 'online' | 'offline'>('all');
   const [activeStreamingIds, setActiveStreamingIds] = useState<Set<string>>(new Set());
+  const [playbackStates, setPlaybackStates] = useState<Record<string, TilePlaybackState>>({});
   const [audioCameraId, setAudioCameraId] = useState<string | null>(null);
   const [spotlightCameraId, setSpotlightCameraId] = useState<string | null>(null);
   const [groupManageOpen, setGroupManageOpen] = useState(false);
@@ -90,11 +95,35 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
       .filter((c): c is DeviceWithRelations => Boolean(c));
   }, [activeGroup, allCameras]);
 
+  // Online / offline breakdown for current group
+  const onlineCameras = useMemo(() => {
+    return groupCameras.filter((c) => {
+      const isDev001 = c.identifier === 'DEV-001' && isLivePreviewEnabled();
+      const state = computeUnifiedDeviceState(c.lastContactAt, c.connectivityState).state;
+      return state === 'online' || isDev001;
+    });
+  }, [groupCameras]);
+
+  const offlineCameras = useMemo(() => {
+    return groupCameras.filter((c) => {
+      const isDev001 = c.identifier === 'DEV-001' && isLivePreviewEnabled();
+      const state = computeUnifiedDeviceState(c.lastContactAt, c.connectivityState).state;
+      return state !== 'online' && !isDev001;
+    });
+  }, [groupCameras]);
+
+  // Filtered cameras based on operator selection
+  const filteredCameras = useMemo(() => {
+    if (cameraFilter === 'online') return onlineCameras;
+    if (cameraFilter === 'offline') return offlineCameras;
+    return groupCameras;
+  }, [cameraFilter, onlineCameras, offlineCameras, groupCameras]);
+
   // Max visible tiles according to layout
   const layoutLimit = parseInt(layout, 10);
   const visibleCameras = useMemo(() => {
-    return groupCameras.slice(0, layoutLimit);
-  }, [groupCameras, layoutLimit]);
+    return filteredCameras.slice(0, layoutLimit);
+  }, [filteredCameras, layoutLimit]);
 
   // Check if any visible camera uses mobile data
   const hasMobileDataCamera = useMemo(() => {
@@ -105,17 +134,37 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
     });
   }, [visibleCameras]);
 
+  // Number of actively playing streams
+  const playingStreamsCount = useMemo(() => {
+    return Object.entries(playbackStates).filter(([id, state]) => {
+      return activeStreamingIds.has(id) && state === 'playing';
+    }).length;
+  }, [playbackStates, activeStreamingIds]);
+
   const handleLayoutChange = (newLayout: '1' | '2' | '4' | '6') => {
     setLayout(newLayout);
     localStorage.setItem('falcon_live_wall_layout', newLayout);
   };
 
-  const handleToggleStream = (cameraId: string) => {
+  const handlePlaybackStateChange = useCallback((cameraId: string, state: TilePlaybackState) => {
+    setPlaybackStates((prev) => {
+      if (prev[cameraId] === state) return prev;
+      return { ...prev, [cameraId]: state };
+    });
+  }, []);
+
+  const handleToggleStream = useCallback((cameraId: string) => {
     setActiveStreamingIds((prev) => {
       const next = new Set(prev);
       if (next.has(cameraId)) {
         next.delete(cameraId);
-        if (audioCameraId === cameraId) setAudioCameraId(null);
+        setAudioCameraId((cur) => (cur === cameraId ? null : cur));
+        setPlaybackStates((ps) => {
+          if (!ps[cameraId]) return ps;
+          const updated = { ...ps };
+          delete updated[cameraId];
+          return updated;
+        });
       } else {
         if (next.size >= 4) {
           addToast(
@@ -129,24 +178,46 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
       }
       return next;
     });
-  };
+  }, [addToast]);
 
-  const handleToggleAudio = (cameraId: string) => {
+  const handleToggleAudio = useCallback((cameraId: string) => {
     setAudioCameraId((prev) => (prev === cameraId ? null : cameraId));
-  };
+  }, []);
 
-  const handleToggleSpotlight = (cameraId: string) => {
+  const handleToggleSpotlight = useCallback((cameraId: string) => {
     setSpotlightCameraId((prev) => (prev === cameraId ? null : cameraId));
-  };
+  }, []);
 
   const handleStartAll = () => {
-    // Hard limit: only start up to 4 streams
-    const targetCameras = visibleCameras.slice(0, 4);
-    const newStreaming = new Set<string>();
+    // Start only eligible online cameras in current view
+    const eligibleCameras = visibleCameras.filter((c) => {
+      const isDev001 = c.identifier === 'DEV-001' && isLivePreviewEnabled();
+      const state = computeUnifiedDeviceState(c.lastContactAt, c.connectivityState).state;
+      return state === 'online' || isDev001;
+    });
+
+    if (eligibleCameras.length === 0) {
+      addToast(
+        'warning',
+        'No online cameras available to start in current view.',
+        'Unable to Start'
+      );
+      return;
+    }
+
+    const targetCameras = eligibleCameras.slice(0, 4);
+    const newStreaming = new Set(activeStreamingIds);
     targetCameras.forEach((c) => newStreaming.add(c.identifier));
     setActiveStreamingIds(newStreaming);
 
-    if (visibleCameras.length > 4) {
+    const skippedOfflineCount = visibleCameras.length - eligibleCameras.length;
+    if (skippedOfflineCount > 0) {
+      addToast(
+        'info',
+        `Started ${targetCameras.length} online stream${targetCameras.length > 1 ? 's' : ''}. ${skippedOfflineCount} offline camera${skippedOfflineCount > 1 ? 's' : ''} skipped.`,
+        'Streams Started'
+      );
+    } else if (eligibleCameras.length > 4) {
       addToast(
         'info',
         'Started 4 streams. Remaining visible cameras kept on standby (stream limit policy).',
@@ -165,6 +236,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
     const count = activeStreamingIds.size;
     setActiveStreamingIds(new Set());
     setAudioCameraId(null);
+    setPlaybackStates({});
     if (count > 0) {
       addToast('info', `Stopped ${count} active stream${count > 1 ? 's' : ''}.`, 'Streams Stopped');
     }
@@ -301,7 +373,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
               variant="outline"
               size="sm"
               onClick={() => handleDeleteGroup(activeGroup.id)}
-              className="size-9 p-0 text-muted-foreground hover:text-rose-500 cursor-pointer"
+              className="size-9 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
               title="Delete group"
             >
               <Trash2 className="size-3.5" />
@@ -309,59 +381,116 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
           )}
         </div>
 
-        {/* Center: Layout Selector (1, 2, 4, 6 tiles) */}
-        <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
-          <span className="text-xs font-semibold text-muted-foreground px-2 hidden md:inline">
-            Layout:
-          </span>
-          <Button
-            variant={layout === '1' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleLayoutChange('1')}
-            className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
-              layout === '1' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground'
-            }`}
-            title="1 tile layout"
-          >
-            <SingleSquare className="size-3.5" />
-            <span>1</span>
-          </Button>
-          <Button
-            variant={layout === '2' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleLayoutChange('2')}
-            className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
-              layout === '2' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground'
-            }`}
-            title="2 tiles layout"
-          >
-            <Columns2 className="size-3.5" />
-            <span>2</span>
-          </Button>
-          <Button
-            variant={layout === '4' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleLayoutChange('4')}
-            className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
-              layout === '4' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground'
-            }`}
-            title="4 tiles (2x2) layout"
-          >
-            <Grid2X2 className="size-3.5" />
-            <span>4</span>
-          </Button>
-          <Button
-            variant={layout === '6' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => handleLayoutChange('6')}
-            className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
-              layout === '6' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground'
-            }`}
-            title="6 tiles (3x2) layout"
-          >
-            <Grid3X3 className="size-3.5" />
-            <span>6</span>
-          </Button>
+        {/* Center: Camera Filter & Layout Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Segmented Filter: All / Online / Offline */}
+          <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
+            <Button
+              variant={cameraFilter === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCameraFilter('all')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                cameraFilter === 'all'
+                  ? 'bg-primary text-primary-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Show all cameras in group"
+            >
+              <span>All</span>
+              <Badge variant="outline" className="text-xs px-1 py-0 font-mono font-normal">
+                {groupCameras.length}
+              </Badge>
+            </Button>
+            <Button
+              variant={cameraFilter === 'online' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCameraFilter('online')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                cameraFilter === 'online'
+                  ? 'bg-primary text-primary-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Show online cameras only"
+            >
+              <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span>Online</span>
+              <Badge variant="outline" className="text-xs px-1 py-0 font-mono font-normal">
+                {onlineCameras.length}
+              </Badge>
+            </Button>
+            <Button
+              variant={cameraFilter === 'offline' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCameraFilter('offline')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                cameraFilter === 'offline'
+                  ? 'bg-primary text-primary-foreground font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Show offline cameras only"
+            >
+              <span className="size-1.5 rounded-full bg-destructive shrink-0" />
+              <span>Offline</span>
+              <Badge variant="outline" className="text-xs px-1 py-0 font-mono font-normal">
+                {offlineCameras.length}
+              </Badge>
+            </Button>
+          </div>
+
+          {/* Layout Selector (1, 2, 4, 6 tiles) */}
+          <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
+            <span className="text-xs font-semibold text-muted-foreground px-1.5 hidden 2xl:inline">
+              Layout:
+            </span>
+            <Button
+              variant={layout === '1' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleLayoutChange('1')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                layout === '1' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="1 tile layout"
+            >
+              <SingleSquare className="size-3.5" />
+              <span>1</span>
+            </Button>
+            <Button
+              variant={layout === '2' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleLayoutChange('2')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                layout === '2' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="2 tiles layout"
+            >
+              <Columns2 className="size-3.5" />
+              <span>2</span>
+            </Button>
+            <Button
+              variant={layout === '4' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleLayoutChange('4')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                layout === '4' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="4 tiles (2x2) layout"
+            >
+              <Grid2X2 className="size-3.5" />
+              <span>4</span>
+            </Button>
+            <Button
+              variant={layout === '6' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleLayoutChange('6')}
+              className={`h-7 px-2 text-xs gap-1 cursor-pointer ${
+                layout === '6' ? 'bg-primary text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="6 tiles (3x2) layout"
+            >
+              <Grid3X3 className="size-3.5" />
+              <span>6</span>
+            </Button>
+          </div>
         </div>
 
         {/* Right: Stream Actions (Start all, Stop all, Fullscreen) */}
@@ -400,50 +529,120 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
         </div>
       </div>
 
-      {/* 2. Status Line & Bandwidth Disclaimer */}
+      {/* 2. Operational Summary Line */}
       <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground px-1 gap-2">
-        <div className="flex items-center gap-3">
-          <span className="font-medium text-foreground">
-            Streaming {activeStreamingIds.size} / 4 active
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-semibold text-foreground">
+            {activeGroup?.name || 'All cameras'}
           </span>
           <span className="text-border">•</span>
-          <span>Showing {visibleCameras.length} of {groupCameras.length} cameras</span>
+          <span>
+            <strong className="font-medium text-foreground">{groupCameras.length}</strong> in group ({onlineCameras.length} online, {offlineCameras.length} offline)
+          </span>
+          <span className="text-border">•</span>
+          <span>
+            Showing <strong className="font-medium text-foreground">{visibleCameras.length}</strong> of {filteredCameras.length} slots
+          </span>
+          <span className="text-border">•</span>
+          <span className="inline-flex items-center gap-1 font-medium text-foreground">
+            <Video className="size-3 text-primary" />
+            Streaming: {activeStreamingIds.size} / 4 active
+            {playingStreamsCount > 0 && playingStreamsCount !== activeStreamingIds.size && (
+              <span className="text-muted-foreground font-normal">({playingStreamsCount} playing)</span>
+            )}
+          </span>
           {hasMobileDataCamera && (
             <>
               <span className="text-border">•</span>
               <span className="inline-flex items-center gap-1 text-amber-500 font-medium">
                 <Radio className="size-3" />
-                Mobile data cameras included
+                Mobile data included
               </span>
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-xs text-muted-foreground/80">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Info className="size-3 text-primary" />
-          <span>Groups are saved on this device only</span>
+          <span>Groups saved locally</span>
         </div>
       </div>
 
-      {/* 3. Grid Display or Spotlight View */}
+      {/* 3. Spotlight Mode Notification Banner */}
+      {spotlightCameraId && (
+        <div className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-card border border-primary/30 text-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-primary" />
+            <span className="font-medium text-foreground">
+              Spotlight View: <strong className="font-semibold text-primary">{spotlightCameraId}</strong>
+            </span>
+            <span className="text-muted-foreground hidden sm:inline">
+              — Focused inspection with secondary group thumbnails
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSpotlightCameraId(null)}
+            className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-border bg-card hover:bg-muted text-foreground"
+          >
+            Exit spotlight
+          </Button>
+        </div>
+      )}
+
+      {/* 4. Grid Display or Spotlight View */}
       {visibleCameras.length === 0 ? (
         <div className="p-12 text-center rounded-xl border border-border bg-card space-y-3">
-          <Video className="size-8 text-muted-foreground/40 mx-auto" />
-          <div className="font-semibold text-foreground text-sm">No cameras in this group</div>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Click "Edit group" to select cameras for this view, or choose another group from the dropdown.
-          </p>
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingGroup(activeGroup);
-              setGroupManageOpen(true);
-            }}
-            className="h-8 text-xs font-semibold mt-2"
-          >
-            <Edit2 className="size-3.5 mr-1" />
-            Edit group cameras
-          </Button>
+          {groupCameras.length === 0 ? (
+            <>
+              <Video className="size-8 text-muted-foreground/40 mx-auto" />
+              <div className="font-semibold text-foreground text-sm">No cameras in this group</div>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                Click "Edit group" to select cameras for this view, or choose another group from the dropdown.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingGroup(activeGroup);
+                  setGroupManageOpen(true);
+                }}
+                className="h-8 text-xs font-semibold mt-2"
+              >
+                <Edit2 className="size-3.5 mr-1" />
+                Edit group cameras
+              </Button>
+            </>
+          ) : cameraFilter === 'online' ? (
+            <>
+              <WifiOff className="size-8 text-muted-foreground/40 mx-auto" />
+              <div className="font-semibold text-foreground text-sm">No online cameras in this group</div>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                All {groupCameras.length} cameras in this group are currently offline. Switch filter to view offline cameras.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCameraFilter('all')}
+                className="h-8 text-xs font-semibold mt-2"
+              >
+                Show all cameras ({groupCameras.length})
+              </Button>
+            </>
+          ) : (
+            <>
+              <Video className="size-8 text-muted-foreground/40 mx-auto" />
+              <div className="font-semibold text-foreground text-sm">No cameras match current filter</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCameraFilter('all')}
+                className="h-8 text-xs font-semibold mt-2"
+              >
+                Show all cameras ({groupCameras.length})
+              </Button>
+            </>
+          )}
         </div>
       ) : spotlightCameraId ? (
         /* Spotlight Layout: 2/3 prominent tile + 1/3 vertical stack */
@@ -453,23 +652,16 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
               const spotCamera = allCameras.find((c) => c.identifier === spotlightCameraId);
               if (!spotCamera) return null;
               return (
-                <div className="relative">
-                  <MonitorTile
-                    camera={spotCamera}
-                    isStreaming={activeStreamingIds.has(spotCamera.identifier)}
-                    hasAudio={audioCameraId === spotCamera.identifier}
-                    isSpotlight={true}
-                    onToggleStream={handleToggleStream}
-                    onToggleAudio={handleToggleAudio}
-                    onToggleSpotlight={handleToggleSpotlight}
-                  />
-                  <div className="absolute top-3 left-14 z-30 pointer-events-none">
-                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 text-xs px-2 py-0.5 font-semibold gap-1">
-                      <Sparkles className="size-3" />
-                      Spotlight
-                    </Badge>
-                  </div>
-                </div>
+                <MonitorTile
+                  camera={spotCamera}
+                  isStreaming={activeStreamingIds.has(spotCamera.identifier)}
+                  hasAudio={audioCameraId === spotCamera.identifier}
+                  isSpotlight={true}
+                  onToggleStream={handleToggleStream}
+                  onToggleAudio={handleToggleAudio}
+                  onToggleSpotlight={handleToggleSpotlight}
+                  onPlaybackStateChange={handlePlaybackStateChange}
+                />
               );
             })()}
           </div>
@@ -490,6 +682,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
                   onToggleStream={handleToggleStream}
                   onToggleAudio={handleToggleAudio}
                   onToggleSpotlight={handleToggleSpotlight}
+                  onPlaybackStateChange={handlePlaybackStateChange}
                 />
               ))}
           </div>
@@ -517,6 +710,7 @@ export const MonitorWall: React.FC<MonitorWallProps> = ({
               onToggleStream={handleToggleStream}
               onToggleAudio={handleToggleAudio}
               onToggleSpotlight={handleToggleSpotlight}
+              onPlaybackStateChange={handlePlaybackStateChange}
             />
           ))}
         </div>
